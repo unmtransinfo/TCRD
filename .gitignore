@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+*.py_cache
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -11,3 +12,11 @@ __pycache__/
 
 # data
 data/
+
+# log files from load scripts
+*.log
+
+# Database dump files
+SQL/dumps/
+
+

@@ -1,3 +1,5 @@
+This README includes all commands (and most output) run to build TCRD v4.
+
 [smathias@juniper SQL]$ mysqldump --no-data tcrd3 | sed 's/ AUTO_INCREMENT=[0-9]*\b//g' > create-TCRDv4.sql
 [smathias@juniper SQL]$ mysqldump --no-create-db --no-create-info tcrd3 compartment_type data_type disease_association_type expression_type info_type pathway_type phenotype_type ppi_type xref_type > types_v4.sql
 mysql> create database tcrd4;
@@ -36,19 +38,18 @@ INSERT INTO dbinfo (dbname, schema_ver, data_ver, owner) VALUES ('tcrd4', '4.0.0
 [smathias@juniper SQL]$ mysqldump tcrd4 > tcrd4-0.sql
 
 
-[smathias@juniper scripts]$ ./load-UniProt.py --dbname tcrd4 --loglevel 20 --logfile tcrd4logs/load-UniProt.py.log
 
 [smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd4-1.sql
 
 
-[smathias@juniper scripts]$ ./pickle-IDGFams.py --dbname tcrd3 --outfile ../data/TCRDv3.1.2_IDGFams.p
+[smathias@juniper scripts]$ ./pickle-IDGFams.py --dbname tcrd3 --outfile ../tcrd/TCRDv3.1.2_IDGFams.p
 
 pickle-IDGFams.py (v1.3.0) [Wed Nov 16 13:25:49 2016]:
   Connected to TCRD database tcrd3 (schema ver: 1.5.0, data ver: 3.1.2)
   Dumping TCRD IDG Families for 1795 targets
 Progress: 100% [###########################################################] Time: 0:00:02
 1795 TCRD targets processed. Elapsed time: 0:00:02.068
-Saving info for following IDG Family counts to pickle file ../data/TCRDv3.1.2_IDGFams.p
+Saving info for following IDG Family counts to pickle file ../tcrd/TCRDv3.1.2_IDGFams.p
   IC: 342
   GPCR: 406
   NR: 48
@@ -57,7 +58,8 @@ Saving info for following IDG Family counts to pickle file ../data/TCRDv3.1.2_ID
 
 pickle-IDGFams.py: Done.
 
-[smathias@juniper scripts]$ ./load-IDGFams.py --dbname tcrd4 --infile ../data/TCRDv3.1.2_IDGFams.p
+[smathias@juniper scripts]$ ./load-IDGFams.py --dbname tcrd4 --infile
+../tcrd/TCRDv3.1.2_IDGFams.p
 
 
 
