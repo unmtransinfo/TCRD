@@ -9,11 +9,13 @@ __pycache__/
 
 # Emacs autosave files
 \#*#
+.\#*
 
 # data
 data/
 
 # log files from load scripts
+scripts/tcrd4logs/
 *.log
 
 # Database dump files

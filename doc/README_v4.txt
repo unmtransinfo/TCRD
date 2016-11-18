@@ -37,7 +37,63 @@ INSERT INTO dbinfo (dbname, schema_ver, data_ver, owner) VALUES ('tcrd4', '4.0.0
 
 [smathias@juniper SQL]$ mysqldump tcrd4 > tcrd4-0.sql
 
+[smathias@juniper scripts]$ ./load-UniProt.py --dbname tcrd4 --loglevel 20 --logfile tcrd4logs/load-UniProt.py.l
+og
 
+load-UniProt.py (v2.0.0) [Thu Nov 17 12:53:11 2016]:
+
+Connected to TCRD database tcrd4 (schema ver 4.0.0; data ver 4.0.0)
+
+Processing 20120 records in UniProt file ../data/UniProt/uniprot-human-reviewed_20161116.tab
+
+Loading data for 20120 proteins
+Progress: 100% [################################################################################] Time: 21:33:36
+Processed 20120 UniProt records.
+  Total loaded targets/proteins: 20061
+  Total targets/proteins remaining for retries: 59 
+
+Retry loop 1: Trying to load data for 59 proteins
+Progress: 100% [#################################################################################] Time: 0:01:25
+Processed 30 UniProt records.
+  Loaded 30 new targets/proteins
+  Total loaded targets/proteins: 20091
+  Total targets/proteins remaining for next loop: 29 
+
+Retry loop 2: Trying to load data for 29 proteins
+Progress: 100% [#################################################################################] Time: 0:01:11
+Processed 15 UniProt records.
+  Loaded 15 new targets/proteins
+  Total loaded targets/proteins: 20106
+  Total targets/proteins remaining for next loop: 14 
+
+Retry loop 3: Trying to load data for 14 proteins
+Progress: 100% [#################################################################################] Time: 0:00:36
+Processed 7 UniProt records.
+  Loaded 7 new targets/proteins
+  Total loaded targets/proteins: 20113
+  Total targets/proteins remaining for next loop: 7 
+
+Retry loop 4: Trying to load data for 7 proteins
+Progress: 100% [#################################################################################] Time: 0:00:13
+Processed 4 UniProt records.
+  Loaded 4 new targets/proteins
+  Total loaded targets/proteins: 20117
+  Total targets/proteins remaining for next loop: 3 
+
+Retry loop 5: Trying to load data for 3 proteins
+Progress: 100% [#################################################################################] Time: 0:00:02
+Processed 2 UniProt records.
+  Loaded 2 new targets/proteins
+  Total loaded targets/proteins: 20119
+  Total targets/proteins remaining for next loop: 1 
+
+Retry loop 6: Trying to load data for 1 proteins
+Progress: 100% [#################################################################################] Time: 0:00:01
+Processed 1 UniProt records.
+  Loaded 1 new targets/proteins
+  Total loaded targets/proteins: 20120
+
+load-UniProt.py: Done. Elapsed time: 21:37:07.399
 
 [smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd4-1.sql
 
