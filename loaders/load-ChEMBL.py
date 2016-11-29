@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2016-11-16 16:11:56 smathias>
+# Time-stamp: <2016-11-29 09:56:11 smathias>
 """Load chembl_activity data in TCRD via ChEMBL MySQL database.
 
 Usage:
@@ -38,6 +38,7 @@ import copy
 import cPickle as pickle
 import logging
 import string
+import urllib
 from progressbar import *
 
 PROGRAM = os.path.basename(sys.argv[0])
@@ -45,10 +46,21 @@ DBHOST = 'localhost'
 DBPORT = 3306
 DBNAME = 'tcrdev'
 LOGFILE = './%s.log'%PROGRAM
-UNIPROT2CHEMBL_FILE = '/home/app/TCRD4/data/ChEMBL/chembl_uniprot_mapping.txt'
 CHEMBL_DB = 'chembl_22'
-SC_PFILE = 'tcrd4logs/SelectiveCmpds.p'
-  
+DOWNLOAD_DIR = '../data/ChEMBL/'
+BASE_URL = 'ftp://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest'
+UNIPROT2CHEMBL_FILE = 'chembl_uniprot_mapping.txt'
+
+def download_mappings():
+  if os.path.exists(DOWNLOAD_DIR + UNIPROT2CHEMBL_FILE):
+    os.remove(DOWNLOAD_DIR + UNIPROT2CHEMBL_FILE)
+  start_time = time.time()
+  print "\nDownloading ", BASE_URL + UNIPROT2CHEMBL_FILE
+  print "         to ", DOWNLOAD_DIR + UNIPROT2CHEMBL_FILE
+  urllib.urlretrieve(BASE_URL + UNIPROT2CHEMBL_FILE, DOWNLOAD_DIR + UNIPROT2CHEMBL_FILE)
+  elapsed = time.time() - start_time
+  print "Done. Elapsed time: %s" % secs2str(elapsed)
+
 def main():
   args = docopt(__doc__, version=__version__)
   debug = int(args['--debug'])
@@ -75,11 +87,12 @@ def main():
   dbi = dba.get_dbinfo()
   logger.info("Connected to TCRD database %s (schema ver %s; data ver %s)", args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
   if not args['--quiet']:
-    print "\n%s (v%s) [%s]:" % (PROGRAM, __version__, time.strftime("%c"))
     print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+
+  start_time = time.time()
   
   # Dataset
-  dataset_id = dba.ins_dataset( {'name': 'ChEMBL', 'source': 'ChEMBL MySQL database {}'.format(CHEMBL_DB), 'app': PROGRAM, 'app_version': __version__, 'columns_touched': ' chembl_activity.*; tdl_info where itype is ChEMBL First Reference Year or ChEMBL Selective Compound'} )
+  dataset_id = dba.ins_dataset( {'name': 'ChEMBL', 'source': 'ChEMBL MySQL database {}'.format(CHEMBL_DB), 'app': PROGRAM, 'app_version': __version__, 'url': 'https://www.ebi.ac.uk/chembl/'} )
   if not dataset_id:
     print "WARNING: Error inserting dataset See logfile %s for details." % logfile
   # Provenance
@@ -99,10 +112,11 @@ def main():
 
   # First get mapping of UniProt accestions to ChEMBL IDs
   up2chembl = {}
-  line_ct = wcl(UNIPROT2CHEMBL_FILE)
+  f = DOWNLOAD_DIR + UNIPROT2CHEMBL_FILE
+  line_ct = wcl(f)
   if not args['--quiet']:
-    print "\nProcessing %d input lines in file %s" % (line_ct, UNIPROT2CHEMBL_FILE)
-  with open(UNIPROT2CHEMBL_FILE, 'rU') as tsv:
+    print "\nProcessing %d input lines in file %s" % (line_ct, f)
+  with open(f, 'rU') as tsv:
     tsvreader = csv.reader(tsv, delimiter='\t')
     ct = 0
     for row in tsvreader:
@@ -115,7 +129,6 @@ def main():
   print "%d input lines processed." % ct
   #print "Saved %d keys in up2chembl dict" % len(up2chembl.keys())
 
-  start_time = time.time()
   upct = len(up2chembl.keys())
   if not args['--quiet']:
     print "\nProcessing %d UniProt to ChEMBL ID(s) mappings" % upct
@@ -263,8 +276,9 @@ def main():
         selective.append(smi)
         break
       i += 1
-  pickle.dump(selective, open(SC_PFILE, 'wb'))
-  print "%d selective compounds saved to %s" % (len(selective), sc_pfile)
+  #pickle.dump(selective, open(SC_PFILE, 'wb'))
+  #print "%d selective compounds saved to %s" % (len(selective), SC_PFILE)
+  print "  Found %d selective compounds" % len(selective)
   cscti_ct = 0
   for tid,acts in t2acts.items():
     for a in acts:
@@ -294,5 +308,7 @@ def secs2str(t):
 
 
 if __name__ == '__main__':
+  print "\n%s (v%s) [%s]:" % (PROGRAM, __version__, time.strftime("%c"))
+  download_mappings()
   main()
 

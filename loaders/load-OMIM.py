@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2016-11-16 15:41:45 smathias>
+# Time-stamp: <2016-11-29 10:22:23 smathias>
 """Load phenotypes into TCRD from OMIM genemap.txt file.
 
 Usage:
@@ -33,15 +33,27 @@ from docopt import docopt
 from TCRD import DBAdaptor
 import csv
 import logging
+import urllib
 from progressbar import *
 
 PROGRAM = os.path.basename(sys.argv[0])
 DBHOST = 'localhost'
 DBPORT = 3306
 DBNAME = 'tcrdev'
-INFILE = '/home/smathias/TCRD4/data/OMIM/genemap.txt'
+# One must register to get OMIM downloads. Last time I did, the link to get them was:
+DOWNLOAD_DIR = '../data/OMIM/'
+BASE_URL = 'http://omim.org/downloads/ey9G4kaCTGCQ-q_Yx0XAPg/'
+FILENAME = 'genemap.txt'
 
-def main():
+def download():
+  if os.path.exists(DOWNLOAD_DIR + FILENAME):
+    os.rename(DOWNLOAD_DIR + FILENAME, DOWNLOAD_DIR + FILENAME + '.bak')
+  print "\nDownloading ", BASE_URL + FILENAME
+  print "         to ", DOWNLOAD_DIR + FILENAME
+  urllib.urlretrieve(BASE_URL + FILENAME, DOWNLOAD_DIR + FILENAME)
+  print "Done."
+
+def load():
   args = docopt(__doc__, version=__version__)
   debug = int(args['--debug'])
   if debug:
@@ -67,11 +79,10 @@ def main():
   dbi = dba.get_dbinfo()
   logger.info("Connected to TCRD database %s (schema ver %s; data ver %s)", args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
   if not args['--quiet']:
-    print "\n%s (v%s) [%s]:" % (PROGRAM, __version__, time.strftime("%c"))
     print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
   # Dataset
-  dataset_id = dba.ins_dataset( {'name': 'OMIM Confirmed Phenotypes', 'source': 'File %s from ftp.omim.org'%INFILE, 'app': PROGRAM, 'app_version': __version__, 'url': 'http://omim.org/'} )
+  dataset_id = dba.ins_dataset( {'name': 'OMIM Confirmed Phenotypes', 'source': 'File %s from ftp.omim.org'%FILENAME, 'app': PROGRAM, 'app_version': __version__, 'url': 'http://omim.org/'} )
   if not dataset_id:
     print "WARNING: Error inserting dataset See logfile %s for details." % logfile
     sys.exit(1)
@@ -80,15 +91,16 @@ def main():
   if not rv:
     print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
     sys.exit(1)
-  
-  line_ct = wcl(INFILE)
+
+  fname = DOWNLOAD_DIR + FILENAME
+  line_ct = wcl(fname)
   line_ct -= 1 
   if not args['--quiet']:
-    print '\nProcessing %d lines from input file %s' % (line_ct, INFILE)
+    print '\nProcessing %d lines from input file %s' % (line_ct, fname)
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start()
   outlist = []
-  with open(INFILE, 'rU') as tsv:
+  with open(fname, 'rU') as tsv:
     tsvreader = csv.reader(tsv, delimiter='\t')
     # there are three header lines
     tsvreader.next()
@@ -116,6 +128,10 @@ def main():
 # 10 - Comments
 # 11 - Phenotypes
 # 12 - Mouse Gene Symbol
+      if row[0].startswith('#'):
+        # The file ends with a lot of commented lines describing the fields
+        skip_ct += 1
+        continue
       if row[6] != 'C':
         # only load records with confirmed status
         skip_ct += 1
@@ -143,18 +159,15 @@ def main():
       pbar.update(ct)
   pbar.finish()
 
-  print "\n%d lines processed." % ct
+  print "%d lines processed." % ct
   print "Loaded %d OMIM phenotypes for %d targets" % (pt_ct, len(tmark.keys()))
-  print "  Skipped %d records with unconfirmed status" % skip_ct
+  print "  Skipped %d lines (commented lines and lines with unconfirmed status)." % skip_ct
   if notfnd:
     print "No target found for %d symbols:" % len(notfnd.keys())
     for s in notfnd.keys():
       print "    %s" % s
   if dba_err_ct > 0:
     print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
-
-  print "\n%s: Done." % PROGRAM
-  print
 
 def wcl(fname):
   with open(fname) as f:
@@ -163,7 +176,11 @@ def wcl(fname):
   return i + 1
 
 if __name__ == '__main__':
-    main()
+  print "\n%s (v%s) [%s]:" % (PROGRAM, __version__, time.strftime("%c"))
+  download()
+  load()
+  print "\n%s: Done.\n" % PROGRAM
+
 
 
 

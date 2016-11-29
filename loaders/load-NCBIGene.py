@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2016-11-16 15:41:54 smathias>
+# Time-stamp: <2016-11-23 11:01:20 smathias>
 """TCRD with latest NCBI Gene data via EUtils.
 
 Usage:
@@ -86,8 +86,7 @@ def main():
     print "WARNING: Error inserting dataset See logfile %s for details." % logfile
     sys.exit(1)
   # Provenance
-  provs = [ {'dataset_id': dataset_id, 'table_name': 'alias', 'where_clause': "type = ''"}, 
-            {'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': "itype = 'NCBI Gene Summary'"},
+  provs = [ {'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': "itype = 'NCBI Gene Summary'"},
             {'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': "itype = 'NCBI Gene PubMed Count'"},
             {'dataset_id': dataset_id, 'table_name': 'generif'} ]
   for prov in provs:
@@ -113,7 +112,7 @@ def main():
   pbar = ProgressBar(widgets=pbar_widgets, maxval=tct).start()  
   ct = 0
   skip_ct = 0
-  for t in dba.get_targets(idg=False, include_annotations=False):
+  for t in dba.get_targets(include_annotations=False):
     tid = t['id']
     #if tid < 17872: continue
     ct += 1
@@ -138,7 +137,7 @@ def main():
       s['counts']['xml_err'] += 1
       logger.error("XML Error for Gene ID %s" % geneid)
       continue
-    load_annotations(dba, t, gene_annotations, s)
+    load_annotations(dba, t, dataset_id, gene_annotations, s)
     time.sleep(0.5)
     pbar.update(ct)
   pbar.finish()
@@ -174,7 +173,7 @@ def main():
         s['counts']['xml_err'] += 1
         logger.error("XML Error for Gene ID %s" % geneid)
         continue
-      load_annotations(dba, t, gene_annotations, s)
+      load_annotations(dba, t, dataset_id, gene_annotations, s)
       act += 1
       del s['retries'][i]
       time.sleep(0.5)

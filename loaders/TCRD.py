@@ -4,7 +4,7 @@
 
   Steve Mathias
   smathias@salud.unm.edu
-  Time-stamp: <2016-11-16 14:13:38 smathias>
+  Time-stamp: <2016-11-28 13:11:58 smathias>
 '''
 from __future__ import print_function
 import sys
@@ -783,16 +783,17 @@ class DBAdaptor:
 
   def ins_disease(self, init, commit=True):
     if 'dtype' in init and 'name' in init:
+      cols = ['dtype', 'name']
       params = [init['dtype'], init['name']]
     else:
       self.warning("Invalid parameters sent to ins_disease(): ", init)
       return False
     if 'protein_id' in init:
-      cols = ['protein_id', 'dtype', 'name']
+      cols.insert(0, 'protein_id')
       vals = ['%s','%s','%s']
       params.insert(0, init['protein_id'])
     elif 'target_id' in init:
-      cols = ['target_id', ]
+      cols.insert(0, 'target_id')
       vals = ['%s','%s','%s']
       params.insert(0, init['target_id'])
     else:
@@ -970,7 +971,7 @@ class DBAdaptor:
       return False
     cols = ['target_id', 'appid', 'full_project_num', 'activity', 'funding_ics', 'year', 'cost']
     vals = ['%s', '%s', '%s', '%s', '%s', '%s', '%s']
-    sql = "INSERT INTO grant (%s) VALUES (%s)" % (','.join(cols), ','.join(vals))
+    sql = "INSERT INTO `grant` (%s) VALUES (%s)" % (','.join(cols), ','.join(vals))
     self._logger.debug("SQLpat: %s"%sql)
     self._logger.debug("SQLparams: %s"%','.join([str(p) for p in params]))
     with closing(self._conn.cursor()) as curs:
@@ -1670,12 +1671,6 @@ class DBAdaptor:
         t['tdl_updates'].append(u)
       if not t['tdl_updates']: del(t['tdl_updates'])
       if include_annotations:
-        # synonyms
-        t['synonyms'] = []
-        curs.execute("SELECT * FROM synonym WHERE target_id = %s", (id,))
-        for s in curs:
-          t['synonyms'].append(s)
-        if not t['synonyms']: del(t['synonyms'])
         # tdl_info
         t['tdl_infos'] = {}
         curs.execute("SELECT * FROM tdl_info WHERE target_id = %s", (id,))
@@ -1732,10 +1727,10 @@ class DBAdaptor:
         if not t['pathways']: del(t['pathways'])
         # grants
         t['grants'] = []
-        curs.execute("SELECT * FROM grant WHERE target_id = %s", (id,))
+        curs.execute("SELECT * FROM `grant` WHERE target_id = %s", (id,))
         for t2g in curs:
           t['grants'].append(t2g)
-        if not t['grants']: del(t['2grants'])
+        if not t['grants']: del(t['grants'])
       # Components
       t['components'] = {}
       t['components']['protein'] = []
@@ -1770,12 +1765,6 @@ class DBAdaptor:
         for a in curs:
           p['aliases'].append(a)
         if not p['aliases']: del(p['aliases'])
-        # synonyms
-        p['synonyms'] = []
-        curs.execute("SELECT * FROM synonym WHERE protein_id = %s", (id,))
-        for s in curs:
-          p['synonyms'].append(s['name'])
-        if not p['synonyms']: del(p['synonyms'])
         # tdl_info
         p['tdl_infos'] = {}
         curs.execute("SELECT * FROM tdl_info WHERE protein_id = %s", (id,))

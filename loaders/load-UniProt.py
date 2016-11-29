@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2016-11-17 12:52:58 smathias>
+# Time-stamp: <2016-11-29 15:15:58 smathias>
 """Load protein data from UniProt.org into TCRD via the web.
 
 Usage:
@@ -110,7 +110,8 @@ def main():
   s = shelve.open(SHELF_FILE, writeback=True)
   s['ups'] = []
   s['loaded'] = {}
-  s['retries'] = []
+  s['retries'] = {}
+  s['errors'] = {}
 
   line_ct = wcl(UPHUMAN_FILE)
   line_ct -= 1 # file has header row
@@ -144,11 +145,11 @@ def main():
     # 503	Service not available. The server is being updated, try again later.
     if not status:
       logger.warn("Failed getting accession %s" % up)
-      s['retries'].append(up)
+      s['retries'][up] = True
       continue
     if status != 200:
-      logger.warn("Bad UniProt API response for %s: %s" % (up, status))
-      s['retries'].append(up)
+      logger.error("Bad UniProt API response for %s: %s" % (up, status))
+      s['errors'][up] = status
       continue
     target = uniprotxml2target(up, upxml, dataset_id, xtypes, e2e)
     if not target:
@@ -168,8 +169,10 @@ def main():
   print "  Total loaded targets/proteins: %d" % len(s['loaded'].keys())
   if len(s['retries']) > 0:
     print "  Total targets/proteins remaining for retries: %d " % len(s['retries'])
+  if len(s['errors']) > 0:
+    print "WARNING: %d API errors occurred. See logfile %s for details." % (len(s['errors']), logfile)
   if xml_err_ct > 0:
-    print "WARNING: %d XML errors occurred." % xml_err_ct
+    print "WARNING: %d XML parsing errors occurred." % xml_err_ct
   if dba_err_ct > 0:
     print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
   
@@ -183,10 +186,9 @@ def main():
     tct = 0
     xml_err_ct = 0
     dba_err_ct = 0
-    # Because s['retries'] is being modified in this loop, only every other entry (assuming success of get_uniprot) gets processed. This is strange, but it seems to work.
-    for i,up in enumerate(s['retries']):
+    for up,_ in s['retries'].items():
       ct += 1
-      logger.info("Processing UniProt entry %d: %s" % (i, up))
+      logger.info("Processing UniProt entry %s" % up)
       (status, headers, upxml) = get_uniprot(up)
       # Code	Description
       # 200	The request was processed successfully.
@@ -200,7 +202,8 @@ def main():
         logger.warn("Failed getting accession %s" % up)
         continue
       if status != 200:
-        logger.warn("Bad UniProt API response for %s: %s" % (up, status))
+        logger.error("Bad UniProt API response for %s: %s" % (up, status))
+        s['errors'][up] = status
         continue
       target = uniprotxml2target(up, upxml, dataset_id, xtypes, e2e)
       if not target:
@@ -212,7 +215,7 @@ def main():
         tct += 1
         logger.debug("Target insert id: %s" % tid)
         s['loaded'][up] = tid
-        del s['retries'][i]
+        del s['retries'][up]
       else:
         dba_err_ct += 1
       time.sleep(0.5)
@@ -224,8 +227,10 @@ def main():
     print "  Total loaded targets/proteins: %d" % len(s['loaded'].keys())
     if len(s['retries']) > 0:
       print "  Total targets/proteins remaining for next loop: %d " % len(s['retries'])
+    if len(s['errors']) > 0:
+      print "WARNING: %d API errors occurred. See logfile %s for details." % (len(s['errors']), logfile)
     if xml_err_ct > 0:
-      print "WARNING: %d XML errors occurred." % xml_err_ct
+      print "WARNING: %d XML parsing errors occurred." % xml_err_ct
     if dba_err_ct > 0:
       print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
   

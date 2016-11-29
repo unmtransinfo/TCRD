@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2016-11-16 15:32:35 smathias>
+# Time-stamp: <2016-11-28 13:27:19 smathias>
 """ Load Drug Central data into TCRD from TSV files.
 
 Usage:
@@ -80,7 +80,7 @@ def main():
     print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
   # Dataset
-  dataset_id = dba.ins_dataset( {'name': 'Drug Central', 'source': "Drug Central files (%s) obtained directly from Oleg Ursu"%", ".join(SRC_FILES), 'app': PROGRAM, 'app_version': __version__, 'columns_touched': 'drug_activity.*'} )
+  dataset_id = dba.ins_dataset( {'name': 'Drug Central', 'source': "Drug Central files (%s) obtained directly from Oleg Ursu"%", ".join(SRC_FILES), 'app': PROGRAM, 'app_version': __version__, 'url': 'http://drugcentral.org/'} )
   if not dataset_id:
     print "WARNING: Error inserting dataset. See logfile %s for details." % logfile
     sys.exit(1)
@@ -260,8 +260,8 @@ def main():
         notfnd[drug] = True
         continue
       for tid in drug2targets[drug]:
-        rv = dba.ins_target2disease({'target_id': tid, 'dtype': 'DrugCentral Indication',
-                                     'name': row[2], 'doid': row[5], 'drug_name': drug})
+        rv = dba.ins_disease({'target_id': tid, 'dtype': 'DrugCentral Indication',
+                              'name': row[2], 'doid': row[5], 'drug_name': drug})
         if rv:
           t2d_ct += 1
         else:
@@ -273,7 +273,7 @@ def main():
     #for drug in notfnd:
     #  print drug
   if dba_err_ct > 0:
-    print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, dba_logfile)
+    print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
 
   print "\n%s: Done." % PROGRAM
   print

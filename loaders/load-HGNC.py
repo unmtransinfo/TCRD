@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2016-11-17 12:47:21 smathias>
+# Time-stamp: <2016-11-29 15:33:03 smathias>
 """Load HGNC annotations for TCRD targets via web API.
 
 Usage:
@@ -76,13 +76,13 @@ def main():
     print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
   # Dataset
-  dataset_id = dba.ins_dataset( {'name': 'HGNC', 'source': 'Web API at %s'%HGNC_URL, 'app': PROGRAM, 'app_version': __version__, 'columns_touched': 'protein.sym/geneid/chr; xref.* where xtype is HGNC ID and MGI ID', 'url': 'http://www.genenames.org/'} )
+  dataset_id = dba.ins_dataset( {'name': 'HGNC', 'source': 'Web API at %s'%HGNC_URL, 'app': PROGRAM, 'app_version': __version__, 'url': 'http://www.genenames.org/'} )
   if not dataset_id:
     print "WARNING: Error inserting dataset See logfile %s for details." % logfile
     sys.exit(1)
   # Provenance
-  provs = [ {'dataset_id': dataset_id, 'table_name': 'protein', 'column_name': 'sym', 'comment': "This cnly is only updated with HGNC data if data from UniProt is absent ir discrepant."},
-            {'dataset_id': dataset_id, 'table_name': 'protein', 'column_name': 'geneid', 'comment': "This cnly is only updated with HGNC data if data from UniProt is absent ir discrepant."},
+  provs = [ {'dataset_id': dataset_id, 'table_name': 'protein', 'column_name': 'sym', 'comment': "This is only updated with HGNC data if data from UniProt is absent or discrepant."},
+            {'dataset_id': dataset_id, 'table_name': 'protein', 'column_name': 'geneid', 'comment': "This is only updated with HGNC data if data from UniProt is absent or discrepant."},
             {'dataset_id': dataset_id, 'table_name': 'protein', 'column_name': 'chr'} ]
   for prov in provs:
     rv = dba.ins_provenance(prov)
@@ -94,7 +94,7 @@ def main():
 
   s = shelve.open(SHELF_FILE, writeback=True)
   s['loaded'] = []
-  s['retries'] = []
+  s['retries'] = {}
   s['notfound'] = []
   s['counts'] = defaultdict(int)
   
@@ -110,13 +110,12 @@ def main():
     pbar.update(ct)
     logger.info("Processing target %d" % target['id'])
     p = target['components']['protein'][0]
-    pid = p['id']
     # try by NCBI geneid
     if p['geneid']:
       (status, headers, xml) = get_hgnc(geneid=p['geneid'])
       if not status or status != 200:
         logger.error("Bad API response for %s" % p['geneid'])
-        s['retries'].append(target['id'])
+        s['retries'][target['id']] = True
         continue
     else:
       # try by uniprot
@@ -146,25 +145,22 @@ def main():
     pbar = ProgressBar(widgets=pbar_widgets, maxval=len(s['retries'])).start()
     ct = 0
     act = 0
-    for i,tid in enumerate(s['retries']):
+    for tid,_ in s['retries'].items():
       ct += 1
-      target = dba.get_target(tid, include_annotations=True)
+      target = dba.get_target(tid)
       logger.info("Processing target %d" % tid)
       p = target['components']['protein'][0]
-      pid = p['id']
       # try by NCBI geneid
       if p['geneid']:
         (status, headers, xml) = get_hgnc(geneid=p['geneid'])
         if not status or status != 200:
           logger.error("Bad API response for %s" % p['geneid'])
-          s['retries'].append(target['id'])
           continue
       # try by uniprot
       else:
         (status, headers, xml) = get_hgnc(uniprot=p['uniprot'])
         if not status or status != 200:
           logger.error("Bad API response for %s" % p['uniprot'])
-          s['retries'].append(target['id'])
           continue
       hgnc_annotations = parse_hgnc_xml(xml)
       if not hgnc_annotations:
@@ -172,7 +168,7 @@ def main():
         continue
       load_annotations(dba, target, dataset_id, hgnc_annotations, s)
       act += 1
-      del s['retries'][i]
+      del(s['retries'][tid])
       pbar.update(ct)
     loop += 1
     pbar.finish()

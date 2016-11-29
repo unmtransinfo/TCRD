@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2016-11-16 14:27:06 smathias>
+# Time-stamp: <2016-11-28 09:54:36 smathias>
 """Load JensenLab STRING IDs (ENSPs) into TCRD protein.ensp.
 
 Usage:
@@ -147,7 +147,7 @@ def main():
   print "%d input lines processed. Elapsed time: %s" % (ct, secs2str(elapsed))
   print "  Got %d alias to STRING ID mappings" % amap_ct
   if err_ct > 0:
-    print "WARNNING: %d alias errors occurred. See logfile %s for details." % (err_ct, logfile)
+    print "  %d alias errors occurred. See logfile %s for details." % (err_ct, logfile)
 
   start_time = time.time()
   tct = dba.get_target_count(idg=False)
