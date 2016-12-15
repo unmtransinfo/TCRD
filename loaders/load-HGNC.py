@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2016-11-29 15:33:03 smathias>
+# Time-stamp: <2016-12-06 10:33:27 smathias>
 """Load HGNC annotations for TCRD targets via web API.
 
 Usage:
@@ -110,19 +110,17 @@ def main():
     pbar.update(ct)
     logger.info("Processing target %d" % target['id'])
     p = target['components']['protein'][0]
-    # try by NCBI geneid
-    if p['geneid']:
+    if p['geneid']: # try first by NCBI geneid
       (status, headers, xml) = get_hgnc(geneid=p['geneid'])
       if not status or status != 200:
         logger.error("Bad API response for %s" % p['geneid'])
         s['retries'][target['id']] = True
         continue
-    else:
-      # try by uniprot
+    else: # then try by uniprot
       (status, headers, xml) = get_hgnc(uniprot=p['uniprot'])
       if not status or status != 200:
         logger.error("Bad API response for %s" % p['uniprot'])
-        s['retries'].append(target['id'])
+        s['retries'][target['id']] = True
         continue
     hgnc_annotations = parse_hgnc_xml(xml)
     if not hgnc_annotations:
@@ -150,14 +148,12 @@ def main():
       target = dba.get_target(tid)
       logger.info("Processing target %d" % tid)
       p = target['components']['protein'][0]
-      # try by NCBI geneid
-      if p['geneid']:
+      if p['geneid']: # try first by NCBI geneid
         (status, headers, xml) = get_hgnc(geneid=p['geneid'])
         if not status or status != 200:
           logger.error("Bad API response for %s" % p['geneid'])
           continue
-      # try by uniprot
-      else:
+      else: # then try by uniprot
         (status, headers, xml) = get_hgnc(uniprot=p['uniprot'])
         if not status or status != 200:
           logger.error("Bad API response for %s" % p['uniprot'])
@@ -206,6 +202,7 @@ def get_hgnc(sym=None, hgnc_id=None, geneid=None, uniprot=None):
   else:
     print "No query parameter sent to get_hgnc()"
     return False
+  r = None
   attempts = 0
   while attempts <= 5:
     try:

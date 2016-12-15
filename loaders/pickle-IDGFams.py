@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2016-11-16 13:29:32 smathias>
+# Time-stamp: <2016-12-01 12:18:00 smathias>
 '''
 pickle-IDGFams.py - Create a pickle file containing IDG family sym/geneids/uniprots
 '''

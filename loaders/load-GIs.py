@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2016-11-29 15:39:28 smathias>
+# Time-stamp: <2016-11-30 10:04:32 smathias>
 """Load NCBI gi xrefs into TCRD from UniProt ID Mapping file.
 
 Usage:
@@ -34,6 +34,7 @@ from TCRD import DBAdaptor
 import logging
 import csv
 import urllib
+import gzip
 from progressbar import *
 
 PROGRAM = os.path.basename(sys.argv[0])
@@ -43,15 +44,25 @@ DBNAME = 'tcrdev'
 LOGFILE = './%s.log'%PROGRAM
 DOWNLOAD_DIR = '../data/UniProt/'
 BASE_URL = 'ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/idmapping/by_organism/'
-FILENAME = 'HUMAN_9606_idmapping_selected.tab'
+FILENAME = 'HUMAN_9606_idmapping_selected.tab.gz'
 
 def download():
-  if os.path.exists(DOWNLOAD_DIR + FILENAME):
-    os.remove(DOWNLOAD_DIR + FILENAME)
+  gzfn = DOWNLOAD_DIR + FILENAME
+  if os.path.exists(gzfn):
+    os.remove(gzfn)
+  fn = gzfn.replace('.gz', '')
+  if os.path.exists(fn):
+    os.remove(fn)
   start_time = time.time()
   print "\nDownloading ", BASE_URL + FILENAME
-  print "         to ", DOWNLOAD_DIR + FILENAME
-  urllib.urlretrieve(BASE_URL + FILENAME, DOWNLOAD_DIR + FILENAME)
+  print "         to ", gzfn
+  urllib.urlretrieve(BASE_URL + FILENAME, gzfn)
+  print "Uncompressing", gzfn
+  ifh = gzip.open(gzfn, 'rb')
+  ofh = open(fn, 'wb')
+  ofh.write( ifh.read() )
+  ifh.close()
+  ofh.close()
   elapsed = time.time() - start_time
   print "Done. Elapsed time: %s" % secs2str(elapsed)
 
@@ -92,7 +103,8 @@ def load():
 
   start_time = time.time()
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
-  line_ct = wcl(IDMAPPING_FILE)
+  infile = (DOWNLOAD_DIR + FILENAME).replace('.gz', '')
+  line_ct = wcl(infile)
   # ID Mappiing fields
   # 1. UniProtKB-AC
   # 2. UniProtKB-ID
@@ -117,8 +129,8 @@ def load():
   # 21. Ensembl_PRO
   # 22. Additional PubMed
   if not args['--quiet']:
-    print "\nProcessing %d rows in file %s" % (line_ct, IDMAPPING_FILE)
-  with open(IDMAPPING_FILE, 'rU') as tsv:
+    print "\nProcessing %d rows in file %s" % (line_ct, infile)
+  with open(infile, 'rU') as tsv:
     ct = 0
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start()
     ct = 0
@@ -155,8 +167,6 @@ def load():
   print "%d targets annotated with GI xref(s)" % len(tmark.keys())
   print "  Skipped %d rows" % skip_ct
   print "  Inserted %d new GI xref rows" % xref_ct
-  if not args['--quiet']:
-    print "\n%s: Done.\n" % PROGRAM
 
 def wcl(fname):
   with open(fname) as f:

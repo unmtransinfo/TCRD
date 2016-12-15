@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2016-11-29 09:56:11 smathias>
+# Time-stamp: <2016-12-08 10:51:18 smathias>
 """Load chembl_activity data in TCRD via ChEMBL MySQL database.
 
 Usage:
@@ -48,7 +48,7 @@ DBNAME = 'tcrdev'
 LOGFILE = './%s.log'%PROGRAM
 CHEMBL_DB = 'chembl_22'
 DOWNLOAD_DIR = '../data/ChEMBL/'
-BASE_URL = 'ftp://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest'
+BASE_URL = 'ftp://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/'
 UNIPROT2CHEMBL_FILE = 'chembl_uniprot_mapping.txt'
 
 def download_mappings():

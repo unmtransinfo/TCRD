@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2016-11-29 10:38:56 smathias>
+# Time-stamp: <2016-12-14 16:31:22 smathias>
 """Load Experimental MF/BP Leaf Term GOA tdl_infos into TCRD.
 
 Usage:
@@ -89,7 +89,7 @@ def load():
   # Dataset
   dataset_id = 1 # 'IDG-KMC Generated Data', source: Steve Mathias
   # Provenance
-  rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': "itype = 'Experimental MF/BP Leaf Term GOA'"})
+  rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': "itype = 'Experimental MF/BP Leaf Term GOA'", 'comment': "These values indicate that a protein is annotated with a GO leaf term in either the Molecular Function or Biological Process branch with an experimental evidenve code."})
   if not rv:
     print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
     sys.exit(1)

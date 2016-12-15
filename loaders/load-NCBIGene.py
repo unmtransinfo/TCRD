@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2016-11-23 11:01:20 smathias>
+# Time-stamp: <2016-12-06 10:38:16 smathias>
 """TCRD with latest NCBI Gene data via EUtils.
 
 Usage:
@@ -48,7 +48,7 @@ LOGFILE = "%s.log" % PROGRAM
 #select count(*) from protein where geneid in (select geneid from protein group by geneid having count(*) > 1);
 
 EFETCH_GENE_URL = "http://www.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=Gene&rettype=xml&id="
-SHELF_FILE = '/home/app/TCRD/scripts/tcrd3logs/load-NCBIGene.db'
+SHELF_FILE = 'tcrd4logs/load-NCBIGene.db'
 xtypes = {}
 
 def main():
@@ -101,7 +101,7 @@ def main():
   
   s = shelve.open(SHELF_FILE, writeback=True)
   s['loaded'] = []
-  s['retries'] = []
+  s['retries'] = {}
   s['counts'] = defaultdict(int)
   
   tct = dba.get_target_count(idg=False)
@@ -126,11 +126,11 @@ def main():
     (status, headers, xml) = get_ncbigene(geneid)
     if not status:
       logger.warn("Failed getting Gene ID %s" % geneid)
-      s['retries'].append(tid)
+      s['retries'][tid] = True
       continue
     if status != 200:
       logger.warn("Bad API response for Gene ID %s: %s" % (geneid, status))
-      s['retries'].append(tid)
+      s['retries'][tid] = True
       continue
     gene_annotations = parse_genexml(xml)
     if not gene_annotations:
@@ -156,9 +156,9 @@ def main():
     pbar = ProgressBar(widgets=pbar_widgets, maxval=len(s['retries'])).start()
     ct = 0
     act = 0
-    for i,tid in enumerate(s['retries']):
+    for tid,_ in s['retries'].items():
       ct += 1
-      t = dba.get_targets(tid, include_annotations=False)
+      t = dba.get_target(tid, include_annotations=False)
       geneid = str(t['components']['protein'][0]['geneid'])
       logger.info("Processing target %d: geneid %s" % (tid, geneid))
       (status, headers, xml) = get_ncbigene(geneid)
@@ -175,7 +175,7 @@ def main():
         continue
       load_annotations(dba, t, dataset_id, gene_annotations, s)
       act += 1
-      del s['retries'][i]
+      del s['retries'][tid]
       time.sleep(0.5)
       pbar.update(ct)
     loop += 1
@@ -203,6 +203,7 @@ def main():
 
 def get_ncbigene(id):
   url = "%s%s.xml" % (EFETCH_GENE_URL, id)
+  r = None
   attempts = 0
   while attempts <= 5:
     try:

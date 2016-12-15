@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2016-11-21 09:54:54 smathias>
+# Time-stamp: <2016-12-02 10:50:34 smathias>
 """Load antibody count and URL tdl_infos into TCRD via Antibodtpedia.com API.
 
 Usage:
@@ -153,17 +153,14 @@ def main():
     time.sleep(1)
     pbar.update(ct)
   pbar.finish()
-  print "%d TCRD targets processed." % ct
+  elapsed = time.time() - start_time
+  print "%d TCRD targets processed. Elapsed time: %s" % (ct, secs2str(elapsed))
   print "  Inserted %d Ab Count tdl_info rows" % tiab_ct
   print "  Inserted %d MAb Count tdl_info rows" % timab_ct
   print "  Inserted %d Antibodypedia URL tdl_info rows" % tiurl_ct
-  if len(net_errs) > 0:
-    print "WARNING: Network errror for %d targets:" % len(net_errs)
-    for tid,d in net_errs.items():
-      print "Target %d (%s): %s" % (tid, d['uniprot'], d['status'])
-    
-  elapsed = time.time() - start_time
-  print "\n%s: Done. Elapsed time: %s" % (PROGRAM, secs2str(elapsed))
+  if net_err_ct > 0:
+    print "WARNING: Network error for %d targets. See logfile %s for details." % (net_err_ct, logfile)
+  print "\n%s: Done." % PROGRAM
   print
 
 def secs2str(t):

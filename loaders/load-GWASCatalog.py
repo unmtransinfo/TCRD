@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2016-11-16 16:44:12 smathias>
+# Time-stamp: <2016-12-12 15:04:05 smathias>
 """Load GWAS Catalog phenotype data into TCRD from TSV file.
 
 Usage:
@@ -43,8 +43,8 @@ DBNAME = 'tcrdev'
 # http://www.ebi.ac.uk/gwas/docs/fileheaders
 # Get file here:
 # https://www.ebi.ac.uk/gwas/docs/downloads
-INFILE = '/home/smathias/TCRD/data/EBI/gwas_catalog_v1.0.1-studies_r2016-11-13.tsv'
-OUTFILE = 'tcrd4logs/TCRDv4-GWAS_Mapping.csv'
+INFILE = '/home/smathias/TCRD4/data/EBI/gwas_catalog_v1.0.1-associations_e86_r2016-12-04.tsv'
+OUTFILE = 'tcrd/TCRDv4-GWAS_Mapping.csv'
 
 def main():
   args = docopt(__doc__, version=__version__)
@@ -76,9 +76,10 @@ def main():
     print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
   # Dataset
-  dataset_id = dba.ins_dataset( {'name': 'GWAS Catalog', 'source': 'File %s from http://www.ebi.ac.uk/gwas/docs/downloads'%os.path.basename(INFILE), 'app': PROGRAM, 'app_version': __version__, 'columns_touched': "phenotype.* where ptype is 'GWAS Catalog'"} )
+  dataset_id = dba.ins_dataset( {'name': 'GWAS Catalog', 'source': 'File %s from http://www.ebi.ac.uk/gwas/docs/downloads'%os.path.basename(INFILE), 'app': PROGRAM, 'app_version': __version__, 'url': 'https://www.ebi.ac.uk/gwas/docs/downloads'} )
   if not dataset_id:
-    print "WARNING: Error inserting dataset See logfile %s for details." % dba_logfile
+    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
+    sys.exit(1)
   # Provenance
   rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'phenotype', 'where_clause': "ptype = 'GWAS Catalog'"})
   if not rv:
@@ -169,12 +170,12 @@ def main():
   if dba_err_ct > 0:
     print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
 
-  header = ['TCRD ID', 'HGNC Sym', 'Name', 'Description', 'IDG Family', 'TDL', 'NCBI Gene ID', 'UniProt', 'GWAS Study', 'PubMed ID', 'Disease/Trait', 'SNP(s)', 'p-value']
-  with open(OUTFILE, 'wb') as csvout:
-    csvwriter = csv.writer(csvout, quotechar='"', quoting=csv.QUOTE_MINIMAL)
-    csvwriter.writerow(header)
-    for outrow in outlist:
-      csvwriter.writerow(outrow)
+  # header = ['TCRD ID', 'HGNC Sym', 'Name', 'Description', 'IDG Family', 'TDL', 'NCBI Gene ID', 'UniProt', 'GWAS Study', 'PubMed ID', 'Disease/Trait', 'SNP(s)', 'p-value']
+  # with open(OUTFILE, 'wb') as csvout:
+  #   csvwriter = csv.writer(csvout, quotechar='"', quoting=csv.QUOTE_MINIMAL)
+  #   csvwriter.writerow(header)
+  #   for outrow in outlist:
+  #     csvwriter.writerow(outrow)
   
   print "\n%s: Done." % PROGRAM
   print

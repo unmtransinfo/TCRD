@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2016-11-28 13:27:19 smathias>
+# Time-stamp: <2016-11-30 12:22:06 smathias>
 """ Load Drug Central data into TCRD from TSV files.
 
 Usage:
@@ -236,7 +236,7 @@ def main():
     for up in notfnd:
       print up
   if dba_err_ct > 0:
-    print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, dba_logfile)
+    print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
 
   #
   # Indications (diseases)
