@@ -1,6 +1,6 @@
 -- MySQL dump 10.13  Distrib 5.6.24, for Linux (x86_64)
 --
--- Host: localhost    Database: tcrd4
+-- Host: localhost    Database: t4
 -- ------------------------------------------------------
 -- Server version	5.6.24
 
@@ -187,7 +187,7 @@ CREATE TABLE `dataset` (
 
 LOCK TABLES `dataset` WRITE;
 /*!40000 ALTER TABLE `dataset` DISABLE KEYS */;
-INSERT INTO `dataset` VALUES (1,'IDG-KMC Generated Data','Steve Mathias',NULL,NULL,'2016-11-16 21:09:19',NULL,NULL),(2,'IDG-KMC Generated Data','Oleg Ursu',NULL,NULL,'2016-11-16 21:09:19',NULL,NULL),(3,'IDG-KMC Generated Data','Lars Jensen',NULL,NULL,'2016-11-16 21:09:19',NULL,NULL);
+INSERT INTO `dataset` VALUES (1,'IDG-KMC Generated Data','Steve Mathias',NULL,NULL,'2017-01-05 21:20:41',NULL,NULL),(2,'IDG-KMC Generated Data','Oleg Ursu',NULL,NULL,'2017-01-05 21:20:41',NULL,NULL),(3,'IDG-KMC Generated Data','Jeremy Yang',NULL,NULL,'2017-01-05 21:20:41',NULL,NULL);
 /*!40000 ALTER TABLE `dataset` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -227,9 +227,9 @@ DROP TABLE IF EXISTS `disease`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `disease` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `dtype` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
-  `target_id` int(11) DEFAULT NULL,
-  `protein_id` int(11) DEFAULT NULL,
+  `datype` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  `target_id` int(11) NOT NULL,
+  `protein_id` int(11) NOT NULL,
   `name` text COLLATE utf8_unicode_ci NOT NULL,
   `did` varchar(20) COLLATE utf8_unicode_ci DEFAULT NULL,
   `evidence` text COLLATE utf8_unicode_ci,
@@ -243,10 +243,10 @@ CREATE TABLE `disease` (
   `score` decimal(16,15) DEFAULT NULL,
   `source` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `disease_idx1` (`dtype`),
+  KEY `disease_idx1` (`datype`),
   KEY `disease_idx2` (`target_id`),
   KEY `disease_idx3` (`protein_id`),
-  CONSTRAINT `fk_disease__disease_type` FOREIGN KEY (`dtype`) REFERENCES `disease_type` (`name`),
+  CONSTRAINT `fk_disease__disease_type` FOREIGN KEY (`datype`) REFERENCES `disease_type` (`name`),
   CONSTRAINT `fk_disease_protein` FOREIGN KEY (`protein_id`) REFERENCES `protein` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_disease_target` FOREIGN KEY (`target_id`) REFERENCES `target` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
@@ -618,40 +618,6 @@ LOCK TABLES `goa` WRITE;
 UNLOCK TABLES;
 
 --
--- Table structure for table `grant`
---
-
-DROP TABLE IF EXISTS `grant`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `grant` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `target_id` int(11) DEFAULT NULL,
-  `protein_id` int(11) DEFAULT NULL,
-  `appid` int(11) NOT NULL,
-  `full_project_num` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
-  `activity` varchar(4) COLLATE utf8_unicode_ci NOT NULL,
-  `funding_ics` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
-  `year` int(4) NOT NULL,
-  `cost` decimal(12,2) NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `grant_idx1` (`target_id`),
-  KEY `grant_idx2` (`protein_id`),
-  CONSTRAINT `fk_grant_protein` FOREIGN KEY (`protein_id`) REFERENCES `protein` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_grant_target` FOREIGN KEY (`target_id`) REFERENCES `target` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `grant`
---
-
-LOCK TABLES `grant` WRITE;
-/*!40000 ALTER TABLE `grant` DISABLE KEYS */;
-/*!40000 ALTER TABLE `grant` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `hgram_cdf`
 --
 
@@ -707,7 +673,7 @@ CREATE TABLE `info_type` (
 
 LOCK TABLES `info_type` WRITE;
 /*!40000 ALTER TABLE `info_type` DISABLE KEYS */;
-INSERT INTO `info_type` VALUES ('Ab Count','Integer',NULL,'Antibody count from antibodypedia.com'),('Antibodypedia.com URL','String',NULL,'Antibodypedia.com detail page URL for a given protein.'),('ChEMBL Activity Count','Integer',NULL,'Number of filtered bioactivities in ChEMBL better than 1uM (10uM for Ion Channels)'),('ChEMBL First Reference Year','Integer',NULL,'The year of the oldest bioactivity reference this target has in ChEMBL. Note that this is derived from ChEMBL activities as filtered for TCRD purposes.'),('ChEMBL Selective Compound','String',NULL,'2 log selective compound on this target. Value is ChEMBL ID and SMILES joined with a pipe character.'),('Drugable Epigenome Class','String',NULL,'Drugable Epigenome Class/Domain from Nature Reviews Drug Discovery 11, 384-400 (May 2012)'),('DrugDB Count','Integer',NULL,'Number of drugs in DrugDB with with activity better than 1uM (10uM for Ion Channels)'),('EBI Total Patent Count','Integer',NULL,'Total count of all patents mentioning this protein according to EBI text mining'),('EBI Total Patent Count (Relevant)','Integer',NULL,'Total count of all relevant patents mentioning this protein according to EBI text mining'),('Experimental MF/BP Leaf Term GOA','String',NULL,'Indicates that a target is annotated with one or more GO MF/BP leaf term with Experimental Evidence code. Value is a concatenation of all GO terms/names/evidences.'),('GTEx Tissue Specificity Index','Number',NULL,'Tau as defined in Yanai, I. et. al., Bioinformatics 21(5): 650-659 (2005) calculated on GTEx data.'),('Has MLP Assay','Boolean',NULL,'Indicates that a protein is used in at least one PubChem MLP assay. Details are in mlp_assay_info tabel.'),('HPA Protein Tissue Specificity Index','Number',NULL,'Tau as defined in Yanai, I. et. al., Bioinformatics 21(5): 650-659 (2005) calculated on HPA Protein data.'),('HPA RNA Tissue Specificity Index','Number',NULL,'Tau as defined in Yanai, I. et. al., Bioinformatics 21(5): 650-659 (2005) calculated on HPM RNA data.'),('HPM Gene Tissue Specificity Index','Number',NULL,'Tau as defined in Yanai, I. et. al., Bioinformatics 21(5): 650-659 (2005) calculated on HPM Gene data.'),('HPM Protein Tissue Specificity Index','Number',NULL,'Tau as defined in Yanai, I. et. al., Bioinformatics 21(5): 650-659 (2005) calculated on HPM Protein data.'),('IMPC Mice In Progress','Boolean',NULL,'IMPC mouse knockout strain is in progress.'),('IMPC Mice Produced','Boolean',NULL,'IMPC mouse knockout strain is available.'),('Is Transcription Factor','Boolean',NULL,'Target is a transcription factor according to http://www.bioguo.org/AnimalTFDB'),('JensenLab COMPARTMENT Prediction Plasma membrane','String',NULL,'Prediction method and value (conf 2 or 3 only) that the protein is Plasma membrane from JensenLab COMPARTMENTS resouce'),('JensenLab PubMed Score','Number',NULL,'PubMed paper count from textmining done in group of Lars-Juhl Jensen.'),('MAb Count','Integer',NULL,'Monoclonal Antibody count from antibodypedia.com'),('NCBI Gene PubMed Count','Integer',NULL,'Number of PubMed references for target and all its aliases'),('NCBI Gene Summary','String',NULL,'Gene summary statement from NCBI Gene database'),('NIHRePORTER 2010-2015 R01 Count','Integer',NULL,'Total number of 2010-2015 R01s associated with this target via JensenLab tagger.'),('PubTator Score','Number',NULL,'PubMed paper count from PubTator data run through Lars Jensen\'s counting proceedure'),('TIN-X Novelty Score','Number',NULL,'TIN-X novelty score from Cristian Bologa.'),('TM Count','Integer',NULL,'Number of transmembrane helices according to Survey of the Human Transmembrane Proteome (https://modbase.compbio.ucsf.edu/projects/membrane/). At least 2 are required to be in their list.'),('TMHMM Prediction','String',NULL,'Short output from TMHMM run locally on protein sequences.'),('UniProt Function','String',NULL,'Funtion comment from UniProt');
+INSERT INTO `info_type` VALUES ('Ab Count','Integer',NULL,'Antibody count from antibodypedia.com'),('Antibodypedia.com URL','String',NULL,'Antibodypedia.com detail page URL for a given protein.'),('ChEMBL Activity Count','Integer',NULL,'Number of filtered bioactivities in ChEMBL better than 1uM (10uM for Ion Channels)'),('ChEMBL First Reference Year','Integer',NULL,'The year of the oldest bioactivity reference this target has in ChEMBL. Note that this is derived from ChEMBL activities as filtered for TCRD purposes.'),('ChEMBL Selective Compound','String',NULL,'2 log selective compound on this target. Value is ChEMBL ID and SMILES joined with a pipe character.'),('Drugable Epigenome Class','String',NULL,'Drugable Epigenome Class/Domain from Nature Reviews Drug Discovery 11, 384-400 (May 2012)'),('DrugDB Count','Integer',NULL,'Number of drugs in DrugDB with with activity better than 1uM (10uM for Ion Channels)'),('EBI Total Patent Count','Integer',NULL,'Total count of all patents mentioning this protein according to EBI text mining'),('EBI Total Patent Count (Relevant)','Integer',NULL,'Total count of all relevant patents mentioning this protein according to EBI text mining'),('Experimental MF/BP Leaf Term GOA','String',NULL,'Indicates that a target is annotated with one or more GO MF/BP leaf term with Experimental Evidence code. Value is a concatenation of all GO terms/names/evidences.'),('GTEx Tissue Specificity Index','Number',NULL,'Tau as defined in Yanai, I. et. al., Bioinformatics 21(5): 650-659 (2005) calculated on GTEx data.'),('Has MLP Assay','Boolean',NULL,'Indicates that a protein is used in at least one PubChem MLP assay. Details are in mlp_assay_info tabel.'),('HPA Protein Tissue Specificity Index','Number',NULL,'Tau as defined in Yanai, I. et. al., Bioinformatics 21(5): 650-659 (2005) calculated on HPA Protein data.'),('HPA RNA Tissue Specificity Index','Number',NULL,'Tau as defined in Yanai, I. et. al., Bioinformatics 21(5): 650-659 (2005) calculated on HPM RNA data.'),('HPM Gene Tissue Specificity Index','Number',NULL,'Tau as defined in Yanai, I. et. al., Bioinformatics 21(5): 650-659 (2005) calculated on HPM Gene data.'),('HPM Protein Tissue Specificity Index','Number',NULL,'Tau as defined in Yanai, I. et. al., Bioinformatics 21(5): 650-659 (2005) calculated on HPM Protein data.'),('IMPC Mice In Progress','Boolean',NULL,'IMPC mouse knockout strain is in progress.'),('IMPC Mice Produced','Boolean',NULL,'IMPC mouse knockout strain is available.'),('Is Transcription Factor','Boolean',NULL,'Target is a transcription factor according to http://www.bioguo.org/AnimalTFDB'),('JensenLab COMPARTMENT Prediction Plasma membrane','String',NULL,'Prediction method and value (conf 2 or 3 only) that the protein is Plasma membrane from JensenLab COMPARTMENTS resouce'),('JensenLab PubMed Score','Number',NULL,'PubMed paper count from textmining done in group of Lars-Juhl Jensen.'),('MAb Count','Integer',NULL,'Monoclonal Antibody count from antibodypedia.com'),('NCBI Gene PubMed Count','Integer',NULL,'Number of PubMed references for target and all its aliases'),('NCBI Gene Summary','String',NULL,'Gene summary statement from NCBI Gene database'),('NIHRePORTER 2000-2015 R01 Count','Integer',NULL,'Total number of 2000-2015 R01s associated with this target via JensenLab tagger.'),('PubTator Score','Number',NULL,'PubMed paper count from PubTator data run through Lars Jensen\'s counting proceedure'),('TIN-X Novelty Score','Number',NULL,'TIN-X novelty score from Cristian Bologa.'),('TM Count','Integer',NULL,'Number of transmembrane helices according to Survey of the Human Transmembrane Proteome (https://modbase.compbio.ucsf.edu/projects/membrane/). At least 2 are required to be in their list.'),('TMHMM Prediction','String',NULL,'Short output from TMHMM run locally on protein sequences.'),('UniProt Function','String',NULL,'Funtion comment from UniProt');
 /*!40000 ALTER TABLE `info_type` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -738,6 +704,36 @@ CREATE TABLE `kegg_distance` (
 LOCK TABLES `kegg_distance` WRITE;
 /*!40000 ALTER TABLE `kegg_distance` DISABLE KEYS */;
 /*!40000 ALTER TABLE `kegg_distance` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `kegg_nearest_tclin`
+--
+
+DROP TABLE IF EXISTS `kegg_nearest_tclin`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `kegg_nearest_tclin` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `protein_id` int(11) NOT NULL,
+  `tclin_id` int(11) NOT NULL,
+  `direction` enum('upstream','downstream') COLLATE utf8_unicode_ci NOT NULL,
+  `distance` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `kegg_nearest_tclin_idx1` (`protein_id`),
+  KEY `kegg_nearest_tclin_idx2` (`tclin_id`),
+  CONSTRAINT `fk_kegg_nearest_tclin__protein` FOREIGN KEY (`protein_id`) REFERENCES `protein` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_kegg_nearest_tclin__target` FOREIGN KEY (`tclin_id`) REFERENCES `target` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `kegg_nearest_tclin`
+--
+
+LOCK TABLES `kegg_nearest_tclin` WRITE;
+/*!40000 ALTER TABLE `kegg_nearest_tclin` DISABLE KEYS */;
+/*!40000 ALTER TABLE `kegg_nearest_tclin` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -1269,6 +1265,40 @@ LOCK TABLES `target` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `target2grant`
+--
+
+DROP TABLE IF EXISTS `target2grant`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `target2grant` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `target_id` int(11) NOT NULL,
+  `protein_id` int(11) NOT NULL,
+  `appid` int(11) NOT NULL,
+  `full_project_num` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  `activity` varchar(4) COLLATE utf8_unicode_ci NOT NULL,
+  `funding_ics` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  `year` int(4) NOT NULL,
+  `cost` decimal(12,2) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `grant_idx1` (`target_id`),
+  KEY `grant_idx2` (`protein_id`),
+  CONSTRAINT `fk_grant_protein` FOREIGN KEY (`protein_id`) REFERENCES `protein` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_grant_target` FOREIGN KEY (`target_id`) REFERENCES `target` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `target2grant`
+--
+
+LOCK TABLES `target2grant` WRITE;
+/*!40000 ALTER TABLE `target2grant` DISABLE KEYS */;
+/*!40000 ALTER TABLE `target2grant` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `tdl_info`
 --
 
@@ -1616,4 +1646,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2016-11-16 14:09:27
+-- Dump completed on 2017-01-05 15:28:22
