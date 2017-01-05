@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2016-11-29 15:15:58 smathias>
+# Time-stamp: <2017-01-05 16:42:59 smathias>
 """Load protein data from UniProt.org into TCRD via the web.
 
 Usage:
@@ -8,7 +8,7 @@ Usage:
 
 Options:
   -h --dbhost DBHOST   : MySQL database host name [default: localhost]
-  -n --dbname DBNAME   : MySQL database name [default: tcrd]
+  -n --dbname DBNAME   : MySQL database name [default: tcrdev]
   -l --logfile LOGF    : set log file name
   -v --loglevel LOGL   : set logging level [default: 30]
                          50: CRITICAL
@@ -39,9 +39,6 @@ import shelve
 from progressbar import *
 
 PROGRAM = os.path.basename(sys.argv[0])
-DBHOST = 'localhost'
-DBPORT = 3306
-DBNAME = 'tcrdev'
 LOGFILE = "%s.log" % PROGRAM
 
 # Download tab-delimited file from:

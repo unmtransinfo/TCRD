@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2016-12-12 10:44:05 smathias>
+# Time-stamp: <2017-01-05 16:38:26 smathias>
 """Load Jackson Labs phenotype data into TCRD from TSV files.
 
 Usage:
@@ -8,7 +8,7 @@ Usage:
 
 Options:
   -h --dbhost DBHOST   : MySQL database host name [default: localhost]
-  -n --dbname DBNAME   : MySQL database name [default: tcrd]
+  -n --dbname DBNAME   : MySQL database name [default: tcrdev]
   -l --logfile LOGF    : set log file name
   -v --loglevel LOGL   : set logging level [default: 30]
                          50: CRITICAL
@@ -37,9 +37,6 @@ import urllib
 from progressbar import *
 
 PROGRAM = os.path.basename(sys.argv[0])
-DBHOST = 'localhost'
-DBPORT = 3306
-DBNAME = 'tcrdev'
 LOGFILE = "%s.log" % PROGRAM
 DOWNLOAD_DIR = '../data/JAX/'
 BASE_URL = 'http://www.informatics.jax.org/downloads/reports/'
@@ -156,7 +153,7 @@ def load():
   print "Loaded %d new phenotype rows for %d distinct proteins" % (pt_ct, len(pmark.keys()))
   print "Loaded/Skipped %d new MGI xrefs" % mgixr_ct
   if dba_err_ct > 0:
-    print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, dba_logfile)
+    print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
 
 
 def wcl(fname):

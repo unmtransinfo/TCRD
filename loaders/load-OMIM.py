@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2016-11-29 10:22:23 smathias>
+# Time-stamp: <2017-01-05 16:39:48 smathias>
 """Load phenotypes into TCRD from OMIM genemap.txt file.
 
 Usage:
@@ -8,7 +8,7 @@ Usage:
 
 Options:
   -h --dbhost DBHOST   : MySQL database host name [default: localhost]
-  -n --dbname DBNAME   : MySQL database name [default: tcrd]
+  -n --dbname DBNAME   : MySQL database name [default: tcrdev]
   -l --logfile LOGF    : set log file name
   -v --loglevel LOGL   : set logging level [default: 30]
                          50: CRITICAL
@@ -37,9 +37,6 @@ import urllib
 from progressbar import *
 
 PROGRAM = os.path.basename(sys.argv[0])
-DBHOST = 'localhost'
-DBPORT = 3306
-DBNAME = 'tcrdev'
 # One must register to get OMIM downloads. Last time I did, the link to get them was:
 DOWNLOAD_DIR = '../data/OMIM/'
 BASE_URL = 'http://omim.org/downloads/ey9G4kaCTGCQ-q_Yx0XAPg/'

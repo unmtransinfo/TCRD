@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2016-12-08 10:51:18 smathias>
+# Time-stamp: <2017-01-05 16:35:23 smathias>
 """Load chembl_activity data in TCRD via ChEMBL MySQL database.
 
 Usage:
@@ -8,7 +8,7 @@ Usage:
 
 Options:
   -h --dbhost DBHOST   : MySQL database host name [default: localhost]
-  -n --dbname DBNAME   : MySQL database name [default: tcrd]
+  -n --dbname DBNAME   : MySQL database name [default: tcrdev]
   -l --logfile LOGF    : set log file name
   -v --loglevel LOGL   : set logging level [default: 30]
                          50: CRITICAL
@@ -42,9 +42,6 @@ import urllib
 from progressbar import *
 
 PROGRAM = os.path.basename(sys.argv[0])
-DBHOST = 'localhost'
-DBPORT = 3306
-DBNAME = 'tcrdev'
 LOGFILE = './%s.log'%PROGRAM
 CHEMBL_DB = 'chembl_22'
 DOWNLOAD_DIR = '../data/ChEMBL/'

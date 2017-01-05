@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-05 16:38:15 smathias>
-"""Load IMPC phenotype data into TCRD from CSV file.
+# Time-stamp: <2017-01-05 16:24:10 smathias>
+"""Load patent counts into TCRD from CSV file.
 
 Usage:
-    load-IMPCPhenotypes.py [--debug=<int> | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
-    load-IMPCPhenotypes.py -? | --help
+    load-EBIPatentCounts.py [--debug=<int> | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>] 
+    load-EBIPatentCounts.py -? | --help
 
 Options:
   -h --dbhost DBHOST   : MySQL database host name [default: localhost]
@@ -31,15 +31,13 @@ __version__   = "2.0.0"
 import os,sys,time
 from docopt import docopt
 from TCRD import DBAdaptor
-import logging
 import csv
+import logging
 from progressbar import *
 
 PROGRAM = os.path.basename(sys.argv[0])
 LOGFILE = "%s.log" % PROGRAM
-# Get from ftp://ftp.ebi.ac.uk/pub/databases/impc/release-*.*/csv/
-IMPC_FILE = '/home/app/TCRD/data/IMPC/ALL_genotype_phenotype.csv'
-IMPC_VER = '4.3'
+INFILE = '../data/EBI/EBI_PatentCountsJensenTagger_20160711.csv'
 
 def main():
   args = docopt(__doc__, version=__version__)
@@ -71,78 +69,85 @@ def main():
     print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
   # Dataset
-  dataset_id = dba.ins_dataset( {'name': 'IMPC Phenotypes', 'source': "File %s from ftp://ftp.ebi.ac.uk/pub/databases/impc/release-%s/csv/"%(os.path.basename(IMPC_FILE), IMPC_VER), 'app': PROGRAM, 'app_version': __version__, 'url': 'ftp://ftp.ebi.ac.uk/pub/databases/impc/release-%s/csv/README'%IMPC_VER} )
+  dataset_id = dba.ins_dataset( {'name': 'EBI Patent Counts', 'source': 'File obtained directly from AnneHersey at EBI', 'app': PROGRAM, 'app_version': __version__, 'url': 'https://www.surechembl.org/search/', 'comments': 'Patents from SureChEMBL were tagged using the JensenLab tagger.'} )
   if not dataset_id:
     print "WARNING: Error inserting dataset See logfile %s for details." % logfile
-    sys.exit(1)
   # Provenance
-  rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'phenotype', 'where_clause': "ptype = 'IMPC'"})
-  if not rv:
-    print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
-    sys.exit(1)
-  
-  start_time = time.time()
-  line_ct = wcl(IMPC_FILE)
-  line_ct -= 1 # file has header row
-  pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
+  provs = [ {'dataset_id': dataset_id, 'table_name': 'patent_count'},
+            {'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': "itype = 'EBI Total Patent Count'"} ]
+  for prov in provs:
+    rv = dba.ins_provenance(prov)
+    if not rv:
+      print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
+      sys.exit(1)
 
+  start_time = time.time()
+  pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
+  patent_cts = {}
+  notfnd = {}
+  pc_ct = 0
+  dba_err_ct = 0
+  line_ct = wcl(INFILE)
   if not args['--quiet']:
-    print "\nProcessing %d lines from input file %s" % (line_ct, IMPC_FILE)
-  with open(IMPC_FILE, 'rU') as csvfile:
+    print "\nProcessing %d data lines in file %s" % (line_ct, INFILE)
+  with open(INFILE, 'rU') as csvfile:
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
     csvreader = csv.reader(csvfile)
-    csvreader.next() # skip header line
+    header = csvreader.next() # skip header line
     ct = 0
-    tmark = {}
-    pt_ct = 0
-    ptmark = {} # the data file has the same data for male and female mice. These end up looking like duplicates since TCRD phenotype table does not have that level of detail. Keep track of loaded data so this doesn't happen.
-    mgixr_ct = 0
-    notfnd = set()
-    dba_err_ct = 0
     for row in csvreader:
       ct += 1
-      sym = row[1].upper()
-      targets = dba.find_targets({'sym': sym}, idg = False)
-      if not targets:
-        notfnd.add(tuple(row))
-        continue
-      for t in targets:
-        if not row[21] and not row[22]:
-          # skip data with neither a term_id or term_name (IMPC has 134 of these)
-          continue
-        tmark[t['id']] = True
-        pid = t['components']['protein'][0]['id']
-        k = "%s|%s|%s|%s|%s|%s|%s|%s|%s" % (pid, row[19], row[20], row[21], row[22], row[23], row[24], row[25], row[26])
-        if k in ptmark: # Don't add "duplicates"
-          continue
-        rv = dba.ins_xref({'protein_id': pid, 'xtype': 'MGI ID', 'dataset_id': dataset_id, 'value': row[0]})
-        if rv:
-          mgixr_ct += 1
-        else:
-          dba_err_ct += 1
-        rv = dba.ins_phenotype({'protein_id': pid, 'ptype': 'IMPC', 'top_level_term_id': row[19], 'top_level_term_name': row[20], 'term_id': row[21], 'term_name': row[22], 'p_value': row[23], 'percentage_change': row[24], 'effect_size': row[25], 'statistical_method': row[26]})
-        if rv:
-          pt_ct += 1
-          ptmark[k] = True
-        else:
-          dba_err_ct += 1
       pbar.update(ct)
+      up = row[0]
+      targets = dba.find_targets({'uniprot': up})
+      if not targets:
+        targets = dba.find_targets_by_alias({'type': 'UniProt', 'value': up})
+        if not targets:
+          notfnd[up] = True
+          continue
+      pid = targets[0]['components']['protein'][0]['id']
+      rv = dba.ins_patent_count({'protein_id': pid, 'year': row[2], 'count': row[3]} )
+      if rv:
+        pc_ct += 1
+      else:
+        dba_err_ct += 1
+      if pid in patent_cts:
+        patent_cts[pid] += int(row[3])
+      else:
+        patent_cts[pid] = int(row[3])
   pbar.finish()
-
-  print "%d rows processed." % ct
-  print "%d targets annotated with IMPC phenotypes" % len(tmark.keys())
-  print "  Inserted %d new phenotype rows" % pt_ct
-  print "  Inserted %d new MGI ID xref rows" % mgixr_ct
+  elapsed = time.time() - start_time
+  print "%d input lines processed. Elapsed time: %s" % (ct, secs2str(elapsed))
+  print "\n%d targets have patent counts" % len(patent_cts.keys())
+  print "Inserted %d new patent_count rows" % pc_ct
+  if notfnd:
+    print "No target found for %d symbols:" % len(notfnd)
+    for up in notfnd.keys():
+      print "  %s" % sym
   if dba_err_ct > 0:
     print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
-  if notfnd:
-    print "No target found for %d gene symbols" % len(notfnd)
-    #for row in notfnd:
-    #  print row[0],row[1]
+    
+  if not args['--quiet']:
+    print "\nLoading %d Patent Count tdl_infos" % len(patent_cts.keys())
+  ct = 0
+  ti_ct = 0
+  dba_err_ct = 0
+  for pid,count in patent_cts.items():
+    ct += 1
+    rv = dba.ins_tdl_info({'protein_id': pid, 'itype': 'EBI Total Patent Count', 
+                           'integer_value': count} )
+    if rv:
+      ti_ct += 1
+    else:
+      dba_err_ct += 1
+  print "  %d processed" % ct
+  print "  Inserted %d new EBI Total Patent Count tdl_info rows" % ti_ct
+  if dba_err_ct > 0:
+    print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
 
-  print "\n%s: Done." % PROGRAM
-  print
-
+  if not args['--quiet']:
+    print "\n%s: Done.\n" % PROGRAM
+  
 
 def wcl(fname):
   with open(fname) as f:

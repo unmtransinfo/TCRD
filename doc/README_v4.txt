@@ -1,41 +1,11 @@
 This README includes all commands (and most output) run to build TCRD v4.
 
-[smathias@juniper SQL]$ mysqldump --no-data tcrd3 | sed 's/ AUTO_INCREMENT=[0-9]*\b//g' > create-TCRDv4.sql
-[smathias@juniper SQL]$ mysqldump --no-create-db --no-create-info tcrd3 compartment_type data_type disease_association_type expression_type info_type pathway_type phenotype_type ppi_type xref_type > types_v4.sql
-mysql> create database tcrd4;
+
+Create the empty schema:
+[smathias@juniper SQL]$ mysql
+mysql> create database tcrd4
 mysql> use tcrd4
-Edit create-TCRDv4.sql to rename disease and grant and add protein_id foreign keys to both
 mysql> \. create-TCRDv4.sql
-mysql> \. types_v4.sql
-Check that everything is good:
-mysql> SHOW TABLE STATUS FROM `tcrd4`;
-
-ALTER TABLE dataset DROP COLUMN columns_touched;
-CREATE TABLE provenance (
-  id                    INTEGER(11) NOT NULL AUTO_INCREMENT,
-  dataset_id            INTEGER(11) NOT NULL,
-  table_name            VARCHAR(255) NOT NULL,
-  column_name           VARCHAR(255) NULL,
-  where_clause          TEXT NULL,
-  comment               TEXT NULL,
-  PRIMARY KEY (id)
-) ENGINE=InnoDB;
-CREATE INDEX provenance_idx1 ON provenance(dataset_id);
-ALTER TABLE provenance ADD CONSTRAINT fk_provenance_dataset FOREIGN KEY
-provenance_idx1(dataset_id) REFERENCES dataset(id) ON DELETE RESTRICT; -- provenance must have a dataset
-INSERT INTO dataset (name, source) VALUES ('IDG-KMC Generated Data', 'Steve Mathias');
-INSERT INTO dataset (name, source) VALUES ('IDG-KMC Generated Data', 'Oleg Ursu');
-INSERT INTO dataset (name, source) VALUES ('IDG-KMC Generated Data', 'Lars Jensen');
-ALTER TABLE xref ADD COLUMN dataset_id INTEGER(11) NOT NULL;
-CREATE INDEX xref_idx6 ON xref(dataset_id);
-ALTER TABLE xref ADD CONSTRAINT fk_xref_dataset FOREIGN KEY xref_idx6(dataset_id) REFERENCES dataset(id) ON DELETE RESTRICT; -- xrefs must have a dataset
-ALTER TABLE alias ADD COLUMN dataset_id INTEGER(11) NOT NULL;
-CREATE INDEX alias_idx2 ON alias(dataset_id);
-ALTER TABLE alias ADD CONSTRAINT fk_alias_dataset FOREIGN KEY alias_idx2(dataset_id) REFERENCES dataset(id) ON DELETE RESTRICT; -- aliases must have a dataset
-DROP TABLE synonym;
-INSERT INTO dbinfo (dbname, schema_ver, data_ver, owner) VALUES ('tcrd4', '4.0.0', '4.0.0', 'smathias');
-
-[smathias@juniper SQL]$ mysqldump tcrd4 > tcrd4-0.sql
 
 
 [smathias@juniper loaders]$ ./load-UniProt.py --dbname tcrd4 --loglevel 20 --logfile tcrd4logs/load-UniProt.py.log
@@ -127,13 +97,13 @@ load-STRINGIDs.py (v2.0.0) [Thu Dec  1 10:36:49 2016]:
 
 Connected to TCRD database tcrd4 (schema ver 4.0.0; data ver 4.0.0)
 
-Processing 20499 input lines in file /home/app/TCRD/data/JensenLab/9606_reviewed_uniprot_2_string.04_2015.tsv
+Processing 20499 input lines in file ../data/JensenLab/9606_reviewed_uniprot_2_string.04_2015.tsv
 Progress: 100% [#####################################################################] Time: 0:00:00
 20499 input lines processed. Elapsed time: 0:00:00.071
   Skipped 2397 non-identity lines
   Got 35046 uniprot/name to STRING ID mappings
 
-Processing 2449433 input lines in file /home/app/TCRD/data/JensenLab/9606.protein.aliases.v10.txt
+Processing 2449433 input lines in file ../data/JensenLab/9606.protein.aliases.v10.txt
 Progress: 100% [#####################################################################] Time: 0:00:15
 2449433 input lines processed. Elapsed time: 0:00:15.872
   Got 2166722 alias to STRING ID mappings
@@ -501,8 +471,6 @@ load-DrugableEpigenomeTDLInfos.py: Done.
 [smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd4-12.sql
 
 
-mysql> update dataset set source = 'Jeremy Yang' where id = 3;
-
 [smathias@juniper loaders]$ ./load-MLPAssayInfo.py --dbname tcrd4
 
 load-MLPAssayInfo.py (v2.0.0) [Mon Dec 12 11:52:00 2016]:
@@ -546,16 +514,14 @@ Progress: 100% [################################################################
 
 load-IDGFams.py: Done.
 
-[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd4-14.sql
-
-
-
 UPDATE provenance SET comment = "These values indicate that a protein is annotated with a GO leaf term in either the Molecular Function or Biological Process branch with an experimental evidenve code." where id = 31;
 UPDATE provenance SET comment = "This data is generated at UNM from PubChem and EUtils data. It has details about targets studied in assays that were part of NIH's Molecular Libraries Program." where id = 40;
 
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd4-14.sql
 
-
+#
 # Grant Tagging
+#
 [smathias@juniper python]$ ./pickle_grant_info.py 
 
 pickle_grant_info.py (v1.0.0) [Wed Dec 14 15:35:59 2016]:
@@ -634,4 +600,340 @@ Progress: 100% [################################################################
 Tagging 93841 projects from 2010
 Progress: 100% [#####################################################################] Time: 0:06:24
 93841 projects processed. See logfile ../data/NIHExporter/TCRDv4/grant_tagger.py.log for details.
+
+Tagging 83643 projects from 2011
+Progress: 100% [#####################################################################] Time: 0:05:51
+83643 projects processed. See logfile ../data/NIHExporter/TCRDv4/grant_tagger.py.log for details.
+
+Tagging 78989 projects from 2012
+Progress: 100% [#####################################################################] Time: 0:05:48
+78989 projects processed. See logfile ../data/NIHExporter/TCRDv4/grant_tagger.py.log for details.
+
+Tagging 77036 projects from 2013
+Progress: 100% [#####################################################################] Time: 0:05:22
+77036 projects processed. See logfile ../data/NIHExporter/TCRDv4/grant_tagger.py.log for details.
+
+Tagging 76167 projects from 2014
+Progress: 100% [#####################################################################] Time: 0:05:22
+76167 projects processed. See logfile ../data/NIHExporter/TCRDv4/grant_tagger.py.log for details.
+
+Tagging 73356 projects from 2015
+Progress: 100% [#####################################################################] Time: 0:05:34
+73356 projects processed. See logfile ../data/NIHExporter/TCRDv4/grant_tagger.py.log for details.
+
+grant_tagger.py: Done.
+
+[smathias@juniper loaders]$ ./load-GrantInfo.py --dbname tcrd4
+
+load-GrantInfo.py (v2.0.0) [Thu Dec 15 12:36:42 2016]:
+
+Connected to TCRD database tcrd4 (schema ver 4.0.0; data ver 4.0.0)
+
+Loading project info from pickle file ../data/NIHExporter/ProjectInfo2000-2015.p
+
+Processing tagging results for 2000: 5537 targets
+Progress: 100% [#####################################################################] Time: 0:00:50
+Processed 5537 target tagging records. Elapsed time: 0:00:50.353
+  Inserted 70442 new grant rows
+
+Processing tagging results for 2001: 5834 targets
+Progress: 100% [#####################################################################] Time: 0:00:49
+Processed 5834 target tagging records. Elapsed time: 0:00:49.649
+  Inserted 70547 new grant rows
+
+Processing tagging results for 2002: 6136 targets
+Progress: 100% [#####################################################################] Time: 0:00:55
+Processed 6136 target tagging records. Elapsed time: 0:00:55.986
+  Inserted 76020 new grant rows
+
+Processing tagging results for 2003: 6322 targets
+Progress: 100% [#####################################################################] Time: 0:00:53
+Processed 6322 target tagging records. Elapsed time: 0:00:53.497
+  Inserted 73521 new grant rows
+
+Processing tagging results for 2004: 6532 targets
+Progress: 100% [#####################################################################] Time: 0:00:55
+Processed 6532 target tagging records. Elapsed time: 0:00:55.650
+  Inserted 79034 new grant rows
+
+Processing tagging results for 2005: 6736 targets
+Progress: 100% [#####################################################################] Time: 0:00:58
+Processed 6736 target tagging records. Elapsed time: 0:00:59.065
+  Inserted 84297 new grant rows
+
+Processing tagging results for 2006: 6911 targets
+Progress: 100% [#####################################################################] Time: 0:01:02
+Processed 6911 target tagging records. Elapsed time: 0:01:02.610
+  Inserted 88329 new grant rows
+
+Processing tagging results for 2007: 7579 targets
+Progress: 100% [#####################################################################] Time: 0:01:08
+Processed 7579 target tagging records. Elapsed time: 0:01:08.432
+  Inserted 99715 new grant rows
+
+Processing tagging results for 2008: 7678 targets
+Progress: 100% [#####################################################################] Time: 0:01:09
+Processed 7678 target tagging records. Elapsed time: 0:01:10.088
+  Inserted 101556 new grant rows
+
+Processing tagging results for 2009: 8165 targets
+Progress: 100% [#####################################################################] Time: 0:01:29
+Processed 8165 target tagging records. Elapsed time: 0:01:29.952
+  Inserted 130859 new grant rows
+
+Processing tagging results for 2010: 8247 targets
+Progress: 100% [#####################################################################] Time: 0:01:28
+Processed 8247 target tagging records. Elapsed time: 0:01:28.943
+  Inserted 125818 new grant rows
+
+Processing tagging results for 2011: 8147 targets
+Progress: 100% [#####################################################################] Time: 0:01:16
+Processed 8147 target tagging records. Elapsed time: 0:01:16.574
+  Inserted 110636 new grant rows
+
+Processing tagging results for 2012: 8087 targets
+Progress: 100% [#####################################################################] Time: 0:01:13
+Processed 8087 target tagging records. Elapsed time: 0:01:14.446
+  Inserted 107997 new grant rows
+
+Processing tagging results for 2013: 7999 targets
+Progress: 100% [#####################################################################] Time: 0:01:11
+Processed 7999 target tagging records. Elapsed time: 0:01:12.213
+  Inserted 104302 new grant rows
+
+Processing tagging results for 2014: 8061 targets
+Progress: 100% [#####################################################################] Time: 0:01:10
+Processed 8061 target tagging records. Elapsed time: 0:01:10.529
+  Inserted 102685 new grant rows
+
+Processing tagging results for 2015: 8107 targets
+Progress: 100% [#####################################################################] Time: 0:01:12
+Processed 8107 target tagging records. Elapsed time: 0:01:12.704
+  Inserted 104480 new grant rows
+
+Loading 'NIHRePORTER 2010-2015 R01 Count' tdl_infos for 9527 targets
+  Inserted 9527 new tdl_info rows
+
+load-GrantInfo.py: Done.
+
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd4-15.sql
+
+#
+# TIN-X
+#
+[smathias@juniper python]$ ./TIN-X.py --dbname tcrd4
+
+TIN-X.py (v2.0.0) [Fri Dec 16 09:54:51 2016]:
+
+Downloading http://ontologies.berkeleybop.org/doid.obo
+         to ../data/DiseaseOntology/doid.obo
+
+Downloading http://download.jensenlab.org/disease_textmining_mentions.tsv
+         to ../data/JensenLab/disease_textmining_mentions.tsv
+Downloading http://download.jensenlab.org/human_textmining_mentions.tsv
+         to ../data/JensenLab/human_textmining_mentions.tsv
+
+Connected to TCRD database tcrd4 (schema ver 4.0.0; data ver 4.0.0)
+
+Parsing Disease Ontology file ../data/DiseaseOntology/doid.obo
+  Got 10081 Disease Ontology terms
+
+Processing 19871 input lines in protein file ../data/JensenLab/human_textmining_mentions.tsv
+Progress: 100% [#####################################################################] Time: 0:08:20
+19871 input lines processed. Elapsed time: 0:08:20.934
+  Skipped 2255 non-ENSP lines
+  Saved 17332 protein to PMIDs mappings
+  Saved 4557210 PMID to protein count mappings
+WARNING: No target found for 171 ENSPs. See logfile TIN-X.py.log for details.
+
+Processing 7594 input lines in file ../data/JensenLab/disease_textmining_mentions.tsv
+Progress: 100% [#####################################################################] Time: 0:01:10
+7594 input lines processed. Elapsed time: 0:01:11.653
+  Skipped 1668 non-DOID lines
+  Saved 5926 DOID to PMIDs mappings
+  Saved 8956541 PMID to disease count mappings
+
+Computing protein novely scores
+  Wrote 17332 novelty scores to file ../data/TIN-X/TCRDv4/ProteinNovelty.csv
+  Elapsed time: 0:00:02.987
+
+Computing disease novely scores
+  Wrote 5926 novelty scores to file ../data/TIN-X/TCRDv4/DiseaseNovelty.csv
+  Elapsed time: 0:00:22.658
+
+Computing importance scores
+  Wrote 2095170 importance scores to file ../data/TIN-X/TCRDv4/Importance.csv
+  Elapsed time: 0:44:06.471
+
+Computing PubMed rankings
+  Wrote 33463767 PubMed trankings to file ../data/TIN-X/TCRDv4/PMIDRanking.csv
+  Elapsed time: 0:46:37.658
+
+TIN-X.py: Done.
+
+[smathias@juniper loaders]$ ./load-TIN-X.py --dbname tcrd4
+
+load-TIN-X.py (v2.0.0) [Fri Dec 16 12:45:35 2016]:
+
+Connected to TCRD database tcrd4 (schema ver 4.0.0; data ver 4.0.0)
+
+Parsing Disease Ontology file ../data/DiseaseOntology/doid.obo
+  Got 10081 Disease Ontology terms
+
+Processing 5927 input lines in file ../data/TIN-X/TCRDv4/DiseaseNovelty.csv
+Progress: 100% [#####################################################################] Time: 0:00:03
+5926 input lines processed. Elapsed time: 0:00:03.324
+  Inserted 5926 new tinx_disease rows
+  Saved 5926 keys in dmap
+
+Processing 17333 input lines in file ../data/TIN-X/TCRDv4/ProteinNovelty.csv
+Progress: 100% [#####################################################################] Time: 0:00:10
+17332 input lines processed. Elapsed time: 0:00:10.497
+  Inserted 17332 new tinx_novelty rows
+
+Processing 2095171 input lines in file ../data/TIN-X/TCRDv4/Importance.csv
+Progress: 100% [#####################################################################] Time: 0:20:46
+2095170 input lines processed. Elapsed time: 0:20:47.133
+  Inserted 2095170 new tinx_importance rows
+  Saved 2095170 keys in imap
+
+Processing 33463768 input lines in file ../data/TIN-X/TCRDv4/PMIDRanking.csv
+Progress: 100% [#####################################################################] Time: 5:07:30
+33463767 input lines processed. Elapsed time: 5:07:32.788
+  Inserted 33463767 new tinx_articlerank rows
+
+load-TIN-X.py: Done.
+
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd4-16.sql
+
+
+[smathias@juniper loaders]$ ./load-PubMed.py --dbname tcrd4 --loglevel 20 --logfile tcrd4logs/load-PubMed.py.log
+
+load-PubMed.py (v2.0.0) [Wed Dec 21 11:33:31 2016]:
+
+Connected to TCRD database tcrd4 (schema ver 4.0.0; data ver 4.0.0)
+
+Loading pubmeds for 20120 TCRD targets
+Progress: 100% [#############################################################] Time: 1 day, 20:32:35
+Processed 20120 targets. Elapsed time: 44:32:35.497
+  Successfully loaded all PubMeds for 20094 targets
+  Inserted 504504 new pubmed rows
+  Inserted 1129675 new protein2pubmed rows
+
+Processing 2091428 TIN-X PubMed IDs
+Processed 2091424 TIN-X PubMed IDs. Elapsed time: 63:00:39.265
+  Inserted 1812459 new pubmed rows
+WARNING: 3 DB errors occurred. See logfile tcrd4logs/load-PubMed.py.log for details.
+
+load-PubMed.py: Done.
+
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd4-17.sql
+
+[smathias@juniper SQL]$ mysqldump --no-create-db  tcrd4 pubmed protein2pubmed > dumps/pubmed.sql
+
+#
+# Harmonizome
+#
+[smathias@juniper loaders]$ ./load-Harmonizome.py --dbname tcrdga --loglevel 20 --logfile tcrd4logs/load-Harmonizome.py.log
+
+load-Harmonizome.py (v1.4.1) [Wed Dec 14 14:04:26 2016]:
+
+Connected to TCRD database tcrdga (schema ver 4.0.0; data ver 4.0.0)
+
+Finding targets with Harmonizome genes
+Processing 20120 TCRD targets
+Progress: 100% [#####################################################################] Time: 11:55:36
+  20120 targets processed.
+  Dumping 19488 sym => TCRD protein_id mappings to file tcrd4logs/Sym2pidv4.p
+  Skipped 173 targets with no sym
+  221 targets not found in harmonizome. See logfile tcrd4logs/load-Harmonizome.py.log for details.
+  11 targets had errors. See logfile tcrd4logs/load-Harmonizome.py.log for details.
+
+Manually check errors:
+[smathias@juniper tcrd4logs]$ grep  'ERROR: No JSON' load-Harmonizome.py.log
+2016-12-14 15:50:27 - __main__ - ERROR: No JSON for 3083:CT45A6 => http 500
+2016-12-14 16:14:38 - __main__ - ERROR: No JSON for 3709:GNG10  => GNG10: 3709
+2016-12-14 16:58:49 - __main__ - ERROR: No JSON for 5183:CT45A6 => http 500
+2016-12-14 17:00:17 - __main__ - ERROR: No JSON for 5232:CT45A6 => http 500
+2016-12-14 17:31:50 - __main__ - ERROR: No JSON for 6352:FAM231A => http 500
+2016-12-14 17:34:46 - __main__ - ERROR: No JSON for 6465:FAM231C => http 500
+2016-12-14 18:13:02 - __main__ - ERROR: No JSON for 7573:HSPA1B => http 500
+2016-12-14 18:19:12 - __main__ - ERROR: No JSON for 7791:HSPA1B => http 500
+2016-12-14 19:21:35 - __main__ - ERROR: No JSON for 9666:KCTD17 => KCTD17: 9666
+2016-12-14 19:21:41 - __main__ - ERROR: No JSON for 9667:KCNS1 => KCNS1: 9667
+2016-12-15 00:27:16 - __main__ - ERROR: No JSON for 17797:TMEM211 => TMEM211: 17797
+amd add the good ones to sym2pid:
+In [1]: import cPickle as pickle
+In [2]: SYM2PID_P = 'tcrd4logs/Sym2pidv4.p'
+In [3]: sym2pid = pickle.load( open(SYM2PID_P, 'rb') )
+In [4]: len(sym2pid)
+Out[4]: 19488
+In [5]: sym2pid['GNG10'] = 3709
+In [6]: sym2pid['KCTD17'] = 9666
+In [7]: sym2pid['KCNS1'] = 9667
+In [8]: sym2pid['TMEM211'] = 17797
+In [9]: len(sym2pid)
+Out[9]: 19492
+In [10]: pickle.dump(sym2pid, open(SYM2PID_P, 'wb'))
+
+[smathias@juniper loaders]$ ./load-Harmonizome.py --dbname ga4 --loglevel 20 --logfile tcrd4logs/load-Harmonizome.py.log
+
+load-Harmonizome.py (v2.0.0) [Thu Dec 15 14:41:13 2016]:
+
+Connected to TCRD database ga4 (schema ver 4.0.0; data ver 4.0.0)
+
+Loading mapping of Harmonizome genes to TCRD targets from pickle file tcrd4logs/Sym2pidv4.p
+  Got 19492 symbol to protein_id mappings
+
+Processing 114 Ma'ayan Lab datasets
+...
+Processed 114 Harmonizome datasets. Elapsed time: 205:08:41.725
+  Inserted 73 new gene_attribute_type rows
+WARNING: 6 Gene Set errors occurred. See logfile tcrd4logs/load-Harmonizome.py.log for details.
+
+load-Harmonizome.py: Done.
+
+Two re-runs done. There seems to be a consistent problem with the last two datasets, so I changed the program to commit regardless and just log warnings.
+
+mysql> select count(*) from gene_attribute_type;
++----------+
+| count(*) |
++----------+
+|      113 |
++----------+
++------------------------+
+| count(distinct gat_id) |
++------------------------+
+|                    112 |
++------------------------+
+mysql> delete from gene_attribute_type where id not in (select distinct gat_id from gene_attribute);
+
+[smathias@juniper SQL]$ mysqldump ga4 > dumps/ga4-4.sql
+
+
+
+[smathias@juniper SQL]$ mysqldump --no-create-db --no-create-info tcrd4 gene_attribute_type gene_attribute hgram_cdf > hamonizome.sql
+
+
+[smathias@juniper loaders]$ ./load-EBI-PatentCounts.py --dbname tcrd4
+
+load-EBI-PatentCounts.py (v2.0.0) [Thu Jan  5 16:15:58 2017]:
+
+Connected to TCRD database tcrd4 (schema ver 4.0.0; data ver 4.0.0)
+
+Processing 41281 data lines in file ../data/EBI/EBI_PatentCountsJensenTagger_20160711.csv
+Progress: 100% [#####################################################################] Time: 0:01:32
+41280 input lines processed. Elapsed time: 0:01:32.433
+
+1710 targets have patent counts
+Inserted 41280 new patent_count rows
+
+Loading 1710 Patent Count tdl_infos
+  1710 processed
+  Inserted 1710 new EBI Total Patent Count tdl_info rows
+
+load-EBI-PatentCounts.py: Done.
+
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd4-18.sql
+
 

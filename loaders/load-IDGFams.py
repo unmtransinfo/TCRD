@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2016-11-16 13:57:55 smathias>
+# Time-stamp: <2017-01-05 16:37:51 smathias>
 """Load IDG Family designations into TCRD from pickle file.
 
 Usage:
@@ -9,7 +9,7 @@ Usage:
 Options:
   -i --infile INFILE   : Input pickle file containing IDG Family data
   -h --dbhost DBHOST   : MySQL database host name [default: localhost]
-  -n --dbname DBNAME   : MySQL database name [default: tcrd]
+  -n --dbname DBNAME   : MySQL database name [default: tcrdev]
   -q --quiet           : set output verbosity to minimal level
   -d --debug DEBUGL    : set debugging output level (0-3) [default: 0]
   -? --help            : print this message and exit 
@@ -28,8 +28,6 @@ import cPickle as pickle
 from progressbar import *
 
 PROGRAM = os.path.basename(sys.argv[0])
-DBHOST = 'localhost'
-DBPORT = 3306
 DBNAME = 'tcrdev'
 
 def main():

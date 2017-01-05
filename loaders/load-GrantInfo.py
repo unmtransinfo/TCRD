@@ -8,7 +8,7 @@ Usage:
 
 Options:
   -h --dbhost DBHOST   : MySQL database host name [default: localhost]
-  -n --dbname DBNAME   : MySQL database name [default: tcrd]
+  -n --dbname DBNAME   : MySQL database name [default: tcrdev]
   -l --logfile LOGF    : set log file name
   -v --loglevel LOGL   : set logging level [default: 30]
                          50: CRITICAL
@@ -148,7 +148,7 @@ def main():
     ti_ct += 1
   print "  Inserted %d new tdl_info rows" % ti_ct
   if dba_err_ct > 0:
-    print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, dba_logfile)
+    print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
   
   print "\n%s: Done.\n" % PROGRAM
 

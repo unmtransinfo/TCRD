@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2016-12-02 10:50:34 smathias>
+# Time-stamp: <2017-01-05 16:35:08 smathias>
 """Load antibody count and URL tdl_infos into TCRD via Antibodtpedia.com API.
 
 Usage:
@@ -8,7 +8,7 @@ Usage:
 
 Options:
   -h --dbhost DBHOST   : MySQL database host name [default: localhost]
-  -n --dbname DBNAME   : MySQL database name [default: tcrd]
+  -n --dbname DBNAME   : MySQL database name [default: tcrdev]
   -l --logfile LOGF    : set log file name
   -v --loglevel LOGL   : set logging level [default: 30]
                          50: CRITICAL

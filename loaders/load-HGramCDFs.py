@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-04 12:32:59 smathias>
+# Time-stamp: <2017-01-05 16:37:31 smathias>
 """Calculate CDFs for Harmonizome data and load into TCRD.
 
 Usage:
@@ -37,9 +37,6 @@ import logging
 from progressbar import *
 
 PROGRAM = os.path.basename(sys.argv[0])
-DBHOST = 'localhost'
-DBPORT = 3306
-DBNAME = 'tcrd'
 LOGFILE = 'tcrd4logs/%s.log'%PROGRAM
 
 def main():

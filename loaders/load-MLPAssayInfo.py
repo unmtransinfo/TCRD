@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2016-12-14 16:36:43 smathias>
+# Time-stamp: <2017-01-05 16:39:28 smathias>
 """Load mlp_assay_infos into TCRD from CSV files.
 
 Usage:
@@ -8,7 +8,7 @@ Usage:
 
 Options:
   -h --dbhost DBHOST   : MySQL database host name [default: localhost]
-  -n --dbname DBNAME   : MySQL database name [default: tcrd]
+  -n --dbname DBNAME   : MySQL database name [default: tcrdev]
   -l --logfile LOGF    : set log file name
   -v --loglevel LOGL   : set logging level [default: 30]
                          50: CRITICAL
@@ -39,9 +39,6 @@ import cPickle as pickle
 from progressbar import *
 
 PROGRAM = os.path.basename(sys.argv[0])
-DBHOST = 'localhost'
-DBPORT = 3306
-DBNAME = 'tcrdev'
 LOGFILE = './%s.log'%PROGRAM
 AIDGI_FILE = '../data/PubChem/entrez_assay_summ_mlp_tgt.csv'
 ASSAYS_FILE = '../data/PubChem/entrez_assay_summ_mlp.csv'

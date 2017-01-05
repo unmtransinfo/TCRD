@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2016-11-28 09:54:36 smathias>
+# Time-stamp: <2017-01-05 16:41:20 smathias>
 """Load JensenLab STRING IDs (ENSPs) into TCRD protein.ensp.
 
 Usage:
@@ -8,7 +8,7 @@ Usage:
 
 Options:
   -h --dbhost DBHOST   : MySQL database host name [default: localhost]
-  -n --dbname DBNAME   : MySQL database name [default: tcrd]
+  -n --dbname DBNAME   : MySQL database name [default: tcrdev]
   -l --logfile LOGF    : set log file name
   -v --loglevel LOGL   : set logging level [default: 30]
                          50: CRITICAL
@@ -36,12 +36,9 @@ import logging
 from progressbar import *
 
 PROGRAM = os.path.basename(sys.argv[0])
-DBHOST = 'localhost'
-DBPORT = 3306
-DBNAME = 'tcrdev'
 LOGFILE = "%s.log" % PROGRAM
-INFILE1 = '/home/app/TCRD/data/JensenLab/9606_reviewed_uniprot_2_string.04_2015.tsv'
-INFILE2 = '/home/app/TCRD/data/JensenLab/9606.protein.aliases.v10.txt'
+INFILE1 = '../data/JensenLab/9606_reviewed_uniprot_2_string.04_2015.tsv'
+INFILE2 = '../data/JensenLab/9606.protein.aliases.v10.txt'
 
 def main():
   args = docopt(__doc__, version=__version__)

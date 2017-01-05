@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2016-12-12 11:43:27 smathias>
+# Time-stamp: <2017-01-05 16:35:36 smathias>
 """Load Drugable Epigenome TDL Infos into TCRD from CSV files.
 
 Usage:
@@ -8,7 +8,7 @@ Usage:
 
 Options:
   -h --dbhost DBHOST   : MySQL database host name [default: localhost]
-  -n --dbname DBNAME   : MySQL database name [default: tcrd]
+  -n --dbname DBNAME   : MySQL database name [default: tcrdev]
   -l --logfile LOGF    : set log file name
   -v --loglevel LOGL   : set logging level [default: 30]
                          50: CRITICAL
@@ -36,9 +36,6 @@ import logging
 from progressbar import *
 
 PROGRAM = os.path.basename(sys.argv[0])
-DBHOST = 'localhost'
-DBPORT = 3306
-DBNAME = 'tcrdev'
 INPUT_DIR = '/home/smathias/TCRD/data/Epigenetic-RWE/'
 FILE_LIST = { 'Writer': {'Histone acetyltransferase': 'nrd3674-s3.csv',
                          'Protein methyltransferase': 'nrd3674-s8.csv'},
@@ -95,7 +92,7 @@ def main():
   # Dataset
   dataset_id = dba.ins_dataset( {'name': 'Drugable Epigenome Domains', 'source': 'Files from http://www.nature.com/nrd/journal/v11/n5/suppinfo/nrd3674.html', 'app': PROGRAM, 'app_version': __version__, 'url': 'http://www.nature.com/nrd/journal/v11/n5/suppinfo/nrd3674.html'} )
   if not dataset_id:
-    print "WARNING: Error inserting dataset See logfile %s for details." % dba_logfile
+    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
   # Provenance
   rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': "itype = 'Drugable Epigenome Class'"})
   if not rv:
@@ -145,7 +142,7 @@ def main():
           print "  %d lines processed. Found %d, skipped %d" % (ct, tct, not_fnd_ct)
           print "  Inserted %d new tdl_info rows" % ti_ct
         if dba_err_ct > 0:
-          print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, dba_logfile)
+          print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
         total_ti_ct += ti_ct
 
   if not args['--quiet']:

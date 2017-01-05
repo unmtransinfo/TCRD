@@ -7,7 +7,7 @@ Usage:
 
 Options:
   -h --dbhost DBHOST   : MySQL database host name [default: localhost]
-  -n --dbname DBNAME   : MySQL database name [default: tcrd]
+  -n --dbname DBNAME   : MySQL database name [default: tcrdev]
   -l --logfile LOGF    : set log file name
   -v --loglevel LOGL   : set logging level [default: 30]
                          50: CRITICAL
@@ -36,6 +36,7 @@ from progressbar import *
 import requests
 from bs4 import BeautifulSoup
 import shelve
+from collections import defaultdict
 import calendar
 
 PROGRAM = os.path.basename(sys.argv[0])
@@ -78,17 +79,22 @@ def main():
     print "WARNING: Error inserting dataset See logfile %s for details." % logfile
     sys.exit(1)
   # Provenance
-  rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': ''pubmed})
+  rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'pubmed'})
   if not rv:
     print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
     sys.exit(1)
-
-  start_time = time.time()
-
+  rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'protein2pubmed'})
+  if not rv:
+    print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
+    sys.exit(1)
+    
   s = shelve.open(SHELF_FILE, writeback=True)
+  s['loaded'] = [] # list of target IDs that have been successfully processed
   s['pmids'] = [] # list of stored pubmed ids
   s['p2p_ct'] = 0
+  s['errors'] = defaultdict(list)
 
+  start_time = time.time()
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   if args['--pastid']:
     tct = dba.get_target_count(idg=False, past_id=args['--pastid'])
@@ -99,7 +105,6 @@ def main():
     logger.info("Loading pubmeds for %d TCRD targets" % tct)
   pbar = ProgressBar(widgets=pbar_widgets, maxval=tct).start()  
   ct = 0
-  net_err_ct = 0
   dba_err_ct = 0
   if args['--pastid']:
     past_id = args['--pastid']
@@ -112,13 +117,18 @@ def main():
     if 'PubMed' not in p['xrefs']: continue
     pmids = [d['value'] for d in p['xrefs']['PubMed']]
     chunk_ct = 0
+    err_ct = 0
     for chunk in chunker(pmids, 200):
       chunk_ct += 1
       r = get_pubmed(chunk)
       if not r or r.status_code != 200:
-        logger.error("Bad E-Utils response for target %s, chunk %d" % (target['id'], chunk_ct))
-        net_err_ct += 1
-        continue       
+        # try again...
+        r = get_pubmed(chunk)
+        if not r or r.status_code != 200:
+          logger.error("Bad E-Utils response for target %s, chunk %d" % (target['id'], chunk_ct))
+          s['errors'][target['id']].append(chunk_ct)
+          err_ct += 1
+          continue
       soup = BeautifulSoup(r.text, "xml")
       pmas = soup.find('PubmedArticleSet')
       for pma in pmas.findAll('PubmedArticle'):
@@ -137,17 +147,87 @@ def main():
           dba_err_ct += 1
           continue
         s['p2p_ct'] += 1
-      pbar.update(ct)
-    time.sleep(0.5)
+      time.sleep(0.5)
+    if err_ct == 0:
+      s['loaded'].append(target['id'])
+    pbar.update(ct)
   pbar.finish()
   elapsed = time.time() - start_time
   print "Processed %d targets. Elapsed time: %s" % (ct, secs2str(elapsed))
+  print "  Successfully loaded all PubMeds for %d targets" % len(s['loaded'])
   print "  Inserted %d new pubmed rows" % len(s['pmids'])
   print "  Inserted %d new protein2pubmed rows" % s['p2p_ct']
   if dba_err_ct > 0:
     print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
-  if net_err_ct > 0:
-    print "WARNING: %d Network/E-Utils errors occurred. See logfile %s for details." % (net_err_ct, logfile)
+  if len(s['errors']) > 0:
+    print "WARNING: %d Network/E-Utils errors occurred. See logfile %s for details." % (len(s['errors']), logfile)
+
+  loop = 1
+  while len(s['errors']) > 0:
+    start_time = time.time()
+    print "\nRetry loop %d: Trying to load PubMeds for %d proteins" % (loop, len(s['errors']))
+    logger.info("Retry loop %d: Trying to load data for %d proteins" % (loop, len(s['errors'])))
+    pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
+    pbar = ProgressBar(widgets=pbar_widgets, maxval=len(s['errors'])).start()
+    ct = 0
+    dba_err_ct = 0
+    for tid,chunk_cts in s['errors']:
+      ct += 1
+      target in dba.get_targets(tid, include_annotations=True)
+      logger.info("Processing target %d: %s" % (target['id'], target['name']))
+      p = target['components']['protein'][0]
+      chunk_ct = 0
+      err_ct = 0
+      for chunk in chunker(pmids, 200):
+        chunk_ct += 1
+        # only process chunks that are in the errors lists
+        if chunk_ct not in chunk_cts:
+          continue
+        r = get_pubmed(chunk)
+        if not r or r.status_code != 200:
+          # try again...
+          r = get_pubmed(chunk)
+          if not r or r.status_code != 200:
+            logger.error("Bad E-Utils response for target %s, chunk %d" % (target['id'], chunk_ct))
+            err_ct += 1
+            continue
+        soup = BeautifulSoup(r.text, "xml")
+        pmas = soup.find('PubmedArticleSet')
+        for pma in pmas.findAll('PubmedArticle'):
+          pmid = pma.find('PMID').text
+          if pmid not in s['pmids']:
+            # only store each pubmed once
+            logger.debug("  parsing XML for PMID: %s" % pmid)
+            init = parse_pubmed_article(pma)
+            rv = dba.ins_pubmed(init)
+            if not rv:
+              dba_err_ct += 1
+              continue
+            s['pmids'].append(pmid) # add pubmed id to list of saved ones
+          rv = dba.ins_protein2pubmed({'protein_id': p['id'], 'pubmed_id': pmid})
+          if not rv:
+            dba_err_ct += 1
+            continue
+          s['p2p_ct'] += 1
+        # remove chunk number from this target's error list
+        s['errors'][tid].remove(chunk_ct)
+        # it this target has no more errors, delete it from errors
+        if len(s['errors'][tid]) == 0:
+          del(s['errors'][tid])
+        time.sleep(0.5)
+      if err_ct == 0:
+        s['loaded'].append(target['id'])
+      pbar.update(ct)
+    pbar.finish()
+    elapsed = time.time() - start_time
+    print "Processed %d targets. Elapsed time: %s" % (ct, secs2str(elapsed))
+    print "  Successfully loaded all PubMeds for a total %d targets" % len(s['loaded'])
+    print "  Inserted %d new pubmed rows" % len(s['pmids'])
+    print "  Inserted %d new protein2pubmed rows" % s['p2p_ct']
+    if dba_err_ct > 0:
+      print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
+  if len(s['errors']) > 0:
+    print "  %d targets remaining for next retry loop." % len(s['errors'])
 
   start_time = time.time()
   tinx_pmids = [str(pmid) for pmid in dba.get_tinx_pmids()]
@@ -164,9 +244,12 @@ def main():
     chunk_ct += 1
     r = get_pubmed(chunk)
     if not r or r.status_code != 200:
-      logger.error("Bad E-Utils response for chunk %d" % chunk_ct)
-      net_err_ct += 1
-      continue       
+      # try again...
+        r = get_pubmed(chunk)
+        if not r or r.status_code != 200:
+          logger.error("Bad E-Utils response for chunk %d" % chunk_ct)
+          net_err_ct += 1
+          continue
     soup = BeautifulSoup(r.text, "xml")
     pmas = soup.find('PubmedArticleSet')
     for pma in pmas.findAll('PubmedArticle'):
@@ -209,7 +292,7 @@ def get_pubmed(pmids):
       break
     except:
       attempts += 1
-      time.sleep(2)
+      time.sleep(1)
   if r:
     return r
   else:

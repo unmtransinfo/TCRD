@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2016-05-23 09:48:22 smathias>
+# Time-stamp: <2017-01-05 16:42:44 smathias>
 """Load data for TIN-X into TCRD from TSV files.
 
 Usage:
@@ -8,7 +8,7 @@ Usage:
 
 Options:
   -h --dbhost DBHOST   : MySQL database host name [default: localhost]
-  -n --dbname DBNAME   : MySQL database name [default: tcrd]
+  -n --dbname DBNAME   : MySQL database name [default: tcrdev]
   -l --logfile LOGF    : set log file name
   -v --loglevel LOGL   : set logging level [default: 30]
                          50: CRITICAL
@@ -37,9 +37,6 @@ import csv
 from progressbar import *
 
 PROGRAM = os.path.basename(sys.argv[0])
-DBHOST = 'localhost'
-DBPORT = 3306
-DBNAME = 'tcrdev'
 LOGFILE = "%s.log" % PROGRAM
 
 DISEASE_ONTOLOGY_OBO = '/home/app/TCRD/data/DiseaseOntology/doid.obo'

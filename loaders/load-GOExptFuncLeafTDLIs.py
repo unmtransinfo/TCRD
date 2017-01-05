@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2016-12-14 16:31:22 smathias>
+# Time-stamp: <2017-01-05 16:36:21 smathias>
 """Load Experimental MF/BP Leaf Term GOA tdl_infos into TCRD.
 
 Usage:
@@ -8,7 +8,7 @@ Usage:
 
 Options:
   -h --dbhost DBHOST   : MySQL database host name [default: localhost]
-  -n --dbname DBNAME   : MySQL database name [default: tcrd]
+  -n --dbname DBNAME   : MySQL database name [default: tcrdev]
   -l --logfile LOGF    : set log file name
   -v --loglevel LOGL   : set logging level [default: 30]
                          50: CRITICAL
@@ -37,9 +37,6 @@ import urllib
 from progressbar import *
 
 PROGRAM = os.path.basename(sys.argv[0])
-DBHOST = 'localhost'
-DBPORT = 3306
-DBNAME = 'tcrdev'
 LOGFILE = './%s.log'%PROGRAM
 # GO OBO file: http://www.geneontology.org/ontology/go.obo
 DOWNLOAD_DIR = '../data/GO/'

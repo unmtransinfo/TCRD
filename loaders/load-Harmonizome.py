@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2016-12-14 16:37:48 smathias>
+# Time-stamp: <2017-01-05 16:37:08 smathias>
 """Load Ma'ayan Lab Harmonizome data into TCRD via API.
 
 Usage:
@@ -8,7 +8,7 @@ Usage:
 
 Options:
   -h --dbhost DBHOST   : MySQL database host name [default: localhost]
-  -n --dbname DBNAME   : MySQL database name [default: tcrd]
+  -n --dbname DBNAME   : MySQL database name [default: tcrdev]
   -l --logfile LOGF    : set log file name
   -v --loglevel LOGL   : set logging level [default: 30]
                          50: CRITICAL
@@ -38,11 +38,7 @@ import logging
 from progressbar import *
 
 PROGRAM = os.path.basename(sys.argv[0])
-DBHOST = 'localhost'
-DBPORT = 3306
-DBNAME = 'tcrdga'
 LOGFILE = "%s.log" % PROGRAM
-
 HARMO_API_BASE_URL = 'http://amp.pharm.mssm.edu/Harmonizome/'
 SYM2PID_P = 'tcrd4logs/Sym2pidv4.p'
 DATASET_DONE_FILE = 'tcrd4logs/DatasetsDone.txt'
