@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-12 10:44:37 smathias>
-"""Load disease associations into TCRD from JensenLab DISEASES TSV files..
+# Time-stamp: <2017-01-11 12:48:21 smathias>
+"""Load expression data into TCRD from JensenLab TISSUES TSV files..
 
 Usage:
-    load-JensenLabDISEASES.py [--debug=<int> | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
-    load-JensenLabDISEASES.py -? | --help
+    load-JensenLabTISSUES.py [--debug=<int> | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
+    load-JensenLabTISSUES.py -? | --help
 
 Options:
   -h --dbhost DBHOST   : MySQL database host name [default: localhost]
@@ -24,7 +24,7 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2014-2016, Steve Mathias"
+__copyright__ = "Copyright 2014-2017, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
 __version__   = "2.0.0"
 
@@ -38,17 +38,17 @@ import shelve
 from progressbar import *
 
 PROGRAM = os.path.basename(sys.argv[0])
+LOGDIR = 'tcrd4logs/'
+LOGFILE = LOGDIR+'%s.log'%PROGRAM
 LOGFILE = "%s.log" % PROGRAM
-
 DOWNLOAD_DIR = '../data/JensenLab/'
 BASE_URL = 'http://download.jensenlab.org/'
-FILE_K = 'human_disease_knowledge_filtered.tsv'
-FILE_E = 'human_disease_experiments_filtered.tsv'
-FILE_T = 'human_disease_textmining_filtered.tsv'
+FILE_K = 'human_tissue_knowledge_filtered.tsv'
+FILE_E = 'human_tissue_experiments_filtered.tsv'
+FILE_T = 'human_tissue_textmining_filtered.tsv'
 SRC_FILES = [os.path.basename(FILE_K),
              os.path.basename(FILE_E),
              os.path.basename(FILE_T)]
-SHELF_FILE = 'tcrd4logs/load-JensenLab-DISEASES.db'
 
 def download():
   for f in [FILE_K, FILE_E, FILE_T]:
@@ -68,7 +68,7 @@ def load():
   if args['--logfile']:
     logfile = args['--logfile']
   else:
-    logfile = "%s.log" % PROGRAM
+    logfile = LOGFILE
   logger = logging.getLogger(__name__)
   logger.setLevel(loglevel)
   if not debug:
@@ -78,170 +78,209 @@ def load():
   fh.setFormatter(fmtr)
   logger.addHandler(fh)
 
-  # DBAdaptor uses same logger as main()
   dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
   dba = DBAdaptor(dba_params)
   dbi = dba.get_dbinfo()
   logger.info("Connected to TCRD database %s (schema ver %s; data ver %s)", args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
   if not args['--quiet']:
     print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
-    
+
   # Dataset
-  dataset_id = dba.ins_dataset( {'name': 'Jensen Lab DISEASES', 'source': 'Files %s from %s'%(", ".join(SRC_FILES), BASE_URL), 'app': PROGRAM, 'app_version': __version__, 'url': 'http://diseases.jensenlab.org/'} )
+  dataset_id = dba.ins_dataset( {'name': 'Jensen Lab TISSUES', 'source': 'Files %s from %s'%(", ".join(SRC_FILES), BASE_URL), 'app': PROGRAM, 'app_version': __version__, 'url': 'http://tissues.jensenlab.org/'} )
   if not dataset_id:
     print "WARNING: Error inserting dataset See logfile %s for details." % logfile
     sys.exit(1)
   # Provenance
-  rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'disease', 'where_clause': "dtype LIKE 'JensenLab %'"})
+  rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'expression', 'where_clause': "type LIKE 'JensenLab %'"})
   if not rv:
     print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
     sys.exit(1)
-  
-  s = shelve.open(SHELF_FILE, writeback=True)
-  s['knowledge_not_found'] = set()
-  s['experiment_not_found'] = set()
-  s['textmining_not_found'] = set()
-  
+
+  # this dict will map ENSP|sym from input files to TCRD protein_id(s)
+  # so we only have to find target(s) once for each pair.
+  # See find_pids() below
+  pmap = {}
+
   # Knowledge channel
   start_time = time.time()
-  fn = DOWNLOAD_DIR + FILE_K
+  fn = DOWNLOAD_DIR+FILE_K
   line_ct = wcl(fn)
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   if not args['--quiet']:
-    print "\nProcessing %d lines in file %s" % (line_ct, fn)
+    print "\nProcessing %d lines in input file %s" % (line_ct, fn)
   with open(fn, 'rU') as tsv:
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
     tsvreader = csv.reader(tsv, delimiter='\t')
     ct = 0
-    tmark = {}
-    dis_ct = 0
+    pmark = {}
+    exp_ct = 0
+    dbmfile = LOGDIR + 'TISSUESk_not-found.db'
+    notfnd = shelve.open(dbmfile)
     dba_err_ct = 0
     for row in tsvreader:
       ct += 1
-      ensp = row[0]
-      sym = row[1]
-      targets = dba.find_targets({'stringid': ensp})
-      if not targets:
-        targets = dba.find_targets({'sym': sym}, idg = False)
-      if not targets:
-        k = "%s|%s"%(ensp,sym)
-        s['knowledge_not_found'].add(k)
+      pbar.update(ct)
+      k = "%s|%s" % (row[0], row[1]) # ENSP|sym
+      if k in notfnd:
         continue
-      dtype = 'JensenLab Knowledge ' + row[4]
-      for t in targets:
-        tmark[t['id']] = True
-        rv = dba.ins_disease( {'target_id': t['id'], 'dtype': dtype, 'name': row[3],
-                               'doid': row[2], 'evidence': row[5], 'conf': row[6]} )
+      pids = find_pids(dba, k, pmap)
+      if not pids:
+        notfnd[k] = True
+        continue
+      etype = 'JensenLab Knowledge ' + row[4]
+      for pid in pids:
+        pmark[pid] = True
+        rv = dba.ins_expression( {'protein_id': pid, 'etype': etype, 'tissue': row[3],
+                                  'boolean_value': 1, 'oid': row[2], 'evidence': row[5], 
+                                  'conf': row[6]} )
         if not rv:
           dba_err_ct += 1
           continue
-        dis_ct += 1
-      pbar.update(ct)
+        exp_ct += 1
   pbar.finish()
   elapsed = time.time() - start_time
-  print "%d lines processed. Elapsed time: %s" % (ct, secs2str(elapsed))
-  print "  %d targets have disease association(s)" % len(tmark.keys())
-  print "  Inserted %d new target2disease rows" % dis_ct
+  print "%d rows processed. Elapsed time: %s" % (ct, secs2str(elapsed))
+  print "  %d proteins have expression(s)" % len(pmark.keys())
+  print "  Inserted %d new expression rows" % exp_ct
   if dba_err_ct > 0:
     print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
-  if len(s['knowledge_not_found']) > 0:
-    print "No target found for %d disease association rows. See shelve file: %s" % (len(s['knowledge_not_found']), SHELF_FILE)
+  if notfnd:
+    print "No target found for %d rows - keys saved to file: %s" % (len(notfnd.keys()), dbmfile)
 
   # Experiment channel
   start_time = time.time()
-  fn = DOWNLOAD_DIR + FILE_E
+  fn = DOWNLOAD_DIR+FILE_E
   line_ct = wcl(fn)
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   if not args['--quiet']:
-    print "\nProcessing %d line in file %s" % (line_ct, fn)
+    print "\nProcessing %d lines in input file %s" % (line_ct, fn)
   with open(fn, 'rU') as tsv:
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
     tsvreader = csv.reader(tsv, delimiter='\t')
     ct = 0
-    tmark = {}
-    dis_ct = 0
+    pmark = {}
+    exp_ct = 0
+    dbmfile = LOGDIR + 'TISSUESe_not-found.db'
+    notfnd = shelve.open(dbmfile)
     skip_ct = 0
     dba_err_ct = 0
     for row in tsvreader:
       ct += 1
+      pbar.update(ct)
       if row[6] == '0':
         # skip zero confidence rows
         skip_ct += 1
         continue
-      ensp = row[0]
+      # some rows look like:
+      # ['ENSP00000468389', 'PSENEN {ECO:0000313|Ensembl:ENSP00000468593}', 'BTO:0002860', 'Oral mucosa', 'HPA', 'High: 1 antibody', '1']
       sym = row[1]
-      targets = dba.find_targets({'stringid': ensp})
-      if not targets:
-        targets = dba.find_targets({'sym': sym}, idg = False)
-      if not targets:
-        k = "%s|%s"%(ensp,sym)
-        s['experiment_not_found'].add(k)
+      if ' ' in sym:
+        sym = sym.split()[0]
+      k = "%s|%s" % (row[0], sym) # ENSP|sym
+      if k in notfnd:
         continue
-      dtype = 'JensenLab Experiment ' + row[4]
-      for t in targets:
-        tmark[t['id']] = True
-        rv = dba.ins_disease( {'target_id': t['id'], 'dtype': dtype, 'name': row[3],
-                               'doid': row[2], 'evidence': row[5], 'conf': row[6]} )
+      try:
+        pids = find_pids(dba, k, pmap)
+      except ValueError:
+        print "[ERROR] Row: %s; k: %s" % (str(row), k)
+      if not pids:
+        notfnd[k] = True
+        continue
+      etype = 'JensenLab Experiment ' + row[4]
+      for pid in pids:
+        pmark[pid] = True
+        rv = dba.ins_expression( {'protein_id': pid, 'etype': etype, 'tissue': row[3],
+                                  'string_value': row[5], 'oid': row[2], 'conf': row[6]} )
         if not rv:
           dba_err_ct += 1
           continue
-        dis_ct += 1
-      pbar.update(ct)
+        exp_ct += 1
   pbar.finish()
   elapsed = time.time() - start_time
-  print "%d lines processed. Elapsed time: %s" % (ct, secs2str(elapsed))
+  print "%d rows processed. Elapsed time: %s" % (ct, secs2str(elapsed))
   print "  Skipped %d zero confidence rows" % skip_ct
-  print "  %d targets have disease association(s)" % len(tmark.keys())
-  print "  Inserted %d new target2disease rows" % dis_ct
+  print "  %d proteins have expression(s)" % len(pmark.keys())
+  print "  Inserted %d new expression rows" % exp_ct
   if dba_err_ct > 0:
     print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
-  if len(s['experiment_not_found']) > 0:
-    print "No target found for %d disease association rows. See shelve file: %s" % (len(s['experiment_not_found']), SHELF_FILE)
+  if notfnd:
+    print "No target found for %d rows. Saved to file: %s" % (len(notfnd.keys()), dbmfile)
 
   # Text Mining channel
   start_time = time.time()
-  fn = DOWNLOAD_DIR + FILE_T
+  fn = DOWNLOAD_DIR+FILE_T
   line_ct = wcl(fn)
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   if not args['--quiet']:
-    print "\nProcessing %d lines in file %s" % (line_ct, fn)
+    print "\nProcessing %d lines in input file %s" % (line_ct, fn)
   with open(fn, 'rU') as tsv:
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
     tsvreader = csv.reader(tsv, delimiter='\t')
     ct = 0
-    tmark = {}
-    dis_ct = 0
+    pmark = {}
+    exp_ct = 0
+    dbmfile = LOGDIR + 'TISSUEStm_not-found.db'
+    notfnd = shelve.open(dbmfile)
     dba_err_ct = 0
     for row in tsvreader:
       ct += 1
-      ensp = row[0]
-      sym = row[1]
-      targets = dba.find_targets({'stringid': ensp})
-      if not targets:
-        targets = dba.find_targets({'sym': sym}, idg = False)
-      if not targets:
-        k = "%s|%s"%(ensp,sym)
-        s['textmining_not_found'].add(k)
+      pbar.update(ct)
+      k = "%s|%s" % (row[0], row[1]) # ENSP|sym
+      if k in notfnd:
         continue
-      dtype = 'JensenLab Text Mining'
-      for t in targets:
-        tmark[t['id']] = True
-        rv = dba.ins_disease( {'target_id': t['id'], 'dtype': dtype, 'name': row[3],
-                               'doid': row[2], 'zscore': row[4], 'conf': row[5]} )
+      pids = find_pids(dba, k, pmap)
+      if not pids:
+        notfnd[k] = True
+        continue
+      etype = 'JensenLab Text Mining'
+      for pid in pids:
+        pmark[pid] = True
+        rv = dba.ins_expression( {'protein_id': pid, 'etype': etype, 'tissue': row[3],
+                                  'boolean_value': 1, 'oid': row[2], 'zscore': row[4], 
+                                  'conf': row[5], 'url': row[6]} )
         if not rv:
           dba_err_ct += 1
           continue
-        dis_ct += 1
-      pbar.update(ct)
+        exp_ct += 1
   pbar.finish()
   elapsed = time.time() - start_time
-  print "%d lines processed. Elapsed time: %s" % (ct, secs2str(elapsed))
-  print "  %d targets have disease association(s)" % len(tmark.keys())
-  print "  Inserted %d new target2disease rows" % dis_ct
+  print "%d rows processed. Elapsed time: %s" % (ct, secs2str(elapsed))
+  print "  %d proteins have expression(s)" % len(pmark.keys())
+  print "  Inserted %d new expression rows" % exp_ct
   if dba_err_ct > 0:
     print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
-  if len(s['textmining_not_found']) > 0:
-    print "No target found for %d disease association rows. See shelve file: %s" % (len(s['textmining_not_found']), SHELF_FILE)
+  if notfnd:
+    print "No target found for %d rows. Saved to file: %s" % (len(notfnd.keys()), dbmfile)
+
+
+def find_pids(dba, k, k2pids):
+  # k is 'ENSP|sym'
+  if k in k2pids:
+    pids = k2pids[k]
+  else:
+    pids = []
+    (ensp, sym) = k.split("|")
+    # First try to find target(s) by stringid - the most reliable way
+    targets = dba.find_targets({'stringid': ensp})
+    if targets:
+      for t in targets:
+        pids.append(t['components']['protein'][0]['id'])
+      k2pids[k] = pids
+    if not targets:
+      # Next, try by symbol
+      targets = dba.find_targets({'sym': sym})
+      if targets:
+        for t in targets:
+          pids.append(t['components']['protein'][0]['id'])
+        k2pids[k] = pids
+    if not targets:
+      # Finally, try by Ensembl xref
+      targets = dba.find_targets_by_xref({'xtype': 'Ensembl', 'value': ensp})
+      if targets:
+        for t in targets:
+          pids.append(t['components']['protein'][0]['id'])
+        k2pids[k] = pids
+  return pids
 
 def wcl(fname):
   with open(fname) as f:

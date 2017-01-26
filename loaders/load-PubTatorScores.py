@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-05 16:34:50 smathias>
+# Time-stamp: <2017-01-12 11:28:54 smathias>
 """Load PubTator PubMed Score tdl_infos in TCRD from TSV file.
 
 Usage:
@@ -72,6 +72,7 @@ def main():
   dataset_id = dba.ins_dataset( {'name': 'PubTator Text-mining Scores', 'source': 'File %s obtained directly from Lars Juhl Jensen'%os.path.basename(INFILE), 'app': PROGRAM, 'app_version': __version__, 'url': 'https://www.ncbi.nlm.nih.gov/CBBresearch/Lu/Demo/PubTator/', 'comments': 'PubTator data was subjected to the same counting scheme used to generate JensenLab PubMed Scores.'} )
   if not dataset_id:
     print "WARNING: Error inserting dataset See logfile %s for details." % logfile
+    sys.exit(1)
   # Provenance
   provs = [ {'dataset_id': dataset_id, 'table_name': 'ptscore'},
             {'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': "itype = 'PubTator PubMed Score'"} ]
@@ -171,4 +172,4 @@ def secs2str(t):
   return "%d:%02d:%02d.%03d" % reduce(lambda ll,b : divmod(ll[0],b) + ll[1:], [(t*1000,),1000,60,60])
 
 if __name__ == '__main__':
-    main()
+  main()

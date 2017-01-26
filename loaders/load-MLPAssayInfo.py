@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-05 16:39:28 smathias>
+# Time-stamp: <2017-01-13 12:12:28 smathias>
 """Load mlp_assay_infos into TCRD from CSV files.
 
 Usage:
@@ -65,7 +65,6 @@ def main():
   fh.setFormatter(fmtr)
   logger.addHandler(fh)
 
-  # DBAdaptor uses same logger as main()
   dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
   dba = DBAdaptor(dba_params)
   dbi = dba.get_dbinfo()
@@ -74,8 +73,13 @@ def main():
     print "\n%s (v%s) [%s]:" % (PROGRAM, __version__, time.strftime("%c"))
     print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
+  # Dataset
+  dataset_id = dba.ins_dataset( {'name': 'MLP Assay Info', 'source': 'IDG-KMC generated data by Jeremy Yang at UNM.', 'app': PROGRAM, 'app_version': __version__, 'comments': "This data is generated at UNM from PubChem and EUtils data. It contains details about targets studied in assays that were part of NIH's Molecular Libraries Program."} )
+  if not dataset_id:
+    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
+    sys.exit(1)
   # Provenance
-  rv = dba.ins_provenance({'dataset_id': 3, 'table_name': 'mlp_assay_info', 'comment': "This data is generated at UNM from PubChem and EUtils data. It has details about targets studied in assays that were part of NIH's Molecular Libraries Program."})
+  rv = dba.ins_provenance({'dataset_id': 3, 'table_name': 'mlp_assay_info'})
   if not rv:
     print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
     sys.exit(1)

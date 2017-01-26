@@ -910,9 +910,29 @@ mysql> delete from gene_attribute_type where id not in (select distinct gat_id f
 
 [smathias@juniper SQL]$ mysqldump ga4 > dumps/ga4-4.sql
 
+[smathias@juniper loaders]$ ./load-HGramCDFs.py --dbname ga4
 
+load-HGramCDFs.py (v2.0.0) [Thu Jan  5 14:47:10 2017]:
 
-[smathias@juniper SQL]$ mysqldump --no-create-db --no-create-info tcrd4 gene_attribute_type gene_attribute hgram_cdf > hamonizome.sql
+Connected to TCRD database ga4 (schema ver 4.0.0; data ver 4.0.0)
+
+Collecting counts for 112 gene attribute types on 20120 TCRD targets
+Progress: 100% [######################################################################] Time: 0:49:51
+
+Calculatig Gene Attribute stats. See logfile tcrd4logs/load-HGramCDFs.py.log.
+
+Loading HGram CDFs for 20120 TCRD targets
+Progress: 100% [######################################################################] Time: 1:16:21
+Processed 20120 targets.
+  Loaded 1157744 new hgram_cdf rows
+  Skipped 19142 NaN CDFs
+
+20120 targets processed.
+
+load-HGramCDFs.py: Done. Elapsed time: 2:07:12.085
+
+[smathias@juniper SQL]$ mysqldump ga4 > dumps/ga4.sql
+[smathias@juniper dumps]$ mysqldump --no-create-db ga4 gene_attribute_type gene_attribute hgram_cdf > harmonizome.sql
 
 
 [smathias@juniper loaders]$ ./load-EBI-PatentCounts.py --dbname tcrd4
@@ -935,5 +955,711 @@ Loading 1710 Patent Count tdl_infos
 load-EBI-PatentCounts.py: Done.
 
 [smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd4-18.sql
+
+
+[smathias@juniper loaders]$ ./load-PubTatorScores.py --dbname tcrd4
+
+load-PubTatorScores.py (v2.0.0) [Thu Jan  5 16:32:55 2017]:
+
+Connected to TCRD database tcrd4 (schema ver 4.0.0; data ver 4.0.0)
+
+Processing 758636 input lines in file ../data/JensenLab/pubtator_counts.tsv
+Progress: 100% [#####################################################################] Time: 0:11:00
+758636 input lines processed. Elapsed time: 0:11:00.388
+  17401 targets have PubTator PubMed Scores
+  Inserted 292637 new ptscore rows
+No target found for 81998 NCBI Gene IDs.
+
+Loading 17401 PubTator Score tdl_infos
+  17401 processed
+  Inserted 17401 new PubTator PubMed Score tdl_info rows
+
+load-PubTatorScores.py: Done.
+
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd4-19.sql
+
+
+[smathias@juniper loaders]$ ./load-DisGeNET.py --dbname tcrd4
+
+load-DisGeNET.py (v2.0.0) [Thu Jan  5 16:54:06 2017]:
+
+Connected to TCRD database tcrd4 (schema ver 4.0.0; data ver 4.0.0)
+
+Processing 32856 lines in file ../data/DisGeNET/curated_gene_disease_associations.tsv
+Progress: 100% [#####################################################################] Time: 0:01:18
+32856 lines processed. Elapsed time: 0:01:18.438
+  7822 targets have disease association(s)
+  Inserted 30785 new disease rows
+No target found for 1540 disease association rows.
+
+load-DisGeNET.py: Done.
+
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd4-20.sql
+
+
+[smathias@juniper loaders]$ ./load-GTEx.py --dbname tcrd4
+
+load-GTEx.py (v2.0.0) [Mon Jan  9 10:16:13 2017]:
+
+Connected to TCRD database tcrd4 (schema ver 4.0.0; data ver 4.0.0)
+
+Processing 37364608 records in GTEx file ../data/GTEx/gtex.rpkm.qualitative.2016-03-29.tsv
+Progress: 100% [#####################################################################] Time: 4:07:12
+Processed 37364608 GTEx records. Elapsed time: 4:07:16.917
+  Inserted 12287320 new expression rows
+  18433 targets have GTEx expression data (18505 ENSGs)
+  No target found for 37767 ENSGs.
+Dumping ENSG to protein_id mapping to tcrd4logs/GTEx-ENSG2PID.p
+
+Processing 844080 input lines in Tissue Specificity Index file ../data/GTEx/gtex.tau.2016-03-29.tsv
+Progress: 100% [#####################################################################] Time: 0:03:17
+Processed 844080 tau lines. Elapsed time: 0:03:17.853
+  18433 targets have GTEx tau
+  37767 ENSGs not in map from medians file
+  Inserted 277575 new GTEx Tissue Specificity Index tdl_info rows
+
+load-GTEx.py: Done.
+
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd4-21.sql
+
+
+[smathias@juniper loaders]$ ./load-HPM.py --dbname tcrd4
+
+load-HPM.py (v2.0.0) [Mon Jan  9 15:31:55 2017]:
+
+Connected to TCRD database tcrd4 (schema ver 4.0.0; data ver 4.0.0)
+
+Processing 901680 records in HPM file ../data/HPM/HPM.protein.qualitative.2015-09-10.tsv
+/home/app/TCRD4/loaders/TCRD.py:625: Warning: Data truncated for column 'number_value' at row 1--:--
+  curs.execute(sql, params)
+Progress: 100% [#####################################################################] Time: 0:57:29
+Processed 901680 HPM records.
+  16258 targets have HPM Protein expression data (27920 RefSeqs)
+  No target found for 2136 RefSeqs.
+  Inserted 837600 new expression rows
+Dumping ENSG to protein_id mapping to tcrd4logs/HPMP-RefSeq2PID.p
+
+Processing 30056 input lines in Tissue Specificity Index file ../data/HPM/HPM.protein.tau.2015-09-10.tsv
+/home/app/TCRD4/loaders/TCRD.py:586: Warning: Data truncated for column 'number_value' at row 1--:--
+  curs.execute(sql, (xid, itype, value))
+Progress: 100% [#####################################################################] Time: 0:00:17
+Processed 30056 tau lines.
+  16258 targets have HPM Protein tau
+  2136 RefSeqs not in map from expression file
+  Inserted 27920 new HPM Protein Tissue Specificity Index tdl_info rows
+
+Processing 518820 records in HPM file ../data/HPM/HPM.gene.qualitative.2015-09-10.tsv
+Progress: 100% [#####################################################################] Time: 0:05:28
+Processed 518820 HPM records.
+  16185 targets have HPM Gene expression data (16185 Gene Symbols)
+  No target found for 1109 Gene Symbols.
+  Inserted 485550 new expression rows
+Dumping symbol to protein_id mapping to tcrd4logs/HPMG-Sym2PID.p
+
+Processing 17294 input lines in Tissue Specificity Index file ../data/HPM/HPM.gene.tau.2015-09-10.tsv
+Progress: 100% [#####################################################################] Time: 0:00:09
+Processed 17294 tau lines.
+  16185 targets have HPM Gene tau
+  1109 Gene Symbols not in map from expression file
+  Inserted 16185 new HPM Gene Tissue Specificity Index tdl_info rows
+
+load-HPM.py: Done. Elapsed time: 1:03:25.895
+
+[smathias@juniper loaders]$ ./load-HPA.py --dbname tcrd4
+
+load-HPA.py (v2.0.0) [Mon Jan  9 15:44:13 2017]:
+
+Connected to TCRD database tcrd4 (schema ver 4.0.0; data ver 4.0.0)
+
+Processing 414090 records in HPA file ../data/HPA/HPA.Protein.expression.qualitative.2015-09-09.tsv
+Progress: 100% [#############################################################################] Time: 0:13:34
+Processed 414090 HPA records.
+  5066 targets have HPA Protein expression data (5078 ENSGss)
+  No target found for 96 ENSGs.
+  Inserted 406355 new expression rows
+Dumping ENSG to protein_id mapping to tcrd4logs/HPAP-ENSG2PID.p
+
+Processing 5168 input lines in Tissue Specificity Index file ../data/HPA/HPA.Protein.tau.2015-09-09.tsv
+Progress: 100% [#############################################################################] Time: 0:00:03
+Processed 5168 tau lines.
+  5060 targets have HPA Protein tau
+  96 ENSGs not in map from expression file
+  Inserted 5072 new HPA Protein Tissue Specificity Index tdl_info rows
+
+Processing 651006 records in HPA file ../data/HPA/HPA.RNA.expression.qualitative.2015-09-09.tsv
+Progress: 100% [#############################################################################] Time: 0:42:39
+Processed 651006 HPA records.
+  18506 targets have HPA RNA expression data (18582 ENSGs)
+  No target found for 1762 RNA Symbols.
+  Inserted 594622 new expression rows
+Dumping ENSG to protein_id mapping to HPAR-ENSG2PID.p
+
+Processing 18512 input lines in Tissue Specificity Index file ../data/HPA/HPA.RNA.tau.2015-09-09.tsv
+Progress: 100% [#############################################################################] Time: 0:00:13
+  17455 targets have HPA RNA tau
+    ?? ENSGs not in map from expression file
+    Inserted 17513 new HPA RNA Tissue Specificity Index tdl_info rows
+  
+load-HPA.py: Done.
+
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd4-22.sql
+
+
+[smathias@juniper loaders]$ ./load-ConsensusExpressions.py --dbname tcrd4
+
+load-ConsensusExpressions.py (v2.0.0) [Tue Jan 10 10:24:02 2017]:
+
+Connected to TCRD database tcrd4 (schema ver 4.0.0; data ver 4.0.0)
+
+Processiong 249 tissue mapping lines from file: ../data/Tissues_Typed_v2.1.csv
+  Got 197 tissue name mappings
+
+Calculating/Loading Consensus expressions for 20120 TCRD targets
+Progress: 100% [#####################################################################] Time: 0:28:12
+Processed 20120 targets.
+  Inserted 200294 new Consensus expression rows.
+
+load-ConsensusExpressions.py: Done. Elapsed time: 0:28:12.623
+
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd4-23.sql
+
+
+[smathias@juniper loaders]$ ./load-JensenLabTISSUES.py --dbname tcrd4
+
+load-JensenLabTISSUES.py (v2.0.0) [Tue Jan 10 11:55:37 2017]:
+
+Downloading  http://download.jensenlab.org/human_tissue_knowledge_filtered.tsv
+         to  ../data/JensenLab/human_tissue_knowledge_filtered.tsv
+Downloading  http://download.jensenlab.org/human_tissue_experiments_filtered.tsv
+         to  ../data/JensenLab/human_tissue_experiments_filtered.tsv
+Downloading  http://download.jensenlab.org/human_tissue_textmining_filtered.tsv
+         to  ../data/JensenLab/human_tissue_textmining_filtered.tsv
+
+Connected to TCRD database tcrd4 (schema ver 4.0.0; data ver 4.0.0)
+
+Processing 63874 lines in input file ../data/JensenLab/human_tissue_knowledge_filtered.tsv
+Progress: 100% [#####################################################################] Time: 0:03:23
+63874 rows processed. Elapsed time: 0:03:23.042
+  16655 proteins have expression(s)
+  Inserted 64843 new expression rows
+No target found for 69 rows - keys saved to file: tcrd4logs/TISSUESk_not-found.db
+
+Processing 1610815 lines in input file ../data/JensenLab/human_tissue_experiments_filtered.tsv
+Progress: 100% [#####################################################################] Time: 0:06:52
+1610815 rows processed. Elapsed time: 0:06:52.305
+  Skipped 1126329 zero confidence rows
+  17468 proteins have expression(s)
+  Inserted 492186 new expression rows
+No target found for 186 rows. Saved to file: tcrd4logs/TISSUESe_not-found.db
+
+Processing 58534 lines in input file ../data/JensenLab/human_tissue_textmining_filtered.tsv
+Progress: 100% [#####################################################################] Time: 0:02:23
+58534 rows processed. Elapsed time: 0:02:23.636
+  12326 proteins have expression(s)
+  Inserted 57985 new expression rows
+No target found for 927 rows. Saved to file: tcrd4logs/TISSUEStm_not-found.db
+
+load-JensenLabTISSUES.py: Done.
+
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd4-24.sql
+
+
+[smathias@juniper loaders]$ ./load-ExpressionAtlas.py --dbname tcrd4
+
+load-ExpressionAtlas.py (v2.0.0) [Tue Jan 10 16:56:10 2017]:
+
+Connected to TCRD database tcrd4 (schema ver 4.0.0; data ver 4.0.0)
+
+Processing 170839 lines in file ../data/ExpressionAtlas/disease_assoc_human_do_uniq.tsv
+Progress: 100% [#####################################################################] Time: 0:13:34
+170838 lines processed. Elapsed time: 0:13:34.370
+  16611 targets have disease association(s)
+  Inserted 157754 new disease rows
+No target found for 5912 disease association rows.
+
+load-ExpressionAtlas.py: Done.
+
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd4-25.sql
+
+
+[smathias@juniper loaders]$ ./load-DTO.py --dbname tcrd4
+
+load-DTO.py (v2.0.0) [Wed Jan 11 12:20:30 2017]:
+
+Connected to TCRD database tcrd4 (schema ver 4.0.0; data ver 4.0.0)
+
+Processing 1807 input lines in file ../data/UMiami/UniPids_DTOids2.csv
+Progress: 100% [#####################################################################] Time: 0:00:04
+1807 input lines processed. Elapsed time: 0:00:04.559
+  Updated 1801 protein.dtoid values
+1800 DTO to UniProt mappings for TCRD targets
+1795 UniProt to DTO mappings for TCRD targets
+
+Parsing DTO JSON file ../data/UMiami/dto.json
+Got 571 classifications.
+
+Loading 571 classifications
+Progress: 100% [#####################################################################] Time: 0:00:01
+571 classifications processed. Elapsed time: 0:00:01.439
+Inserted 2426 new dto rows
+
+load-DTO.py: Done.
+
+mysql> UPDATE dto SET parent = NULL WHERE name IN ('GPCR', 'Kinase', 'Nuclear hormone receptor', 'Ion channel');
+mysql> ALTER TABLE dto ADD CONSTRAINT fk_dto_dto FOREIGN KEY dto_idx1(parent) REFERENCES dto(id) ON DELETE RESTRICT;
+
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd4-26.sql
+
+
+[smathias@juniper loaders]$ ./load-BioPlexPPIs.py --dbname tcrd4
+
+load-BioPlexPPIs.py (v2.0.0) [Wed Jan 11 13:01:14 2017]:
+
+
+Connected to TCRD database tcrd4 (schema ver 4.0.0; data ver 4.0.0)
+
+Processing 56553 lines from BioPlex PPI file ../data/BioPlex/BioPlex_interactionList_v4.tsv
+Progress: 100% [#####################################################################] Time: 0:01:49
+56553 BioPlex PPI rows processed.
+  Inserted 55971 new ppi rows
+  49 proteins NOT FOUND in TCRD:
+
+Processing 4305 lines from BioPlex PPI update file ../data/BioPlex/interactome_update_Aug2016.tsv
+Progress: 100% [#####################################################################] Time: 0:01:03
+4305 BioPlex PPI rows processed.
+  Inserted 4279 new ppi rows
+  10 proteins NOT FOUND in TCRD:
+
+Processing 3160 lines from BioPlex PPI update file ../data/BioPlex/interactome_update_Dec2016.tsv
+Progress: 100% [#####################################################################] Time: 0:00:51
+3160 BioPlex PPI rows processed.
+  Inserted 3136 new ppi rows
+  9 proteins NOT FOUND in TCRD:
+
+load-BioPlexPPIs.py: Done.
+
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd4-27.sql
+
+
+
+[smathias@juniper loaders]$ ./load-PathwayCommons.py --dbname tcrd4
+
+load-PathwayCommons.py (v2.0.0) [Thu Jan 12 08:57:34 2017]:
+
+Downloading  http://www.pathwaycommons.org/archives/PC2/current/PathwayCommons.8.All.GSEA.uniprot.gmt.gz
+         to  ../data/PathwayCommons/PathwayCommons.8.All.GSEA.uniprot.gmt.gz
+Uncompressing ../data/PathwayCommons/PathwayCommons.8.All.GSEA.uniprot.gmt.gz
+
+Connected to TCRD database tcrd4 (schema ver 4.0.0; data ver 4.0.0)
+
+Processing 19222 input lines from PathwayCommons file ../data/PathwayCommons/PathwayCommons.8.All.GSEA.uniprot.gmt
+Progress: 100% [#####################################################################] Time: 0:02:55
+Processed 19222 Reactome Pathways. Elapsed time: 0:02:55.073
+  Inserted 68768 pathway rows
+  Skipped 1600 rows from 'kegg', 'wikipathways', 'reactome'
+WARNNING: 253 (of 13836) UniProt accession(s) did not find a TCRD target.
+
+load-PathwayCommons.py: Done.
+
+[smathias@juniper loaders]$ ./load-KEGGPathways.py --dbname tcrd4
+
+load-KEGGPathways.py (v2.0.0) [Thu Jan 12 09:02:50 2017]:
+
+
+Connected to TCRD database tcrd4 (schema ver 4.0.0; data ver 4.0.0)
+
+Getting KEGG pathway to gene list
+Processing mapping of 311 KEGG Pathways to genes
+Progress: 100% [#####################################################################] Time: 0:24:47
+Processed 311 KEGG Pathways. Elapsed time: 0:24:47.869
+  Inserted 27416 pathway rows
+WARNNING: 312 (of 7197) KEGG IDs did not find a TCRD target.
+
+load-KEGGPathways.py: Done.
+
+[smathias@juniper loaders]$ ./load-ReactomePathways.py --dbname tcrd4
+
+load-ReactomePathways.py (v2.0.0) [Thu Jan 12 09:42:52 2017]:
+Downloading  http://www.reactome.org/download/current/ReactomePathways.gmt.zip
+         to  ../data/Reactome/ReactomePathways.gmt.zip
+Unzipping ../data/Reactome/ReactomePathways.gmt.zip
+
+Connected to TCRD database tcrd4 (schema ver 4.0.0; data ver 4.0.0)
+
+Processing 1892 input line from Reactome Pathways file ../data/Reactome/ReactomePathways.gmt
+Progress: 100% [#####################################################################] Time: 0:37:37
+Processed 1892 Reactome Pathways. Elapsed time: 0:37:37.814
+  Inserted 105744 pathway rows
+WARNNING: 251 (of 10422) Gene symbols did not find a TCRD target.
+
+load-ReactomePathways.py: Done.
+
+[smathias@juniper loaders]$ ./load-WikiPathways.py --dbname tcrd4
+
+load-WikiPathways.py (v2.0.0) [Thu Jan 12 10:23:12 2017]:
+Downloading  http://www.pathvisio.org/data/bots/gmt/current/gmt_wp_Homo_sapiens.gmt
+         to  ../data/WikiPathways/gmt_wp_Homo_sapiens.gmt
+
+Connected to TCRD database tcrd4 (schema ver 4.0.0; data ver 4.0.0)
+
+Processing 377 input line from WikiPathways file ../data/WikiPathways/gmt_wp_Homo_sapiens.gmt
+Progress: 100% [#####################################################################] Time: 0:05:22
+Processed 377 WikiPathways. Elapsed time: 0:05:22.502
+  Inserted 15516 pathway rows
+WARNNING: 356 (of 5497) Gene IDs did not find a TCRD target.
+
+load-WikiPathways.py: Done.
+
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd4-28.sql
+
+
+[smathias@juniper loaders]$ ./load-JensenLabCOMPARTMNTS.py --dbname tcrd4
+
+load-JensenLabCOMPARTMNTS.py (v2.0.0) [Thu Jan 12 10:43:27 2017]:
+
+Downloading  http://download.jensenlab.org/human_compartment_knowledge_full.tsv
+         to  ../data/JensenLab/human_compartment_knowledge_full.tsv
+
+Downloading  http://download.jensenlab.org/human_compartment_experiments_full.tsv
+         to  ../data/JensenLab/human_compartment_experiments_full.tsv
+
+Downloading  http://download.jensenlab.org/human_compartment_textmining_full.tsv
+         to  ../data/JensenLab/human_compartment_textmining_full.tsv
+
+Downloading  http://download.jensenlab.org/human_compartment_predictions_full.tsv
+         to  ../data/JensenLab/human_compartment_predictions_full.tsv
+
+Connected to TCRD database tcrd4 (schema ver 4.0.0; data ver 4.0.0)
+
+Processing 636965 lines in input file ../data/JensenLab/human_compartment_knowledge_full.tsv
+Progress: 100% [#####################################################################] Time: 0:15:47
+636965 rows processed. Elapsed time: 0:15:47.153
+  Skipped 61325 rows with conf < 3
+  17161 proteins have compartment(s)
+  Inserted 600971 new compartment rows
+No target found for 148 rows. See file: tcrd4logs/COMPARTMENTS_NotFound.db
+
+Processing 119761 lines in input file ../data/JensenLab/human_compartment_experiments_full.tsv
+Progress: 100% [#####################################################################] Time: 0:00:02
+119761 rows processed. Elapsed time: 0:00:02.041
+  Skipped 117697 rows with conf < 3
+  197 proteins have compartment(s)
+  Inserted 2112 new compartment rows
+
+Processing 622407 lines in input file ../data/JensenLab/human_compartment_textmining_full.tsv
+Progress: 100% [#####################################################################] Time: 0:02:59
+622407 rows processed. Elapsed time: 0:02:59.881
+  Skipped 527743 rows with zscore < 3.0
+  9568 proteins have compartment(s)
+  Inserted 93820 new compartment rows
+No target found for 326 rows. Saved to file: tcrd4logs/COMPARTMENTS_NotFound.db
+
+Processing 414034 lines in input file ../data/JensenLab/human_compartment_predictions_full.tsv
+Progress: 100% [#####################################################################] Time: 0:00:56
+414034 rows processed. Elapsed time: 0:00:56.731
+  Skipped 387715 rows with conf < 3
+  10095 proteins have compartment(s)
+  Inserted 26109 new compartment rows
+No target found for 226 rows. Saved to file: tcrd4logs/COMPARTMENTS_NotFound.db
+
+load-JensenLabCOMPARTMNTS.py: Done.
+
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd4-29.sql
+
+
+TDL Infos still to be done:
+| IMPC Mice In Progress                |      395 |
+| IMPC Mice Produced                   |     5144 |
+| Is Transcription Factor              |     1529 |
+| TMHMM Prediction                     |     5312 |
+
+[smathias@juniper loaders]$ ./load-AnimalTFDB.py --dbname tcrd4
+
+load-AnimalTFDB.py (v2.0.0) [Thu Jan 12 11:19:00 2017]:
+
+Connected to TCRD database tcrd4 (schema ver 4.0.0; data ver 4.0.0)
+
+Processing 1558 lines in input file ../data/AnimalTFDB/HsTFList.txt
+
+Progress: 100% [#####################################################################] Time: 0:00:46
+
+1558 input lines processed. Elapsed time: 0:00:46.775
+  Inserted 1528 new Is Transcription Factor tdl_infos
+No target found for 30 rows:
+Tclin: 23
+Tchem: 52
+Tbio: 937
+Tdark: 516
+
+load-AnimalTFDB.py: Done.
+
+[smathias@juniper loaders]$ ./load-IMPCMiceTDLInfos.py --dbname tcrd4
+
+load-IMPCMiceTDLInfos.py (v2.0.0) [Thu Jan 12 12:58:14 2017]:
+
+Connected to TCRD database tcrd4 (schema ver 4.0.0; data ver 4.0.0)
+
+Processing 5823 lines from input file ../data/IMPC/IMPC_mice.csv
+Progress: 100% [#####################################################################] Time: 0:03:01
+5823 rows processed.
+Inserted 5540 new tdl_info rows
+5537 targets annotated with IMPC Mice TDL Infos
+No target found for 312 rows. See logfile load-IMPCMiceTDLInfos.py.log for details.
+
+load-IMPCMiceTDLInfos.py: Done. Elapsed time: 0:03:01.614
+
+[smathias@juniper loaders]$ ./load-TMHMM_Predictions.py --dbname tcrd4
+
+load-TMHMM_Predictions.py (v2.0.0) [Thu Jan 12 15:12:29 2017]:
+
+Connected to TCRD database tcrd4 (schema ver 4.0.0; data ver 4.0.0)
+Processing 20120 TCRD targets
+Progress: 100% [#####################################################################] Time: 0:33:53
+20120 targets processed.
+  Inserted 5314 new TMHMM Prediction tdl_info rows
+
+load-TMHMM_Predictions.py: Done.
+
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd4-30.sql
+
+
+[smathias@juniper loaders]$ ./load-KEGGDistances.py --dbname tcrd4
+
+load-KEGGDistances.py (v2.0.0) [Fri Jan 13 11:02:40 2017]:
+
+Connected to TCRD database tcrd4 (schema ver 4.0.0; data ver 4.0.0)
+
+Processing 292 KGML files in ../data/KEGG/pathways
+Progress: 100% [#####################################################################] Time: 0:00:02
+  Got 204569 total unique non-zero shortest path lengths
+
+Processing 204569 KEGG Distances
+Progress: 100% [#####################################################################] Time: 0:03:12
+204569 KEGG Distances processed.
+  Inserted 207221 new kegg_distance rows
+  201 KEGG IDs not found in TCRD - Skipped 7922 rows. See logfile load-KEGGDistances.py.log for details.
+
+load-KEGGDistances.py: Done. Elapsed time: 0:03:15.304
+
+[smathias@juniper loaders]$ ./load-KEGGNearestTclins.py --dbname tcrd4
+
+load-KEGGNearestTclins.py (v2.0.0) [Fri Jan 13 11:10:15 2017]:
+
+Connected to TCRD database tcrd4 (schema ver 4.0.0; data ver 4.0.0)
+
+Processing all 20120 TCRD targets
+Progress: 100% [#####################################################################] Time: 0:00:59
+
+20120 targets processed.
+  1850 non-Tclin targets have upstream Tclin targets
+    Inserted 7157 upstream kegg_nearest_tclin rows
+  1899 non-Tclin targets have downstream Tclin targets
+    Inserted 7799 upstream kegg_nearest_tclin rows
+
+load-KEGGNearestTclins.py: Done. Elapsed time: 0:00:59.983
+
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd4-31.sql
+
+
+load-TechDevInfo.py (v2.0.0) [Fri Jan 13 11:25:09 2017]:
+
+Connected to TCRD database tcrd4 (schema ver 4.0.0; data ver 4.0.0)
+
+Processing 1801 lines from input file: ../data/TechDev/TechDev1_IDG_20160610_Johnson.csv
+Progress: 100% [#####################################################################] Time: 0:00:06
+1801 lines processed.
+  Skipped 1490 lines not under investigation
+  WARNING: %d symbols did not find a target!
+    ADCK3
+    ADCK4
+    MLK4
+  Inserted 1 new techdev_contact row
+  Inserted 302 new techdev_info rows
+
+Processing 1805 lines from input file: ../data/TechDev/TechDev2_IDG_20160610_Roth.csv
+Progress: 100% [#####################################################################] Time: 0:00:06
+1805 lines processed.
+  Skipped 1486 lines not under investigation
+  Inserted 1 new techdev_contact row
+  Inserted 313 new techdev_info rows
+
+Processing 1805 lines from input file: ../data/TechDev/TechDev2_IDG_20160610_Roth.csv
+Progress: 100% [#####################################################################] Time: 0:00:06
+1805 lines processed.
+  Skipped 1486 lines not under investigation
+  Inserted 1 new techdev_contact row
+  Inserted 313 new techdev_info rows
+
+Processing 1801 lines from input file: ../data/TechDev/TechDev3_IDG_20160610_Yeh.csv
+Progress: 100% [#####################################################################] Time: 0:00:01
+1801 lines processed.
+  Skipped 1731 lines not under investigation
+  Inserted 1 new techdev_contact row
+  Inserted 64 new techdev_info rows
+
+Processing 1801 lines from input file: ../data/TechDev/TechDev4_IDG_20160610_McManus.csv
+Progress: 100% [#####################################################################] Time: 0:00:00
+1801 lines processed.
+  Skipped 1773 lines not under investigation
+  Inserted 1 new techdev_contact row
+  Inserted 22 new techdev_info rows
+
+Processing 1801 lines from input file: ../data/TechDev/TechDev5_IDG_20160610_Tomita.csv
+Progress: 100% [#####################################################################] Time: 0:00:00
+1801 lines processed.
+  Skipped 1758 lines not under investigation
+  Inserted 1 new techdev_contact row
+  Inserted 37 new techdev_info rows
+
+Processing 1801 lines from input file: ../data/TechDev/TechDev6_IDG_20160610_Finkbeiner.csv
+Progress: 100% [#####################################################################] Time: 0:00:00
+1801 lines processed.
+  Skipped 1754 lines not under investigation
+  Inserted 1 new techdev_contact row
+  Inserted 41 new techdev_info rows
+
+Processing 1801 lines from input file: ../data/TechDev/TechDev7_IDG_20160610_Qin_Baylor.csv
+Progress: 100% [#####################################################################] Time: 0:00:00
+1801 lines processed.
+  Skipped 1756 lines not under investigation
+  Inserted 1 new techdev_contact row
+  Inserted 39 new techdev_info rows
+
+load-TechDevInfo.py: Done. Elapsed time: 0:00:17.398
+
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd4-32.sql
+
+
+UPDATE protein SET sym = 'SGK223' WHERE sym = 'PRAG1';
+
+[smathias@juniper loaders]$ ./load-IDG2Flags.py --dbname tcrd4
+
+load-IDG2Flags.py (v2.0.0) [Fri Jan 13 11:57:46 2017]:
+
+Connected to TCRD database tcrd4 (schema ver 4.0.0; data ver 4.0.0)
+
+Loading IDG Phase 2 flags for 394 gene symbols
+Progress: 100% [#####################################################################] Time: 0:00:08
+394 symbols processed
+396 targets updated with IDG2 flags
+Multiple targets found for 1 symbols: OPN1MW2
+
+load-IDG2Flags.py: Done. Elapsed time: 0:00:08.352
+
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd4-33.sql
+
+
+Fix dataset/provenance stuff:
+UPDATE provenance SET dataset_id = 4 WHERE id 1;
+INSERT INTO dataset (name, source, app, app_version, comments) VALUES ('ChEMBL Info', 'IDG-KMC generated data by Steve Mathias at UNM.', 'load-ChEMBL.py', '2.0.0', 'First reference year and selective compound info are generated by loader app.');
+UPDATE provenance SET dataset_id = 43 WHERE id = 28;
+UPDATE provenance SET dataset_id = 43 WHERE id = 29;
+INSERT INTO dataset (name, source, app, app_version, comments) VALUES ('GO Experimental Leaf Term Flags', 'IDG-KMC generated data by Steve Mathias at UNM.', 'load-GOExptFuncLeafTDLIs.py', '2.0.0', 'These values are calculated by the loader app and indicate that a protein is annotated with a GO leaf term in either the Molecular Function or Biological Process branch with an experimental evidenve code.');
+UPDATE provenance SET dataset_id = 45, comment = NULL WHERE id = 31;
+INSERT INTO dataset (name, source, app, app_version, comments) VALUES ('TDLs', 'IDG-KMC generated data by Steve Mathias at UNM.', 'load-TDLs.py', '2.0.0', 'TDLs are generated by the loading app from data in TCRD.');
+UPDATE provenance SET dataset_id = 46 WHERE id = 32;
+INSERT INTO dataset (name, source, app, app_version, comments) VALUES ('MLP Assay Info', 'IDG-KMC generated data by Jeremy Yang at UNM.', 'load-MLPAssayInfos.py', '2.0.0', "This data is generated at UNM from PubChem and EUtils data. It contains details about targets studied in assays that were part of NIH's Molecular Libraries Program.");
+UPDATE provenance SET dataset_id = 48, comment = NULL  WHERE id = 40;
+INSERT INTO dataset (name, source, app, app_version, comments) VALUES ('IDG Families', 'IDG-KMC generated data by Steve Mathias at UNM and the Schurer group at UMiami.', 'load-IDGFams.py', '2.0.0', 'IDG family designations are based on manually curated lists.');
+UPDATE provenance SET dataset_id = 49 WHERE id = 41;
+INSERT INTO dataset (name, source, app, app_version, comments) VALUES ('Harmonogram CDFs', 'IDG-KMC generated data by Steve Mathias at UNM.', 'load-HGramCDFs.py', '2.0.0', 'CDFs are calculated by the loader app based on gene_attribute data in TCRD.');
+UPDATE provenance SET dataset_id = 50 WHERE id = 44;
+INSERT INTO dataset (name, source, app, app_version, comments) VALUES ('NIH Grant Info', 'IDG-KMC generated data by Steve Mathias at UNM.', 'load-GrantInfo.py', '2.0.0', "Grant info is generated from textmining results of running Lars Jensen's tagger software on project info downloaded from NIHExporter.");
+UPDATE provenance SET dataset_id = 51, comment = NULL  WHERE id = 45;
+UPDATE provenance SET dataset_id = 51, comment = NULL  WHERE id = 46;
+INSERT INTO dataset (name, source, app, app_version, comments) VALUES ('TIN-X Data', 'IDG-KMC generated data by Steve Mathias at UNM.', 'load-TIN-X.py', '2.0.0', 'Data is generated by python/TIN-X.py from mentions files http://download.jensenlab.org/human_textmining_mentions.tsv and http://download.jensenlab.org/disease_textmining_mentions.tsv.');
+UPDATE provenance SET dataset_id = 52 WHERE id = 47;
+UPDATE provenance SET dataset_id = 52 WHERE id = 48;
+UPDATE provenance SET dataset_id = 52 WHERE id = 49;
+UPDATE provenance SET dataset_id = 52 WHERE id = 50;
+INSERT INTO dataset (name, source, app, app_version, url) VALUES ('GTEx', 'IDG-KMC generated data by Oleg Ursu at UNM.', 'load-GTEx.py', '2.0.0', 'http://www.gtexportal.org/home/');
+UPDATE provenance SET dataset_id = 53 WHERE id = 60;
+UPDATE provenance SET dataset_id = 53 WHERE id = 61;
+INSERT INTO dataset (name, source, app, app_version, url) VALUES ('Human Proteome Map', 'IDG-KMC generated data by Oleg Ursu at UNM.', 'load-HPM.py', '2.0.0', 'http://www.humanproteomemap.org/');
+UPDATE provenance SET dataset_id = 54 WHERE id = 62;
+UPDATE provenance SET dataset_id = 54 WHERE id = 63;
+UPDATE provenance SET dataset_id = 54 WHERE id = 64;
+UPDATE provenance SET dataset_id = 54 WHERE id = 65;
+INSERT INTO dataset (name, source, app, app_version, url) VALUES ('Human Protein Atlas', 'IDG-KMC generated data by Oleg Ursu at UNM.', 'load-HPA.py', '2.0.0', 'http://www.proteinatlas.org/');
+UPDATE provenance SET dataset_id = 55 WHERE id = 66 ;
+UPDATE provenance SET dataset_id = 55 WHERE id = 67;
+UPDATE provenance SET dataset_id = 55 WHERE id = 68;
+UPDATE provenance SET dataset_id = 55 WHERE id = 69;
+INSERT INTO dataset (name, source, app, app_version, comments) VALUES ('Consensus Expression Values', 'IDG-KMC generated data by Steve Mathias at UNM.', 'load-ConsensusExpressions.py', '2.0.0', 'Consensus of GTEx, HPM and HPA expression values are calculated by the loader app.');
+UPDATE provenance SET dataset_id = 56 WHERE id = 70;
+INSERT INTO dataset (name, source, app, app_version, url, comments) VALUES ('Expression Atlas', 'IDG-KMC generated data by Oleg Ursu at UNM.', 'load-ExpressionAtlas.py', '2.0.0', 'https://www.ebi.ac.uk/gxa/', 'Disease associations are derived from files from https://www.ebi.ac.uk/gxa/download.html');
+UPDATE provenance SET dataset_id = 57 WHERE id = 72;
+
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd4-34.sql
+
+
+[smathias@juniper loaders]$ ./load-DiseaseOntology.py --dbname tcrd4
+
+load-DiseaseOntology.py (v2.0.0) [Thu Jan 26 09:04:56 2017]:
+
+Downloading  http://purl.obolibrary.org/obo/doid.obo
+         to  ../data/DiseaseOntology/doid.obo
+Done. Elapsed time: 0:00:03.785
+
+Connected to TCRD database tcrd4 (schema ver 4.0.0; data ver 4.0.0)
+
+Parsing Disease Ontology file ../data/DiseaseOntology/doid.obo
+Got 10195 Disease Ontology terms
+
+Loading 10195 Disease Ontology terms
+Progress: 100% [#####################################################################] Time: 0:00:07
+10195 terms processed.
+  Inserted 7805 new do rows
+  Skipped 14 non-DOID terms
+  Skipped 2376 obsolete terms
+
+load-DiseaseOntology.py: Done.
+
+[smathias@juniper SQL]$ mysql tcrd4
+mysql> \. dumps/harmonizome.sql
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/TCRDv4.0.0.sql
+
+
+mysql> DELETE FROM provenance WHERE dataset_id = 17;
+mysql> DELETE FROM xref WHERE dataset_id = 17;
+mysql> DELETE FROM dataset WHERE id = 17;
+mysql> DELETE FROM phenotype WHERE ptype = 'IMPC';
+mysql> ALTER TABLE phenotype CHANGE p_value p_value DECIMAL(20,19) DEFAULT NULL;
+
+[smathias@juniper loaders]$ ./load-IMPC-Phenotypes.py --dbname tcrd4
+
+load-IMPC-Phenotypes.py (v2.0.0) [Thu Jan 26 10:29:27 2017]:
+
+Downloading  ftp://ftp.ebi.ac.uk/pub/databases/impc/release-5.0/csv/ALL_genotype_phenotype.csv.gz
+         to  ../data/IMPC/ALL_genotype_phenotype.csv.gz
+Uncompressing ../data/IMPC/ALL_genotype_phenotype.csv.gz
+
+Connected to TCRD database tcrd4 (schema ver 4.0.0; data ver 4.0.0)
+
+Processing 23696 lines from input file ../data/IMPC/ALL_genotype_phenotype.csv
+Progress: 100% [#####################################################################] Time: 0:22:45
+23696 rows processed.
+2664 targets annotated with IMPC phenotypes
+  Inserted 15541 new phenotype rows
+  Inserted 15541 new MGI ID xref rows
+No target found for 1442 gene symbols
+
+load-IMPC-Phenotypes.py: Done.
+
+mysql> update dbinfo set schema_ver = '4.0.1', data_ver = '4.0.1';
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/TCRDv4.0.1.sql
+
+
+#
+# IDG-Family Only Version
+#
+mysql> drop database tcrdidg;
+mysql> create database tcrdidg4;
+mysql> use tcrdidg4
+mysql> \. dumps/TCRDv4.0.1.sql
+mysql> delete from target where idgfam is NULL;
+mysql> delete from protein where id not in (select distinct protein_id from t2tc);
+mysql> update dbinfo set dbname = 'tcrdidg';
+[smathias@juniper SQL]$ mysqldump tcrdidg > dumps/tcrdidg_v4.0.1.sql
 
 

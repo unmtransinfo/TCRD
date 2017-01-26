@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-05 16:42:59 smathias>
+# Time-stamp: <2017-01-13 11:45:47 smathias>
 """Load protein data from UniProt.org into TCRD via the web.
 
 Usage:
@@ -82,7 +82,7 @@ def main():
     print "WARNING: Error inserting dataset. See logfile %s for details." % logfile
     sys.exit(1)
   # Provenance
-  provs = [ {'dataset_id': 1, 'table_name': 'target', 'column_name': 'ttype'},
+  provs = [ {'dataset_id': dataset_id, 'table_name': 'target', 'column_name': 'ttype'},
             {'dataset_id': dataset_id, 'table_name': 'target', 'column_name': 'name'},
             {'dataset_id': dataset_id, 'table_name': 'protein'},
             {'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': "itype = 'UniProt Function'"},

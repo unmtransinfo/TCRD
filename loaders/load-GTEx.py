@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-04 12:32:56 smathias>
+# Time-stamp: <2017-01-13 12:42:01 smathias>
 """
 Load GTEx expression data into TCRD from tab-delimited files.
 
@@ -38,8 +38,10 @@ import logging
 from progressbar import *
 
 PROGRAM = os.path.basename(sys.argv[0])
-GTEX_QUAL_FILE = '/data/GTEx/gtex.rpkm.qualitative.2016-03-29.tsv'
-GTEX_TAU_FILE = '/data/GTEx/gtex.tau.2016-03-29.tsv'
+LOGDIR = 'tcrd4logs/'
+LOGFILE = LOGDIR + '%s.log'%PROGRAM
+GTEX_QUAL_FILE = '../data/GTEx/gtex.rpkm.qualitative.2016-03-29.tsv'
+GTEX_TAU_FILE = '../data/GTEx/gtex.tau.2016-03-29.tsv'
 
 def load():
   args = docopt(__doc__, version=__version__)
@@ -60,7 +62,6 @@ def load():
   fh.setFormatter(fmtr)
   logger.addHandler(fh)
   
-  # DBAdaptor uses same logger as main()
   dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
   dba = DBAdaptor(dba_params)
   dbi = dba.get_dbinfo()
@@ -68,9 +69,14 @@ def load():
   if not args['--quiet']:
     print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
+  # Dataset
+  dataset_id = dba.ins_dataset( {'name': 'GTEx', 'source': 'IDG-KMC generated data by Oleg Ursu at UNM.', 'app': PROGRAM, 'app_version': __version__, 'url': 'http://www.gtexportal.org/home/'} )
+  if not dataset_id:
+    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
+    sys.exit(1)
   # Provenance
-  provs = [ {'dataset_id': 2, 'table_name': 'expression', 'where_clause': "etype = 'GTEx'", 'comment': 'Log Median and qualitative expression values are derived from files from http://www.gtexportal.org/home/datasets2'},
-            {'dataset_id': 2, 'table_name': 'tdl_info', 'where_clause': "itype = 'GTEx Tissue Specificity Index'", 'comment': 'Tissue Specificity scores are derived from files from http://www.gtexportal.org/home/datasets2. The score is the Tau value as descibed in Yanai, I. et. al., Bioinformatics 21(5): 650-659 (2005)'} ]
+  provs = [ {'dataset_id': dataset_id, 'table_name': 'expression', 'where_clause': "etype = 'GTEx'", 'comment': 'Log Median and qualitative expression values are derived from files from http://www.gtexportal.org/home/datasets2'},
+            {'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': "itype = 'GTEx Tissue Specificity Index'", 'comment': 'Tissue Specificity scores are derived from files from http://www.gtexportal.org/home/datasets2. The score is the Tau value as descibed in Yanai, I. et. al., Bioinformatics 21(5): 650-659 (2005)'} ]
   for prov in provs:
     rv = dba.ins_provenance(prov)
     if not rv:
@@ -83,7 +89,7 @@ def load():
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   line_ct = wcl(GTEX_QUAL_FILE)
   line_ct -= 1 # file has header
-  if not quiet:
+  if not args['--quiet']:
     print "\nProcessing %d records in GTEx file %s" % (line_ct, GTEX_QUAL_FILE)
   pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
   notfnd = {}
@@ -138,7 +144,7 @@ def load():
     print "  No target found for %d ENSGs." % len(notfnd.keys())
   if dba_err_ct > 0:
     print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
-  pfile = 'tcrd4logs/GTEx-ENSG2PID.p'
+  pfile = LOGDIR + 'GTEx-ENSG2PID.p'
   print "Dumping ENSG to protein_id mapping to %s" % pfile
   pickle.dump(ensg2pid, open(pfile, 'wb'))
   
@@ -146,7 +152,7 @@ def load():
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   line_ct = wcl(GTEX_TAU_FILE)
   line_ct -= 1 # file has header
-  if not quiet:
+  if not args['--quiet']:
     print "\nProcessing %d input lines in Tissue Specificity Index file %s" % (line_ct, GTEX_TAU_FILE)
   pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
   with open(GTEX_TAU_FILE, 'rU') as tsv:
@@ -182,8 +188,6 @@ def load():
   print "  Inserted %d new GTEx Tissue Specificity Index tdl_info rows" % ti_ct
   if dba_err_ct > 0:
     print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
-
-  print "\n%s: Done.\n" % PROGRAM
 
 
 def wcl(fname):

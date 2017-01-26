@@ -378,8 +378,7 @@ CREATE TABLE `dto` (
   `name` text COLLATE utf8_unicode_ci NOT NULL,
   `parent` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `dto_idx1` (`parent`),
-  CONSTRAINT `fk_dto_dto` FOREIGN KEY (`parent`) REFERENCES `dto` (`id`)
+  KEY `dto_idx1` (`parent`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

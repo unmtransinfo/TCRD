@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-05 16:38:15 smathias>
+# Time-stamp: <2017-01-26 11:12:24 smathias>
 """Load IMPC phenotype data into TCRD from CSV file.
 
 Usage:
@@ -26,22 +26,44 @@ __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
 __copyright__ = "Copyright 2015-2016, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.0.0"
+__version__   = "2.1.0"
 
 import os,sys,time
 from docopt import docopt
 from TCRD import DBAdaptor
 import logging
+import urllib
+import gzip
 import csv
 from progressbar import *
 
 PROGRAM = os.path.basename(sys.argv[0])
 LOGFILE = "%s.log" % PROGRAM
 # Get from ftp://ftp.ebi.ac.uk/pub/databases/impc/release-*.*/csv/
-IMPC_FILE = '/home/app/TCRD/data/IMPC/ALL_genotype_phenotype.csv'
-IMPC_VER = '4.3'
+# ftp://ftp.ebi.ac.uk/pub/databases/impc/release-5.0/csv/ALL_genotype_phenotype.csv.gz
+IMPC_VER = '5.0'
+DOWNLOAD_DIR = '../data/IMPC/'
+BASE_URL = 'ftp://ftp.ebi.ac.uk/pub/databases/impc/release-%s/csv/'%IMPC_VER
+IMPC_FILE = 'ALL_genotype_phenotype.csv.gz'
 
-def main():
+def download():
+  gzfn = DOWNLOAD_DIR + IMPC_FILE
+  if os.path.exists(gzfn):
+    os.remove(gzfn)
+  fn = gzfn.replace('.gz', '')
+  if os.path.exists(fn):
+    os.remove(fn)
+  print "Downloading ", BASE_URL + IMPC_FILE
+  print "         to ", DOWNLOAD_DIR + IMPC_FILE
+  urllib.urlretrieve(BASE_URL + IMPC_FILE, DOWNLOAD_DIR + IMPC_FILE)
+  print "Uncompressing", gzfn
+  ifh = gzip.open(gzfn, 'rb')
+  ofh = open(fn, 'wb')
+  ofh.write( ifh.read() )
+  ifh.close()
+  ofh.close()
+
+def load():
   args = docopt(__doc__, version=__version__)
   debug = int(args['--debug'])
   if debug:
@@ -51,7 +73,7 @@ def main():
   if args['--logfile']:
     logfile = args['--logfile']
   else:
-    logfile = "%s.log" % PROGRAM
+    logfile = LOGFILE
   logger = logging.getLogger(__name__)
   logger.setLevel(loglevel)
   if not debug:
@@ -67,28 +89,29 @@ def main():
   dbi = dba.get_dbinfo()
   logger.info("Connected to TCRD database %s (schema ver %s; data ver %s)", args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
   if not args['--quiet']:
-    print "\n%s (v%s) [%s]:" % (PROGRAM, __version__, time.strftime("%c"))
     print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
-  # Dataset
-  dataset_id = dba.ins_dataset( {'name': 'IMPC Phenotypes', 'source': "File %s from ftp://ftp.ebi.ac.uk/pub/databases/impc/release-%s/csv/"%(os.path.basename(IMPC_FILE), IMPC_VER), 'app': PROGRAM, 'app_version': __version__, 'url': 'ftp://ftp.ebi.ac.uk/pub/databases/impc/release-%s/csv/README'%IMPC_VER} )
-  if not dataset_id:
-    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
-    sys.exit(1)
-  # Provenance
-  rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'phenotype', 'where_clause': "ptype = 'IMPC'"})
-  if not rv:
-    print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
-    sys.exit(1)
+  # # Dataset
+  # dataset_id = dba.ins_dataset( {'name': 'IMPC Phenotypes', 'source': "File %s from %s"%(IMPC_FILE, BASE_URL), 'app': PROGRAM, 'app_version': __version__, 'url': '%sREADME'%BASE_URL} )
+  # if not dataset_id:
+  #   print "WARNING: Error inserting dataset See logfile %s for details." % logfile
+  #   sys.exit(1)
+  # # Provenance
+  # rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'phenotype', 'where_clause': "ptype = 'IMPC'"})
+  # if not rv:
+  #   print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
+  #   sys.exit(1)
+  dataset_id = 60
   
   start_time = time.time()
-  line_ct = wcl(IMPC_FILE)
+  infile = (DOWNLOAD_DIR + IMPC_FILE).replace('.gz', '')
+  line_ct = wcl(infile)
   line_ct -= 1 # file has header row
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
 
   if not args['--quiet']:
-    print "\nProcessing %d lines from input file %s" % (line_ct, IMPC_FILE)
-  with open(IMPC_FILE, 'rU') as csvfile:
+    print "\nProcessing %d lines from input file %s" % (line_ct, infile)
+  with open(infile, 'rU') as csvfile:
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
     csvreader = csv.reader(csvfile)
     csvreader.next() # skip header line
@@ -120,7 +143,15 @@ def main():
           mgixr_ct += 1
         else:
           dba_err_ct += 1
-        rv = dba.ins_phenotype({'protein_id': pid, 'ptype': 'IMPC', 'top_level_term_id': row[19], 'top_level_term_name': row[20], 'term_id': row[21], 'term_name': row[22], 'p_value': row[23], 'percentage_change': row[24], 'effect_size': row[25], 'statistical_method': row[26]})
+        if row[23] and row[23] != '':
+          try:
+            pval = "%.19f"%float(row[23])
+          except ValueError:
+            print "row: %s" % str(row)
+            print "pval: %s" % row[23]
+        else:
+          pval = None
+        rv = dba.ins_phenotype({'protein_id': pid, 'ptype': 'IMPC', 'top_level_term_id': row[19], 'top_level_term_name': row[20], 'term_id': row[21], 'term_name': row[22], 'p_value': pval, 'percentage_change': row[24], 'effect_size': row[25], 'statistical_method': row[26]})
         if rv:
           pt_ct += 1
           ptmark[k] = True
@@ -140,9 +171,6 @@ def main():
     #for row in notfnd:
     #  print row[0],row[1]
 
-  print "\n%s: Done." % PROGRAM
-  print
-
 
 def wcl(fname):
   with open(fname) as f:
@@ -154,4 +182,7 @@ def secs2str(t):
   return "%d:%02d:%02d.%03d" % reduce(lambda ll,b : divmod(ll[0],b) + ll[1:], [(t*1000,),1000,60,60])
 
 if __name__ == '__main__':
-    main()
+  print "\n%s (v%s) [%s]:\n" % (PROGRAM, __version__, time.strftime("%c"))
+  #download()
+  load()
+  print "\n%s: Done.\n" % PROGRAM

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-05 16:37:31 smathias>
+# Time-stamp: <2017-01-13 12:21:19 smathias>
 """Calculate CDFs for Harmonizome data and load into TCRD.
 
 Usage:
@@ -58,7 +58,6 @@ def main():
   fh.setFormatter(fmtr)
   logger.addHandler(fh)
 
-  # DBAdaptor uses same logger as main()
   dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
   dba = DBAdaptor(dba_params)
   dbi = dba.get_dbinfo()
@@ -67,12 +66,18 @@ def main():
     print "\n%s (v%s) [%s]:" % (PROGRAM, __version__, time.strftime("%c"))
     print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
+  # Dataset
+  dataset_id = dba.ins_dataset( {'name': 'Harmonogram CDFs', 'source': 'IDG-KMC generated data by Steve Mathias at UNM.', 'app': PROGRAM, 'app_version': __version__, 'comments': 'CDFs are calculated by the loader app based on gene_attribute data in TCRD.'} )
+  if not dataset_id:
+    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
+    sys.exit(1)
   # Provenance
   rv = dba.ins_provenance({'dataset_id': 1, 'table_name': 'hgram_cdf'})
   if not rv:
     print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
     sys.exit(1)
 
+  start_time = time.time()
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
 
   # Create a dictionary of gene_attribute_type.name => [] pairs
@@ -99,7 +104,7 @@ def main():
       #p2cts[pid] = attr_count
   pbar.finish()
 
-  print "Calculatig Gene Attribute stats. See logfile %s." % logfile
+  print "\nCalculatig Gene Attribute stats. See logfile %s." % logfile
   logger.info("Calculatig Gene Attribute stats:")
   for type,l in counts.items():
     if len(l) == 0:
@@ -110,7 +115,6 @@ def main():
     stats[type]['mean'] = npa.mean()
     stats[type]['std'] = npa.std()
 
-  start_time = time.time()
   print "\nLoading HGram CDFs for %d TCRD targets" % tct
   pbar = ProgressBar(widgets=pbar_widgets, maxval=tct).start()
   ct = 0

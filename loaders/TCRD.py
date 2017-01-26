@@ -4,7 +4,7 @@
 
   Steve Mathias
   smathias@salud.unm.edu
-  Time-stamp: <2016-11-28 13:11:58 smathias>
+  Time-stamp: <2017-01-17 14:33:25 smathias>
 '''
 from __future__ import print_function
 import sys
@@ -1324,34 +1324,6 @@ class DBAdaptor:
         return False
     return True
 
-  def ins_kegg_distance(self, init, commit=True):
-    if 'pid1' in init and 'pid2' in init and 'distance' in init:
-      params = [init['pid1'], init['pid2'], init['distance']]
-      cols = ['pid1', 'pid2', 'distance']
-      vals = ['%s','%s','%s']
-    else:
-      self.warning("Invalid parameters sent to ins_kegg_distance(): ", init)
-      return False
-    # for optcol in ['protein1_str', 'protein2_str']:
-    #   if optcol in init:
-    #     cols.append(optcol)
-    #     vals.append('%s')
-    #     params.append(init[optcol])
-    sql = "INSERT INTO kegg_distance (%s) VALUES (%s)" % (','.join(cols), ','.join(vals))
-    self._logger.debug("SQLpat: %s"%sql)
-    self._logger.debug("SQLparams: %s"%','.join([str(p) for p in params]))
-    with closing(self._conn.cursor()) as curs:
-      try:
-        curs.execute(sql, tuple(params))
-        if commit: self._conn.commit()
-      except mysql.Error, e:
-        self._conn.rollback()
-        self._logger.error("MySQL Error in ins_kegg_distance(): %s"%str(e))
-        self._logger.error("SQLpat: %s"%sql)
-        self._logger.error("SQLparams: %s"%','.join([str(p) for p in params]))
-        return False
-    return True
-
   def ins_compartment(self, init, commit=True):
     if 'ctype' not in init :
       self.warning("Invalid parameters sent to ins_compartment(): ", init)
@@ -1506,6 +1478,64 @@ class DBAdaptor:
       except mysql.Error, e:
         self._conn.rollback()
         self._logger.error("MySQL commit error in ins_techdev_info(): %s"%str(e))
+        return False
+    
+    return True
+
+  def ins_kegg_distance(self, init, commit=True):
+    if 'pid1' in init and 'pid2' in init and 'distance' in init:
+      params = [init['pid1'], init['pid2'], init['distance']]
+      cols = ['pid1', 'pid2', 'distance']
+      vals = ['%s','%s','%s']
+    else:
+      self.warning("Invalid parameters sent to ins_kegg_distance(): ", init)
+      return False
+    # for optcol in ['protein1_str', 'protein2_str']:
+    #   if optcol in init:
+    #     cols.append(optcol)
+    #     vals.append('%s')
+    #     params.append(init[optcol])
+    sql = "INSERT INTO kegg_distance (%s) VALUES (%s)" % (','.join(cols), ','.join(vals))
+    self._logger.debug("SQLpat: %s"%sql)
+    self._logger.debug("SQLparams: %s"%','.join([str(p) for p in params]))
+    with closing(self._conn.cursor()) as curs:
+      try:
+        curs.execute(sql, tuple(params))
+        if commit: self._conn.commit()
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL Error in ins_kegg_distance(): %s"%str(e))
+        self._logger.error("SQLpat: %s"%sql)
+        self._logger.error("SQLparams: %s"%','.join([str(p) for p in params]))
+        return False
+    return True
+
+  def ins_kegg_nearest_tclin(self, init, commit=True):
+    if 'protein_id' in init and 'tclin_id' in init and 'direction' in init and 'distance' in init:
+      cols = ['protein_id', 'tclin_id', 'direction', 'distance']
+      vals = ['%s','%s','%s','%s']
+      params = [init['protein_id'], init['tclin_id'], init['direction'], init['distance']]
+    else:
+      self.warning("Invalid parameters sent to ins_kegg_nearest_tclin(): ", init)
+      return False
+    sql = "INSERT INTO kegg_nearest_tclin (%s) VALUES (%s)" % (','.join(cols), ','.join(vals))
+    self._logger.debug("SQLpat: %s"%sql)
+    self._logger.debug("SQLparams: %s"%(", ".join([str(p) for p in params])))
+    with closing(self._conn.cursor()) as curs:
+      try:
+        curs.execute(sql, params)
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL Error in ins_do(): %s"%str(e))
+        self._logger.error("SQLpat: %s"%sql)
+        self._logger.error("SQLparams: %s"%','.join([str(p) for p in params]))
+        return False
+    if commit:
+      try:
+        self._conn.commit()
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL commit error in ins_do(): %s"%str(e))
         return False
     
     return True
@@ -1892,6 +1922,12 @@ class DBAdaptor:
           for gact in curs:
             p['gene_attribute_counts'][gact['type']] = gact['attr_count']
           if not p['gene_attribute_counts']: del(p['gene_attribute_counts'])
+        # KEGG Nearest Tclin(s)
+        p['kegg_nearest_tclins'] = []
+        curs.execute("SELECT p.name, p.geneid, p.uniprot, p.description, n.* FROM protein p, kegg_nearest_tclin n WHERE p.id = tclin_id AND n.protein_id = %s", (id,))
+        for knt in curs:
+          p['kegg_nearest_tclins'].append(knt)
+        if not p['kegg_nearest_tclins']: del(p['kegg_nearest_tclins'])
         
     return p
 
@@ -2596,6 +2632,91 @@ class DBAdaptor:
         return False
 
     return traits
+
+  def get_nearest_kegg_tclins(self, pid, dir):
+    if not pid or not dir:
+      self.warning("Invalid parameters sent to get_nearest_kegg_tclin(): ", init)
+      return False
+    results = []
+    # Downstream
+    if dir == 'downstream':
+      min_dist = None
+      sql = "SELECT MIN(kd.distance) AS min_distance FROM target t, t2tc, protein p, kegg_distance kd WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = kd.pid2 AND kd.pid1 = %s AND t.tdl = 'Tclin'"
+      with closing(self._conn.cursor()) as curs:
+        try:
+          curs.execute(sql, (pid,))
+          min_dist = curs.fetchone()[0]
+        except mysql.Error, e:
+          self._conn.rollback()
+          msg = "MySQL Error: %s" % str(e)
+          self._logger.error(msg)
+          self._logger.debug("SQLpat: %s"%sql)
+          self._logger.debug("SQLparams: %d"%pid)
+          return False
+        if not min_dist:
+          return None
+      sql = "SELECT p.id AS protein_id, kd.distance FROM target t, t2tc, protein p, kegg_distance kd WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = kd.pid2 AND kd.pid1 = %s AND kd.distance = %s AND t.tdl = 'Tclin'"
+      with closing(self._conn.cursor(mysql.cursors.DictCursor)) as curs:
+        try:
+          curs.execute(sql, (pid, min_dist))
+          for d in curs:
+            results.append(d)
+        except mysql.Error, e:
+          self._conn.rollback()
+          msg = "MySQL Error: %s" % str(e)
+          self._logger.error(msg)
+          self._logger.debug("SQLpat: %s"%sql)
+          self._logger.debug("SQLparams: %d, %d"%(pid, min_dist))
+          return False
+    # Upstream
+    elif dir == 'upstream':
+      min_dist = None
+      sql = "SELECT MIN(kd.distance) AS min_distance FROM target t, t2tc, protein p, kegg_distance kd WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = kd.pid1 AND kd.pid2 = %s AND t.tdl = 'Tclin'"
+      with closing(self._conn.cursor()) as curs:
+        try:
+          curs.execute(sql, (pid,))
+          min_dist = curs.fetchone()[0]
+        except mysql.Error, e:
+          self._conn.rollback()
+          msg = "MySQL Error: %s" % str(e)
+          self._logger.error(msg)
+          self._logger.debug("SQLpat: %s"%sql)
+          self._logger.debug("SQLparams: %d"%pid)
+          return False
+      if not min_dist:
+        return None
+      sql = "SELECT p.id AS protein_id, kd.distance FROM target t, t2tc, protein p, kegg_distance kd WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = kd.pid1 AND kd.pid2 = %s AND kd.distance = %s AND t.tdl = 'Tclin'"
+      with closing(self._conn.cursor(mysql.cursors.DictCursor)) as curs:
+        try:
+          curs.execute(sql, (pid, min_dist))
+          for d in curs:
+            results.append(d)
+        except mysql.Error, e:
+          self._conn.rollback()
+          msg = "MySQL Error: %s" % str(e)
+          self._logger.error(msg)
+          self._logger.debug("SQLpat: %s"%sql)
+          self._logger.debug("SQLparams: %d, %d"%(pid, min_dist))
+          return False
+    else:
+      self.warning("Invalid parameters sent to get_nearest_kegg_tclin(): direction must be 'upstream' or 'downstream'")
+      return False
+    
+    return results
+
+  def get_common_kegg_pathway(self, pid1, pid2):
+    pwname = ''
+    sql = "SELECT name FROM pathway WHERE pwtype = 'KEGG' and protein_id = %s and name in (select name from pathway where pwtype = 'KEGG' and protein_id = %s)"
+    with closing(self._conn.cursor()) as curs:
+      try:
+        curs.execute(sql, (pid1, pid2))
+        pwname = curs.fetchone()[0]
+      except mysql.Error, e:
+        msg = "MySQL Error: %s" % str(e)
+        #self.error(msg)
+        self._logger.error(msg)
+        return False
+    return pwname
 
   #
   # Update Methods

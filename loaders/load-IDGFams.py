@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-05 16:37:51 smathias>
+# Time-stamp: <2017-01-13 12:18:17 smathias>
 """Load IDG Family designations into TCRD from pickle file.
 
 Usage:
@@ -43,12 +43,17 @@ def main():
     print "\n%s (v%s) [%s]:" % (PROGRAM, __version__, time.strftime("%c"))
     print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
+  # Dataset
+  dataset_id = dba.ins_dataset( {'name': 'IDG Families', 'source': 'IDG-KMC generated data by Steve Mathias at UNM and the Schurer group at UMiami.', 'app': PROGRAM, 'app_version': __version__, 'comments': 'IDG family designations are based on manually curated lists.'} )
+  if not dataset_id:
+    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
+    sys.exit(1)
   # Provenance
-  rv = dba.ins_provenance({'dataset_id': 1, 'table_name': 'target', 'column_name': 'idgfam'})
+  rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'target', 'column_name': 'idgfam'})
   if not rv:
     print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
     sys.exit(1)
-      
+  
   start_time = time.time()
   idgs = pickle.load( open(args['--infile'], 'rb') )
   uct = sum([len(idgs[k]) for k in idgs.keys()])

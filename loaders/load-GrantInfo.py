@@ -73,9 +73,14 @@ def main():
     print "\nLoading project info from pickle file %s" % PROJECTS_P
     projects = pickle.load( open(PROJECTS_P, 'rb') )
 
+  # Dataset
+  dataset_id = dba.ins_dataset( {'name': 'NIH Grant Info', 'source': 'IDG-KMC generated data by Steve Mathias at UNM.', 'app': PROGRAM, 'app_version': __version__, 'comments': "Grant info is generated from textmining results of running Lars Jensen's tagger software on project info downloaded from NIHExporter."} )
+  if not dataset_id:
+    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
+    sys.exit(1)
   # Provenance
-  provs = [ {'dataset_id': 1, 'table_name': 'target2grant', 'comment': "Grant info is generated from textmining results of running Lars Jensen's tagger software on project info downloaded from NIHExporter."},
-            {'dataset_id': 1, 'table_name': 'tdl_info', 'where_clause': 'itype is "NIHRePORTER 2000-2015 R01 Count"', 'comment': "These values are generated from textmining results of running Lars Jensen's tagger software on project info downloaded from NIHExporter."} ]
+  provs = [ {'dataset_id': dataset_id, 'table_name': 'target2grant'},
+            {'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': 'itype is "NIHRePORTER 2000-2015 R01 Count"'} ]
   for prov in provs:
     rv = dba.ins_provenance(prov)
     if not rv:
