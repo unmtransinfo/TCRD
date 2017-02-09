@@ -4,10 +4,10 @@ TCRD is the central resource behind the [Illuminating the Druggable Genome Knowl
 The code in this repository is for people wanting to rebuild a version of TCRD from scratch. If you just want to install TCRD locally, MySQL dumps of recent versions are available for download [here](http://juniper.health.unm.edu/tcrd/download/).
 
 ## Overview of the Build Process
-Targets in TCRD correspond to reviewed human entries in UniProt. There are 50+ datasets in TCRD and one loader script in the loaders directory to load each. Depending on the dataset, data is loaded via web APIs and or files in various formats. Regarding the latter, some loaders take care of downloading the file(s) the need; in other cases the user is required to download the file(s) manually. Additionally, some datasets require pre-processing steps before loading and a few also require manual steps be perforemd after the load is completed.
+Targets in TCRD correspond to reviewed human entries in UniProt. There are 50+ datasets in TCRD and one loader script in the loaders directory to load each. Depending on the dataset, data is loaded via web APIs and/or files in various formats. Regarding the latter, some loaders take care of downloading the file(s) they need; others require the user to download or obtain the file(s) manually before running. Additionally, some datasets require pre-processing steps before loading and a few also require manual steps be perforemd after the load is completed.
 
 ### doc/TCRD_Build_Notes.html
-This file has information for each dataset on the steps required and also an estimate of the time required. Somne loadersw run in a few minutes. others require days.
+This file has information for each dataset on the steps required and also an estimate of the time required. Some loaders run in a few minutes, others require days.
 
 ### doc/README_v4.txt
 This file contains all command lines, and most of their output, run to build TCRD v4. There are notes in this file that should help with the pre- and post- processing required for some of the datasets.
