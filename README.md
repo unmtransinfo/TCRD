@@ -26,6 +26,7 @@ I am using MySQL Community Server 5.6.24. But anything version 5.5 or later woul
 Python 2.7 and many Python modules not included in the standard library: BioPython, BeautifulSoup, docopt, goatools, httplib2, progressbar, urllib, urllib2, cPickle, cStringIO, csv, KEGG_Graph, MySQLdb, networkx, numpy, requests, and shelve.
 
 ### Lars Jensen's Tagger
+This is available [here](https://bitbucket.org/larsjuhljensen/tagger).
 
 ### R
 R and the R packages dplyr, stringr, tidyr, data.table, and Hmisc.
