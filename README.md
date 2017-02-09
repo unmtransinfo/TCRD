@@ -1,4 +1,4 @@
-# TCRD
+
 TCRD is the central resource behind the [Illuminating the Druggable Genome Knowledge Management Center (IDG-KMC)](http://targetcentral.ws/KMC_TiD/). TCRD contains information about human targets, with special emphasis on four families of targets that are central to the NIH IDG initiative: GPCRs, kinases, ion channels and nuclear receptors. Olfactory GPCRs (oGPCRs) are treated as a separate family. The official public portal for IDG-KMC is: [Pharos](https://pharos.nih.gov/).
 
 The code in this repository is for people wanting to rebuild a version of TCRD from scratch. If you just want to install TCRD locally, MySQL dumps of recent versions are available for download [here](http://juniper.health.unm.edu/tcrd/download/).
