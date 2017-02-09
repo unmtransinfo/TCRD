@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-05 16:39:17 smathias>
+# Time-stamp: <2017-02-07 11:10:47 smathias>
 """Load CMap Landmark Gene ID xrefs into TCRD from CSV file.
 
 Usage:
@@ -62,7 +62,7 @@ def main():
   fh.setFormatter(fmtr)
   logger.addHandler(fh)
 
-  # DBAdaptor uses same logger as main()
+# DBAdaptor uses same logger as main()
   dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
   dba = DBAdaptor(dba_params)
   dbi = dba.get_dbinfo()

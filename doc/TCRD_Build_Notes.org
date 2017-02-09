@@ -1,0 +1,252 @@
+#+OPTIONS: toc:nil
+
+* UniProt
+** *Download Required:* No
+** *Pre-processing required:* None
+** *Manual post-processing:* Manual database update of gene ids for GPR89A/B
+** *Approx. total time*: 16 hours
+* IDG Family Assignments
+** *Download Required:* No
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. total time*: < 5 minutes
+* NCBI GI Numbers
+** *Download Required:* No, done by loader
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. total time*: 4 minutes
+* HGNC
+** *Download Required:* No
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. total time*: 17 hours
+* STRING IDs
+** *Download Required:* Yes
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. total time*: 35 minutes
+* Antibodypedia
+** *Download Required:* No
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. total time*: 1.5 days
+* NCBI Gene
+** *Download Required:* No
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. total time*: 1.3 days
+* JensenLab PubMed Scores
+** *Download Required:* No, done by loader
+** *Pre-processing required:* None
+** *Manual post-processing:* Yes. Generate and run SQL to set missing values to zero.
+** *Approx. total time*: 10 minutes
+* Drug Central
+** *Download Required:* Yes. This data must currently be obtained directly from Oleg.
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. total time*: 5 minutes
+* ChEMBL 
+** *Download Required:* Yes.
+** *Pre-processing required:* Yes. ChEMBL MySQL database must be built from download.
+** *Manual post-processing:* None
+** *Approx. total time*: 15 minutes
+* OMIM
+** *Download Required:* Yes. Requires registration to get user-specific download links.
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. total time*: 5 minutes
+* Experimental MF/BP Leaf Term GOA
+** *Download Required:* No, done by loader
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. total time*: 30 minutes
+
+* TDLs
+** *Download Required:* No
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. total time*: 
+* EBI Patent Counts
+** *Download Required:* Data obtained directly from EBI.
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. total time*: < 5 minutes
+* PubTator Scores
+** *Download Required:* Yes
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. total time*: 40 minutes
+
+* GWAS Catalog
+** *Download Required:* Yes
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. total time*: 5 minutes
+* IMPC Phenotypes
+** *Download Required:* Yes
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. total time*: 10 minutes
+* JAX Phenotypes
+** *Download Required:* Yes
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. total time*: 5 minutes
+* JensenLab DISEASES
+** *Download Required:* No, done by loader
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. total time*: 10 minutes
+* DisGeNET
+** *Download Required:* Yes
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. total time*: 5 minutes
+* Drugable Epigenome Info
+** *Download Required:* Yes
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. total time*: < 5 minutes
+* MLP Assay Info
+** *Download Required:* 
+** *Pre-processing required:* Yes. Files are generated from PubChem and EUtils data by Jeremy.
+** *Manual post-processing:* None
+** *Approx. total time*: 1.5 hours for load. Not sure of time for pre-processing.
+* NIH Grant Info
+** *Download Required:* Yes. Project and abstract files must be downloaded from NIH Exporter.
+** *Pre-processing required:* Yes.
+*** Project info is collected and saved. Code provided.
+*** JensenLab Tagger run on Project and abstract files.
+** *Manual post-processing:* None
+** *Approx. total time*: 8 hours
+* TIN-X
+** *Download Required:* No, done by pre-processing code.
+** *Pre-processing required:* Yes. Code provided.
+** *Manual post-processing:* None
+** *Approx. total time*: 8 hours
+* PubMed Abstracts
+** *Download Required:* No
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. total time*: 4.5 days
+* Harmonizome
+** *Download Required:* No
+** *Pre-processing required:* Yes
+** *Manual post-processing:* Yes
+** *Approx. total time*: > 10 days
+* GTEx
+** *Download Required:* Yes
+** *Pre-processing required:* Yes. R code provided.
+** *Manual post-processing:* None
+** *Approx. total time*: 5 hours for load. Not sure of time for pre-processing.
+* JensenLan TISSUES
+** *Download Required:* No, done by loader
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. total time*: 10 minutes
+* Human Protein Atlas
+** *Download Required:* Yes
+** *Pre-processing required:* Yes. R code provided.
+** *Manual post-processing:* None
+** *Approx. total time*: 2 hours for load. Not sure of time for pre-processing.
+* Human Proteome Map
+** *Download Required:* Yes
+** *Pre-processing required:* Yes. R code provided.
+** *Manual post-processing:* None
+** *Approx. total time*: 1 hour for load. Not sure of time for pre-processing.
+* Consensus Expression Values
+** *Download Required:* No
+** *Pre-processing required:* No, done by loader.
+** *Manual post-processing:* None
+** *Approx. total time*: 30 minutes
+* Expression Atlas
+** *Download Required:* Yes
+** *Pre-processing required:* Yes. R code provided.
+** *Manual post-processing:* None
+** *Approx. total time*: 20 minutes for load. Not sure of time for pre-processing.
+* DTO
+** *Download Required:* Yes
+** *Pre-processing required:* None
+** *Manual post-processing:* Manual database updates for root nodes.
+** *Approx. total time*: < 5 minutes
+
+* Reactome PPIs
+** *Download Required:* Yes
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. total time*: < 5 minutes
+* BioPlex PPIs
+** *Download Required:* Yes
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. total time*: < 5 minutes
+* KEGG Pathways
+** *Download Required:* No
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. total time*: 10 minutes
+* KEGG Distances
+** *Download Required:* Yes
+** *Pre-processing required:* No, done by loader.
+** *Manual post-processing:* None
+** *Approx. total time*: 10 minutes
+* KEGG Nearest Tclin
+** *Download Required:* No
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. total time*: < 5 minutes
+* WikiPathways
+** *Download Required:* Yes
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. total time*: < 5 minutes
+* Reactome Pathways
+** *Download Required:* Yes
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. total time*: 15 minutes
+* PathwayCommons
+** *Download Required:* Yes
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. total time*: < 5 minutes
+* JensenLab COMPARTMENTS
+** *Download Required:* No, done by loader
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. total time*: 40 minutes
+* Transcription Factor Flags
+** *Download Required:* Yes
+** *Pre-processing required:* Yes
+** *Manual post-processing:* None
+** *Approx. total time*: < 5 minutes
+* TMHMM Predictions
+** *Download Required:* Yes
+** *Pre-processing required:* Yes
+** *Manual post-processing:* None
+** *Approx. total time*: 1 hour
+* PANTHER Classes
+** *Download Required:* Yes
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. total time*: < 5 minutes
+* TechDev Worklist Info
+** *Download Required:* Data obtained directly from Tech Dev contacts.
+** *Pre-processing required:* Yes. Excel files must be converted to CSV and edited.
+** *Manual post-processing:* None
+** *Approx. total time*: 30 minutes
+* LINCS Cross References
+** *Download Required:* Yes
+** *Pre-processing required:* None
+** *Manual post-processing:* Manual database insert for one target.
+** *Approx. total time*: < 5 minutes
+* IMPC Mice Flags
+** *Download Required:* Yes
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. total time*: < 5 minutes
+* IDG Phase 2 Flags
+** *Download Required:* No
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. total time*: < 5 minutes

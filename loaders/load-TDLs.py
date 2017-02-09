@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-13 10:48:28 smathias>
+# Time-stamp: <2017-01-27 12:56:47 smathias>
 """Calculate and load target TDL assignments.
 
 Usage:
@@ -24,7 +24,7 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2015-2016, Steve Mathias"
+__copyright__ = "Copyright 2015-2017, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
 __version__   = "2.0.0"
 

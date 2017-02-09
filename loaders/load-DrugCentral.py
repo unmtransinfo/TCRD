@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-05 16:35:53 smathias>
+# Time-stamp: <2017-01-27 12:25:43 smathias>
 """ Load Drug Central data into TCRD from TSV files.
 
 Usage:
@@ -26,7 +26,7 @@ __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
 __copyright__ = "Copyright 2015-2016, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.0.0"
+__version__   = "2.0.1"
 
 import os,sys,time
 from docopt import docopt
@@ -38,16 +38,16 @@ from progressbar import *
 PROGRAM = os.path.basename(sys.argv[0])
 LOGFILE = "%s.log" % PROGRAM
 
-TCLIN_FILE = '/home/app/TCRD4/data/DrugCentral/tclin_11082016.tsv'
-TCHEM_FILE = '/home/app/TCRD4/data/DrugCentral/tchem_drugs_11082016.tsv'
-DRUGINFO_FILE = '/home/app/TCRD4/data/DrugCentral/drug_info_11082016.tsv'
-DRUGIND_FILE = '/home/app/TCRD4/data/DrugCentral/drug_indications_11082016.tsv'
+TCLIN_FILE = '../data/DrugCentral/tclin_01262017.tsv'
+TCHEM_FILE = '../data/DrugCentral/tchem_drugs_01262017.tsv'
+DRUGINFO_FILE = '../data/DrugCentral/drug_info_01262017.tsv'
+DRUGIND_FILE = '../data/DrugCentral/drug_indications_01262017.tsv'
 SRC_FILES = [os.path.basename(TCLIN_FILE),
              os.path.basename(TCHEM_FILE),
              os.path.basename(DRUGINFO_FILE),
              os.path.basename(DRUGIND_FILE)]
 
-def main():
+def load():
   args = docopt(__doc__, version=__version__)
   debug = int(args['--debug'])
   if debug:
@@ -285,4 +285,4 @@ def secs2str(t):
   return "%d:%02d:%02d.%03d" % reduce(lambda ll,b : divmod(ll[0],b) + ll[1:], [(t*1000,),1000,60,60])
 
 if __name__ == '__main__':
-    main()
+  load()

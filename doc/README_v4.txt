@@ -1650,16 +1650,69 @@ mysql> update dbinfo set schema_ver = '4.0.1', data_ver = '4.0.1';
 [smathias@juniper SQL]$ mysqldump tcrd4 > dumps/TCRDv4.0.1.sql
 
 
+Drop and recreate drug_activity table.
+mysql> delete from disease where dtype = 'DrugCentral Indication';
+mysql> delete from provenance where dataset_id = 13;
+mysql> delete from dataset where id = 13;
+mysql> update target set tdl = NULL;
+
+[smathias@juniper loaders]$ ./load-DrugCentral.py --dbname tcrd4
+
+load-DrugCentral.py (v2.0.1) [Fri Jan 27 12:54:13 2017]:
+
+Connected to TCRD database tcrd4 (schema ver 4.0.1; data ver 4.0.1)
+
+Processing 1771 input lines in file ../data/DrugCentral/drug_info_01262017.tsv
+1771 input lines processed.
+Saved 1771 keys in infos map
+
+Processing 3134 lines from DrugDB MOA activities file ../data/DrugCentral/tclin_01262017.tsv
+3134 DrugCentral Tclin rows processed.
+  Inserted 3134 new drug_activity rows
+
+Processing 604 lines from Non-MOA activities file ../data/DrugCentral/tchem_drugs_01262017.tsv
+604 DrugCentral Tchem rows processed.
+  Inserted 604 new drug_activity rows
+
+Processing 11096 lines from indications file ../data/DrugCentral/drug_indications_01262017.tsv
+11096 DrugCentral indication rows processed.
+  Inserted 12314 new target2disease rows
+WARNNING: 992 drugs NOT FOUND in activity files:
+
+load-DrugCentral.py: Done.
+
+[smathias@juniper loaders]$ ./load-TDLs.py --dbname tcrd4
+
+load-TDLs.py (v2.0.0) [Fri Jan 27 12:56:52 2017]:
+
+Connected to TCRD database tcrd4 (schema ver 4.0.1; data ver 4.0.1)
+
+Processing 20120 TCRD targets
+Progress: 100% [#####################################################################] Time: 3:37:24
+20120 TCRD targets processed. Elapsed time: 3:37:24.499
+Set TDL values for 20120 targets
+  598 targets are Tclin
+  1405 targets are Tchem
+  11032 targets are Tbio (873 bumped from Tdark)
+  7085 targets are Tdark
+
+load-TDLs.py: Done.
+
+mysql> update dbinfo set data_ver = '4.1.0';
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/TCRDv4.1.0.sql
+
 #
 # IDG-Family Only Version
 #
 mysql> drop database tcrdidg;
 mysql> create database tcrdidg4;
 mysql> use tcrdidg4
-mysql> \. dumps/TCRDv4.0.1.sql
+mysql> \. dumps/TCRDv4.1.0.sql
 mysql> delete from target where idgfam is NULL;
 mysql> delete from protein where id not in (select distinct protein_id from t2tc);
-mysql> update dbinfo set dbname = 'tcrdidg';
-[smathias@juniper SQL]$ mysqldump tcrdidg > dumps/tcrdidg_v4.0.1.sql
+mysql> update dbinfo set dbname = 'tcrdidg4';
+[smathias@juniper SQL]$ mysqldump tcrdidg4 > dumps/tcrdidg_v4.1.0.sql
+
+
 
 
