@@ -16,10 +16,11 @@ This file contains all command lines, and most of their output, run to build TCR
 Some of the loaders need to be run before others. Generally, the steps 1-13 (UniProt through TDLs) should be run in the order they are listed in doc/TCRD_Build_Notes.html. After that, loaders can be run in whatever order you like.
 
 ## System Requirements
-### You will need a Linux or OSX system (you might be able to get things to work on Windows, but it would require a lot of fiddling - Not recommended) and I would recommend at least 4 cores and 64GB of RAM.
+You will need a Linux or OSX system (you might be able to get things to work on Windows, but it would require a lot of fiddling - Not recommended) and I would recommend at least 4 cores and 64GB of RAM.
 
 ## Software Requirements
-### MySQL server. I am using MySQL Community Server 5.6.24. But anything version 5.5 or later would be fine.
+### MySQL server
+I am using MySQL Community Server 5.6.24. But anything version 5.5 or later would be fine.
 
 ### Python
 Python 2.7 and many Python modules not included in the standard library: BioPython, BeautifulSoup, docopt, goatools, httplib2, progressbar, urllib, urllib2, cPickle, cStringIO, csv, KEGG_Graph, MySQLdb, networkx, numpy, requests, and shelve.
