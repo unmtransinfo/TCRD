@@ -6,7 +6,7 @@ The code in this repository is for people wanting to rebuild a version of TCRD f
 ## Overview of the Build Process
 Targets in TCRD correspond to reviewed human entries in UniProt. There are 50+ datasets in TCRD and one loader script in the loaders directory to load each. Depending on the dataset, data is loaded via web APIs and/or files in various formats. Regarding the latter, some loaders take care of downloading the file(s) they need; others require the user to download or obtain the file(s) manually before running. Additionally, some datasets require pre-processing steps before loading and a few also require manual steps be perforemd after the load is completed.
 
-### doc/TCRD_Build_Notes.html
+### doc/TCRD_Build_Notes.txt
 This file has information for each dataset on the steps required and also an estimate of the time required. Some loaders run in a few minutes, others require days.
 
 ### doc/README_v4.txt
