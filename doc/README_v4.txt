@@ -496,20 +496,20 @@ load-MLPAssayInfo.py: Done.
 [smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd4-13.sql
 
 
-[smathias@juniper loaders]$ ./load-IDGFams.py --dbname tcrd4 --infile ../data/TCRDv3.1.2_IDGFams.p 
+[smathias@juniper loaders]$ ./load-IDGFamsExt.py --dbname tcrd4
 
-load-IDGFams.py (v2.0.0) [Tue Dec 13 16:32:27 2016]:
+load-IDGFamsExt.py (v1.0.0) [Wed Feb 22 15:57:00 2017]:
 
-Connected to TCRD database tcrd4 (schema ver 4.0.0; data ver 4.0.0)
+Connected to TCRD database tcrd4 (schema ver 4.0.2; data ver 4.3.0)
 
-Loading 1795 IDF Family designations from pickle file ../data/TCRDv3.1.2_IDGFams.p
-Progress: 100% [#####################################################################] Time: 0:00:44
-1795 IDG family designations loaded into TCRD. Elapsed time: 0:00:44.184
+Processing 20187 lines in inut file ../data/TCRD_3.1.4_TDL_families_Updated.txt
+Progress: 100% [######################################################################] Time: 0:00:24
+20186 rows processed. Elapsed time: 0:00:24.172
+8149 IDG family designations loaded into TCRD.
+5621 IDG extended family designations loaded into TCRD.
+  No target found for 2 UniProt accessions: Q8NFS9, Q06430
 
-load-IDGFams.py: Done.
-
-UPDATE provenance SET comment = "These values indicate that a protein is annotated with a GO leaf term in either the Molecular Function or Biological Process branch with an experimental evidenve code." where id = 31;
-UPDATE provenance SET comment = "This data is generated at UNM from PubChem and EUtils data. It has details about targets studied in assays that were part of NIH's Molecular Libraries Program." where id = 40;
+load-IDGFamsExt.py: Done.
 
 [smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd4-14.sql
 

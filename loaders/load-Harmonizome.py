@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-05 16:37:08 smathias>
+# Time-stamp: <2017-02-23 11:10:15 smathias>
 """Load Ma'ayan Lab Harmonizome data into TCRD via API.
 
 Usage:
@@ -72,20 +72,20 @@ def main():
     print "\n%s (v%s) [%s]:" % (PROGRAM, __version__, time.strftime("%c"))
     print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
-  # # Dataset
-  # dataset_id = dba.ins_dataset( {'name': 'Harmonogram Data', 'source': "API at %s"%HARMO_API_BASE_URL, 'app': PROGRAM, 'app_version': __version__, 'url': 'http://amp.pharm.mssm.edu/Harmonizome/'} )
-  # if not dataset_id:
-  #   print "WARNING: Error inserting dataset See logfile %s for details." % logfile
-  #   sys.exit(1)
-  # # Provenance
-  # provs = [ {'dataset_id': dataset_id, 'table_name': 'gene_attribute'},
-  #           {'dataset_id': dataset_id, 'table_name': 'gene_attribute_type'},
-  #           {'dataset_id': dataset_id, 'table_name': 'hgram_cdf'} ]
-  # for prov in provs:
-  #   rv = dba.ins_provenance(prov)
-  #   if not rv:
-  #     print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
-  #     sys.exit(1)
+  # Dataset
+  dataset_id = dba.ins_dataset( {'name': 'Harmonogram Data', 'source': "API at %s"%HARMO_API_BASE_URL, 'app': PROGRAM, 'app_version': __version__, 'url': 'http://amp.pharm.mssm.edu/Harmonizome/'} )
+  if not dataset_id:
+    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
+    sys.exit(1)
+  # Provenance
+  provs = [ {'dataset_id': dataset_id, 'table_name': 'gene_attribute'},
+            {'dataset_id': dataset_id, 'table_name': 'gene_attribute_type'},
+            {'dataset_id': dataset_id, 'table_name': 'hgram_cdf'} ]
+  for prov in provs:
+    rv = dba.ins_provenance(prov)
+    if not rv:
+      print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
+      sys.exit(1)
 
   if not os.path.exists(SYM2PID_P):
     print "\nFinding targets with Harmonizome genes"
@@ -95,80 +95,80 @@ def main():
   sym2pid = pickle.load( open(SYM2PID_P, 'rb') )
   print "  Got %d symbol to protein_id mappings" % len(sym2pid)
 
-  # start_time = time.time()
-  # if os.path.isfile(DATASET_DONE_FILE):
-  #   # If we are restarting, this file has the names of datasets already loaded
-  #   with open(DATASET_DONE_FILE) as f:
-  #     datasets_done = f.read().splitlines()
-  # else:
-  #   datasets_done = []
-  # datasets = get_datasets(HARMO_API_BASE_URL)
-  # print "\nProcessing %d Ma'ayan Lab datasets" % len(datasets)
-  # ct = 0
-  # gat_ct = 0
-  # total_ga_ct = 0
-  # err_ct = 0
-  # dba_err_ct = 0
-  # for dsname in datasets.keys():
-  #   ct += 1
-  #   ds_start_time = time.time()
-  #   if dsname in datasets_done:
-  #     print "  Skipping previously loaded dataset \"%s\"" % dsname
-  #     continue
-  #   ds_ga_ct = 0
-  #   ds = get_dataset(HARMO_API_BASE_URL, datasets[dsname])
-  #   if not ds:
-  #     logger.error("Error getting dataset %s (%s)" % (dsname, datasets[dsname]))
-  #     err_ct += 1
-  #     continue
-  #   if not args['--quiet']:
-  #     print "  Processing dataset \"%s\" containing %d gene sets" % (dsname, len(ds['geneSets']))
-  #   logger.info("Processing dataset \"%s\" containing %d gene sets" % (dsname, len(ds['geneSets'])))
-  #   rsc = get_resource(HARMO_API_BASE_URL, ds['resource']['href'])
-  #   gat_id = dba.ins_gene_attribute_type( {'name': ds['name'], 'association': ds['association'], 'description': rsc['description'], 'resource_group': ds['datasetGroup'], 'measurement': ds['measurement'], 'attribute_group': ds['attributeGroup'], 'attribute_type': ds['attributeType'], 'pubmed_ids': "|".join([str(pmid) for pmid in rsc['pubMedIds']]), 'url': rsc['url']} )
-  #   if gat_id:
-  #     gat_ct += 1
-  #   else:
-  #     dba_err_ct += 1
-  #   for d in ds['geneSets']:
-  #     name = d['name'].encode('utf-8')
-  #     gs = get_geneset(HARMO_API_BASE_URL, d['href'])
-  #     if not gs:
-  #       logger.error("Error getting gene set %s (%s)" % (name, d['href']))
-  #       err_ct += 1
-  #       continue
-  #     if 'associations' not in gs: # used to be 'features'
-  #       logger.error("No associations in gene set %s" % name)
-  #       err_ct += 1
-  #       continue
-  #     logger.info("  Processing gene set \"%s\" containing %d associations" % (name, len(gs['associations'])))
-  #     ga_ct = 0
-  #     for f in gs['associations']: # used to be 'features'
-  #       sym = f['gene']['symbol']
-  #       if sym not in sym2pid: continue # symbol does not map to a TCRD target
-  #       rv = dba.ins_gene_attribute( {'protein_id': sym2pid[sym], 'gat_id': gat_id, 'name': name, 'value':  f['thresholdValue']} )
-  #       if not rv:
-  #         dba_err_ct += 1
-  #       else:
-  #         ga_ct += 1
-  #     ds_ga_ct += ga_ct
-  #     time.sleep(1)
-  #   total_ga_ct += ds_ga_ct
-  #   ds_elapsed = time.time() - ds_start_time
-  #   logger.info("  Inserted a total of %d new gene_attribute rows for dataset %s. Elapsed time: %s" % (ds_ga_ct, dsname, secs2str(ds_elapsed)))
-  #   if err_ct > 0:
-  #     logger.info("  WARNING: Error getting %d gene set(s) " % err_ct)
-  #   # Save dataset names that are loaded, in case we need to restart
-  #   with open(DATASET_DONE_FILE, "a") as dsdfile:
-  #     dsdfile.write(dsname+'\n')
-  # elapsed = time.time() - start_time
-  # print "\nProcessed %d Ma'ayan Lab datasets. Elapsed time: %s" % (ct, secs2str(elapsed))
-  # print "Inserted %d new gene_attribute_type rows" % gat_ct
-  # print "Inserted a total of %d gene_attribute rows" % total_ga_ct
-  # if err_ct > 0:
-  #   print "WARNING: %d errors occurred. See logfile %s for details." % (err_ct, logfile)
-  # if dba_err_ct > 0:
-  #   print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
+  start_time = time.time()
+  if os.path.isfile(DATASET_DONE_FILE):
+    # If we are restarting, this file has the names of datasets already loaded
+    with open(DATASET_DONE_FILE) as f:
+      datasets_done = f.read().splitlines()
+  else:
+    datasets_done = []
+  datasets = get_datasets(HARMO_API_BASE_URL)
+  print "\nProcessing %d Ma'ayan Lab datasets" % len(datasets)
+  ct = 0
+  gat_ct = 0
+  total_ga_ct = 0
+  err_ct = 0
+  dba_err_ct = 0
+  for dsname in datasets.keys():
+    ct += 1
+    ds_start_time = time.time()
+    if dsname in datasets_done:
+      print "  Skipping previously loaded dataset \"%s\"" % dsname
+      continue
+    ds_ga_ct = 0
+    ds = get_dataset(HARMO_API_BASE_URL, datasets[dsname])
+    if not ds:
+      logger.error("Error getting dataset %s (%s)" % (dsname, datasets[dsname]))
+      err_ct += 1
+      continue
+    if not args['--quiet']:
+      print "  Processing dataset \"%s\" containing %d gene sets" % (dsname, len(ds['geneSets']))
+    logger.info("Processing dataset \"%s\" containing %d gene sets" % (dsname, len(ds['geneSets'])))
+    rsc = get_resource(HARMO_API_BASE_URL, ds['resource']['href'])
+    gat_id = dba.ins_gene_attribute_type( {'name': ds['name'], 'association': ds['association'], 'description': rsc['description'], 'resource_group': ds['datasetGroup'], 'measurement': ds['measurement'], 'attribute_group': ds['attributeGroup'], 'attribute_type': ds['attributeType'], 'pubmed_ids': "|".join([str(pmid) for pmid in rsc['pubMedIds']]), 'url': rsc['url']} )
+    if gat_id:
+      gat_ct += 1
+    else:
+      dba_err_ct += 1
+    for d in ds['geneSets']:
+      name = d['name'].encode('utf-8')
+      gs = get_geneset(HARMO_API_BASE_URL, d['href'])
+      if not gs:
+        logger.error("Error getting gene set %s (%s)" % (name, d['href']))
+        err_ct += 1
+        continue
+      if 'associations' not in gs: # used to be 'features'
+        logger.error("No associations in gene set %s" % name)
+        err_ct += 1
+        continue
+      logger.info("  Processing gene set \"%s\" containing %d associations" % (name, len(gs['associations'])))
+      ga_ct = 0
+      for f in gs['associations']: # used to be 'features'
+        sym = f['gene']['symbol']
+        if sym not in sym2pid: continue # symbol does not map to a TCRD target
+        rv = dba.ins_gene_attribute( {'protein_id': sym2pid[sym], 'gat_id': gat_id, 'name': name, 'value':  f['thresholdValue']} )
+        if not rv:
+          dba_err_ct += 1
+        else:
+          ga_ct += 1
+      ds_ga_ct += ga_ct
+      time.sleep(1)
+    total_ga_ct += ds_ga_ct
+    ds_elapsed = time.time() - ds_start_time
+    logger.info("  Inserted a total of %d new gene_attribute rows for dataset %s. Elapsed time: %s" % (ds_ga_ct, dsname, secs2str(ds_elapsed)))
+    if err_ct > 0:
+      logger.info("  WARNING: Error getting %d gene set(s) " % err_ct)
+    # Save dataset names that are loaded, in case we need to restart
+    with open(DATASET_DONE_FILE, "a") as dsdfile:
+      dsdfile.write(dsname+'\n')
+  elapsed = time.time() - start_time
+  print "\nProcessed %d Ma'ayan Lab datasets. Elapsed time: %s" % (ct, secs2str(elapsed))
+  print "Inserted %d new gene_attribute_type rows" % gat_ct
+  print "Inserted a total of %d gene_attribute rows" % total_ga_ct
+  if err_ct > 0:
+    print "WARNING: %d errors occurred. See logfile %s for details." % (err_ct, logfile)
+  if dba_err_ct > 0:
+    print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
 
   print "\n%s: Done." % PROGRAM
   print

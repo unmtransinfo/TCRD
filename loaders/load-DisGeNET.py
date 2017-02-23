@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-05 16:57:24 smathias>
+# Time-stamp: <2017-02-23 10:45:18 smathias>
 """
 Load disease associations into TCRD from DisGeNET TSV file.
 Usage:
@@ -35,6 +35,7 @@ import logging
 from progressbar import *
 
 PROGRAM = os.path.basename(sys.argv[0])
+# From http://www.disgenet.org/web/DisGeNET/menu/downloads
 INPUT_FILE = '../data/DisGeNET/curated_gene_disease_associations.tsv'
 
 def main():

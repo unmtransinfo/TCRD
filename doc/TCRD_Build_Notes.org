@@ -1,12 +1,19 @@
 #+OPTIONS: toc:nil
 
 * UniProt
-** *Download Required:* No. Data loaded via API.
+** *Download Required:* Yes
+   Go to
+   http://www.uniprot.org/uniprot/?query=reviewed:yes+AND+organism:9606
+   and download the tab-separated version of the file. The rest of the
+   data is loaded via API.
 ** *Pre-processing required:* None
-** *Manual post-processing:* Manual database update of gene ids for GPR89A/B
+** *Manual post-processing:* Yes
+   GPR89A/B each have two Gene IDs in UniProt. Accordnig to NCBI, GPR89B is 51463. Fix this manually:
+   mysql> UPDATE protein SET geneid = 51463 WHERE sym = 'GPR89B';
 ** *Approx. load time*: 16 hours
 * IDG Family Assignments
-** *Download Required:* No. The required file is included in the data/ directory.
+** *Download Required:* No
+   The required file is included in the data/ directory.
 ** *Pre-processing required:* None
 ** *Manual post-processing:* None
 ** *Approx. load time*: < 5 minutes
@@ -22,11 +29,14 @@
 ** *Approx. load time*: 17 hours
 * STRING IDs
 ** *Download Required:* Yes
-   The following files were obtained from Lars Jensen:
-*** 9606_reviewed_uniprot_2_string.04_2015.tsv
-*** 9606.protein.aliases.v10.txt
+   The following files, or updated versions therof should be downloaded
+   and uncompressed:
+*** http://string-db.org/mapping_files/uniprot_mappings/9606_reviewed_uniprot_2_string.04_2015.tsv.gz
+*** http://string-db.org/download/protein.aliases.v10/9606.protein.aliases.v10.txt.gz
 ** *Pre-processing required:* None
-** *Manual post-processing:* None
+** *Manual post-processing:* Yes
+   Manually add stringid for HLA-A targets:
+   mysql> update protein set stringid = 'ENSP00000366005' where sym = 'HLA-A';
 ** *Approx. load time*: 35 minutes
 * Antibodypedia
 ** *Download Required:* No. Data loaded via API.
@@ -48,12 +58,20 @@
 ** *Download Required:* Yes.
    Four files are required. Links are provided on the Drug Central
    downlaod page (http://drugcentral.org/download).
+*** 
+*** 
+*** 
+*** 
 ** *Pre-processing required:* None
 ** *Manual post-processing:* None
 ** *Approx. load time*: 5 minutes
 * ChEMBL 
-** *Download Required:* Yes.
-** *Pre-processing required:* Yes. ChEMBL MySQL database must be built from download.
+** *Download Required:* Yes
+   Go here ftp://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest and
+   get the MySQL dump tarball. E.g. chembl_22_1_mysql.tar.gz
+** *Pre-processing required:* Yes
+   ChEMBL MySQL database must be built from download. Instructions are
+   included in the targall.
 ** *Manual post-processing:* None
 ** *Approx. load time*: 15 minutes
 * OMIM
@@ -80,23 +98,29 @@
 ** *Manual post-processing:* None
 ** *Approx. load time*: < 5 minutes
 * PubTator Scores
-** *Download Required:* ?
+** *Download Required:* Yes
+   ftp://ftp.ncbi.nlm.nih.gov/pub/lu/PubTator/gene2pubtator.gz
 ** *Pre-processing required:* Yes
+   Run perl/pubtator_count.pl on the uncompressed download.
 ** *Manual post-processing:* None
 ** *Approx. load time*: 40 minutes
 
 * GWAS Catalog
 ** *Download Required:* Yes
+   Go to https://www.ebi.ac.uk/gwas/downloads, click on Files, then
+   download the file with description "All associations with added ontology annotations".
 ** *Pre-processing required:* None
 ** *Manual post-processing:* None
 ** *Approx. load time*: 5 minutes
 * IMPC Phenotypes
 ** *Download Required:* Yes
+   Get the file ALL_genotype_phenotype.csv.gz for the latest release ftp://ftp.ebi.ac.uk/pub/databases/impc/release-*.*/csv/
 ** *Pre-processing required:* None
 ** *Manual post-processing:* None
 ** *Approx. load time*: 10 minutes
 * JAX Phenotypes
 ** *Download Required:* Yes
+   Get the files HMD_HumanPhenotype.rpt and VOC_MammalianPhenotype.rpt from http://www.informatics.jax.org/downloads/reports/
 ** *Pre-processing required:* None
 ** *Manual post-processing:* None
 ** *Approx. load time*: 5 minutes
@@ -107,29 +131,43 @@
 ** *Approx. load time*: 10 minutes
 * DisGeNET
 ** *Download Required:* Yes
+   Go to http://www.disgenet.org/web/DisGeNET/menu/downloads and
+   download the file labelled "File with CURATED gene-disease associations".
 ** *Pre-processing required:* None
 ** *Manual post-processing:* None
 ** *Approx. load time*: 5 minutes
 * Drugable Epigenome Info
 ** *Download Required:* Yes
-** *Pre-processing required:* None
+   Go to http://www.nature.com/nrd/journal/v11/n5/suppinfo/nrd3674.html
+   and download all the Excel files.
+** *Pre-processing required:* Yes
+   Excel files must be converted to CSV.
 ** *Manual post-processing:* None
 ** *Approx. load time*: < 5 minutes
 * MLP Assay Info
-** *Download Required:* 
-** *Pre-processing required:* Yes. Files are generated from PubChem and EUtils data by Jeremy.
+** *Download Required:* ??
+** *Pre-processing required:* Yes
+   
 ** *Manual post-processing:* None
-** *Approx. load time*: 1.5 hours for load. Not sure of time for pre-processing.
+** *Approx. load time*: 1.5 hours
 * NIH Grant Info
-** *Download Required:* Yes. Project and abstract files must be downloaded from NIH Exporter.
+** *Download Required:* Yes
+*** Project and abstract CSV files must be downloaded from
+    https://exporter.nih.gov/ExPORTER_Catalog.aspx.
+    Alternatively, run the scripts bash/get_NIHExPORTER_abstracts.sh and bash/get_NIHExPORTER_projects.sh
+*** Download and compile the Jensen Lag tagger from https://bitbucket.org/larsjuhljensen/tagger
+*** Download and uncompress the dictionary files from http://download.jensenlab.org/human_dictionary.tar.gz
 ** *Pre-processing required:* Yes.
-*** Project info is collected and saved. Code provided.
-*** JensenLab Tagger run on Project and abstract files.
+*** Project info is collected and saved:
+    Run python/pickle_grant_info.py
+*** Run the JensenLab Tagger on Project and abstract files:
+    Run python/grant_tagger.py
 ** *Manual post-processing:* None
 ** *Approx. load time*: 8 hours
 * TIN-X
 ** *Download Required:* No, done by pre-processing code.
-** *Pre-processing required:* Yes. Code provided.
+** *Pre-processing required:* Yes.
+   Run python/TIN-X.py
 ** *Manual post-processing:* None
 ** *Approx. load time*: 8 hours
 * PubMed Abstracts
@@ -138,15 +176,21 @@
 ** *Manual post-processing:* None
 ** *Approx. load time*: 4.5 days
 * Harmonizome
-** *Download Required:* No. Data loaded via API.
-** *Pre-processing required:* Yes
+** *Download Required:* No
+   Data loaded via API.
+** *Pre-processing required:* No
 ** *Manual post-processing:* Yes
+   mysql> delete from gene_attribute_type where id not in (select distinct gat_id from gene_attribute);
 ** *Approx. load time*: > 10 days
 * GTEx
 ** *Download Required:* Yes
-** *Pre-processing required:* Yes. R code provided.
+   Register at http://www.gtexportal.org/home/, then login and download:
+*** GTEx_Data_V6_Annotations_SampleAttributesDS.txt
+*** GTEx_Data_V6_Annotations_SubjectPhenotypesDS.txt
+** *Pre-processing required:* Yes
+   Run R/gtex_process.R on downloaded files.
 ** *Manual post-processing:* None
-** *Approx. load time*: 5 hours for load. Not sure of time for pre-processing.
+** *Approx. load time*: 5 hours
 * JensenLan TISSUES
 ** *Download Required:* No, done by loader
 ** *Pre-processing required:* None
@@ -154,12 +198,20 @@
 ** *Approx. load time*: 10 minutes
 * Human Protein Atlas
 ** *Download Required:* Yes
-** *Pre-processing required:* Yes. R code provided.
+   Go to http://www.proteinatlas.org/about/download and download:
+*** normal_tissue.csv.zip
+*** rna.csv.zip
+** *Pre-processing required:* Yes
+   Run R/hpa_tau_prot.R and R/hpa_tau_rna.R on the downloaded files.
 ** *Manual post-processing:* None
-** *Approx. load time*: 2 hours for load. Not sure of time for pre-processing.
+** *Approx. load time*: 2 hours
 * Human Proteome Map
 ** *Download Required:* Yes
-** *Pre-processing required:* Yes. R code provided.
+   Go to http://www.humanproteomemap.org/download.php, register and then download:
+*** HPM_gene_level_epxression_matrix_Kim_et_al_052914.csv.gz
+*** HPM_protein_level_expression_matrix_Kim_et_al_052914.csv.gz
+** *Pre-processing required:* Yes
+   Run R/hpm_gene.R and R/hpm_protein.R on the downloaded files.
 ** *Manual post-processing:* None
 ** *Approx. load time*: 1 hour for load. Not sure of time for pre-processing.
 * Consensus Expression Values

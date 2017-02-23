@@ -2,8 +2,8 @@
 
 library(dplyr)
 library(tidyr)
-source("tau.R")
-source("level.R")
+source("hpm_tau.R")
+source("hpm_level.R")
 
 prot <- read.csv("HPM_protein_level_expression_matrix_Kim_et_al_052914.csv.gz", stringsAsFactors = F, sep = ",", quote = "", check.names=F)
 names(prot)[2] <- "RefSeq"

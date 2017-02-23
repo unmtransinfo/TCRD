@@ -2,8 +2,8 @@
 
 library(dplyr)
 library(tidyr)
-source("tau.R")
-source("level.R")
+source("hpm_tau.R")
+source("hpm_level.R")
 
 gene <- read.csv("HPM_gene_level_epxression_matrix_Kim_et_al_052914.csv.gz", stringsAsFactors = F, sep = ",", quote = "", check.names=F)
 gene <- gather(gene, Tissue, Expression, 2:31)
