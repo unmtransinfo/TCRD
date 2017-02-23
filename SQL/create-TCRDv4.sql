@@ -1264,13 +1264,13 @@ LOCK TABLES `target` WRITE;
 UNLOCK TABLES;
 
 --
--- Table structure for table `target2grant`
+-- Table structure for table `grant`
 --
 
-DROP TABLE IF EXISTS `target2grant`;
+DROP TABLE IF EXISTS `grant`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `target2grant` (
+CREATE TABLE `grant` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `target_id` int(11) NOT NULL,
   `protein_id` int(11) NOT NULL,
@@ -1289,12 +1289,12 @@ CREATE TABLE `target2grant` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `target2grant`
+-- Dumping data for table `grant`
 --
 
-LOCK TABLES `target2grant` WRITE;
-/*!40000 ALTER TABLE `target2grant` DISABLE KEYS */;
-/*!40000 ALTER TABLE `target2grant` ENABLE KEYS */;
+LOCK TABLES `grant` WRITE;
+/*!40000 ALTER TABLE `grant` DISABLE KEYS */;
+/*!40000 ALTER TABLE `grant` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -1631,7 +1631,7 @@ UNLOCK TABLES;
 /*!50001 SET collation_connection      = utf8_general_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 DEFINER=`smathias`@`localhost` SQL SECURITY DEFINER */
-/*!50001 VIEW `tinx_target` AS select `t`.`id` AS `target_id`,`p`.`id` AS `protein_id`,`p`.`uniprot` AS `uniprot`,`p`.`sym` AS `sym`,`t`.`tdl` AS `tdl`,`t`.`idgfam` AS `idgfam`,`p`.`family` AS `family` from ((`target` `t` join `t2tc`) join `protein` `p`) where ((`t`.`id` = `t2tc`.`target_id`) and (`t2tc`.`protein_id` = `p`.`id`) and `p`.`id` in (select distinct `tinx_novelty`.`protein_id` from `tinx_novelty`)) */;
+/*!50001 VIEW `tinx_target` AS select `t`.`id` AS `target_id`,`p`.`id` AS `protein_id`,`p`.`uniprot` AS `uniprot`,`p`.`sym` AS `sym`,`t`.`tdl` AS `tdl`,`t`.`fam` AS `fam`,`p`.`family` AS `family` from ((`target` `t` join `t2tc`) join `protein` `p`) where ((`t`.`id` = `t2tc`.`target_id`) and (`t2tc`.`protein_id` = `p`.`id`) and `p`.`id` in (select distinct `tinx_novelty`.`protein_id` from `tinx_novelty`)) */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;

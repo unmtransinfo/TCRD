@@ -42,7 +42,7 @@ TAGGING_RESULTS_DIR = '../data/NIHExporter/TCRDv4/'
 
 def main():
   args = docopt(__doc__, version=__version__)
-   loglevel = int(args['--loglevel'])
+  loglevel = int(args['--loglevel'])
   if args['--logfile']:
     logfile = args['--logfile']
   else:
@@ -89,6 +89,8 @@ def main():
   
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
 
+  if not quiet:
+    print "\nLoading tagging results in %s" % TAGGING_RESULTS_DIR
   r01cts = {}
   for year in [str(yr) for yr in range(2000, 2016)]: # 2000-2015
     start_time = time.time()
@@ -120,12 +122,11 @@ def main():
           continue
         # grant_target_cost is dollars per target for this grant
         grant_target_cost = gcost/app_target_ct
-        # insert target2grant
-        rv = dba.ins_target2grant( {'target_id': tid, 'appid': appid, 'year': year,
-                                    'full_project_num': ginfo['FULL_PROJECT_NUM'],
-                                    'activity': ginfo['ACTIVITY'],
-                                    'funding_ics': ginfo['FUNDING_ICs'],
-                                    'cost': "%.2f"%grant_target_cost } )
+        rv = dba.ins_grant( {'target_id': tid, 'appid': appid, 'year': year,
+                             'full_project_num': ginfo['FULL_PROJECT_NUM'],
+                             'activity': ginfo['ACTIVITY'],
+                             'funding_ics': ginfo['FUNDING_ICs'],
+                             'cost': "%.2f"%grant_target_cost } )
         if not rv:
           dba_err_ct += 1
           continue

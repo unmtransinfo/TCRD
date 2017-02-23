@@ -1,5 +1,7 @@
 #!/usr/bin/perl -w
 
+# input file is ftp://ftp.ncbi.nlm.nih.gov/pub/lu/PubTator/gene2pubtator.gz
+
 use strict;
 
 $_ = <>;

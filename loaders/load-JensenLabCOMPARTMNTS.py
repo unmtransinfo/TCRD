@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-12 11:09:04 smathias>
+# Time-stamp: <2017-02-22 14:40:32 smathias>
 """Load compartment data into TCRD from JensenLab COMPARTMENTS TSV files.
 
 Usage:
@@ -337,6 +337,6 @@ def secs2str(t):
 
 if __name__ == '__main__':
   print "\n%s (v%s) [%s]:\n" % (PROGRAM, __version__, time.strftime("%c"))
-  #download()
+  download()
   load()
   print "\n%s: Done.\n" % PROGRAM

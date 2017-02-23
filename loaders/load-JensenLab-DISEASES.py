@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-12 10:44:37 smathias>
+# Time-stamp: <2017-02-23 08:08:26 smathias>
 """Load disease associations into TCRD from JensenLab DISEASES TSV files..
 
 Usage:
@@ -131,7 +131,7 @@ def load():
       for t in targets:
         tmark[t['id']] = True
         rv = dba.ins_disease( {'target_id': t['id'], 'dtype': dtype, 'name': row[3],
-                               'doid': row[2], 'evidence': row[5], 'conf': row[6]} )
+                               'did': row[2], 'evidence': row[5], 'conf': row[6]} )
         if not rv:
           dba_err_ct += 1
           continue
@@ -141,7 +141,7 @@ def load():
   elapsed = time.time() - start_time
   print "%d lines processed. Elapsed time: %s" % (ct, secs2str(elapsed))
   print "  %d targets have disease association(s)" % len(tmark.keys())
-  print "  Inserted %d new target2disease rows" % dis_ct
+  print "  Inserted %d new disease rows" % dis_ct
   if dba_err_ct > 0:
     print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
   if len(s['knowledge_not_found']) > 0:
@@ -181,7 +181,7 @@ def load():
       for t in targets:
         tmark[t['id']] = True
         rv = dba.ins_disease( {'target_id': t['id'], 'dtype': dtype, 'name': row[3],
-                               'doid': row[2], 'evidence': row[5], 'conf': row[6]} )
+                               'did': row[2], 'evidence': row[5], 'conf': row[6]} )
         if not rv:
           dba_err_ct += 1
           continue
@@ -192,7 +192,7 @@ def load():
   print "%d lines processed. Elapsed time: %s" % (ct, secs2str(elapsed))
   print "  Skipped %d zero confidence rows" % skip_ct
   print "  %d targets have disease association(s)" % len(tmark.keys())
-  print "  Inserted %d new target2disease rows" % dis_ct
+  print "  Inserted %d new disease rows" % dis_ct
   if dba_err_ct > 0:
     print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
   if len(s['experiment_not_found']) > 0:
@@ -227,7 +227,7 @@ def load():
       for t in targets:
         tmark[t['id']] = True
         rv = dba.ins_disease( {'target_id': t['id'], 'dtype': dtype, 'name': row[3],
-                               'doid': row[2], 'zscore': row[4], 'conf': row[5]} )
+                               'did': row[2], 'zscore': row[4], 'conf': row[5]} )
         if not rv:
           dba_err_ct += 1
           continue
@@ -237,7 +237,7 @@ def load():
   elapsed = time.time() - start_time
   print "%d lines processed. Elapsed time: %s" % (ct, secs2str(elapsed))
   print "  %d targets have disease association(s)" % len(tmark.keys())
-  print "  Inserted %d new target2disease rows" % dis_ct
+  print "  Inserted %d new disease rows" % dis_ct
   if dba_err_ct > 0:
     print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
   if len(s['textmining_not_found']) > 0:

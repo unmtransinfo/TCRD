@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-11 12:48:21 smathias>
+# Time-stamp: <2017-02-22 14:36:31 smathias>
 """Load expression data into TCRD from JensenLab TISSUES TSV files..
 
 Usage:

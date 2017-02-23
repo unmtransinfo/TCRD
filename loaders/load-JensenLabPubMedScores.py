@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-05 16:39:06 smathias>
+# Time-stamp: <2017-02-22 11:51:27 smathias>
 """Load JensenLab PubMed Score tdl_infos in TCRD from TSV file.
 
 Usage:

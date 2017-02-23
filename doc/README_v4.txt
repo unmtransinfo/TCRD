@@ -182,12 +182,6 @@ Loading 17387 JensenLab PubMed Score tdl_infos
 
 load-JensenLabPubMedScores.py: Done.
 
-mysql> select id from protein where id not in (select distinct protein_id from tdl_info where itype = 'JensenLab PubMed Score') INTO OUTFILE '/tmp/nojlpms.csv' FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n';
-Edit that to create InsMissingJLPMSs_TCRDv4.sql:
-[smathias@juniper SQL]$ perl -ne '/^(\d+)/ && print "INSERT INTO tdl_info (protein_id, itype, number_value) VALUES ($1, 'JLPMS', 0);\n"' /tmp/nojlpms.csv > InsZeroJLPMSs_TCRDv4.sql
-Edit InsZeroJLPMSs_TCRDv4.sql: s/JLPMS/'JensenLab PubMed Score'/
-mysql> \. InsZeroJLPMSs_TCRDv4.sql
-
 [smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd4-5.sql
 
 
@@ -976,6 +970,12 @@ Loading 17401 PubTator Score tdl_infos
 
 load-PubTatorScores.py: Done.
 
+mysql> select id from protein where id not in (select distinct protein_id from tdl_info where itype = 'JensenLab PubMed Score') INTO OUTFILE '/tmp/nojlpms.csv' FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n';
+Edit that to create InsMissingJLPMSs_TCRDv4.sql:
+[smathias@juniper SQL]$ perl -ne '/^(\d+)/ && print "INSERT INTO tdl_info (protein_id, itype, number_value) VALUES ($1, 'JLPMS', 0);\n"' /tmp/nojlpms.csv > InsZeroJLPMSs_TCRDv4.sql
+Edit InsZeroJLPMSs_TCRDv4.sql: s/JLPMS/'JensenLab PubMed Score'/
+mysql> \. InsZeroJLPMSs_TCRDv4.sql
+
 [smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd4-19.sql
 
 
@@ -1712,7 +1712,5 @@ mysql> delete from target where idgfam is NULL;
 mysql> delete from protein where id not in (select distinct protein_id from t2tc);
 mysql> update dbinfo set dbname = 'tcrdidg4';
 [smathias@juniper SQL]$ mysqldump tcrdidg4 > dumps/tcrdidg_v4.1.0.sql
-
-
 
 

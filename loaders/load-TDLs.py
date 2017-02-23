@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-27 12:56:47 smathias>
+# Time-stamp: <2017-02-22 12:00:20 smathias>
 """Calculate and load target TDL assignments.
 
 Usage:
@@ -124,7 +124,10 @@ def load():
       continue
     p = target['components']['protein'][0]
     ptdlis = p['tdl_infos']
-    pms =  float(ptdlis['JensenLab PubMed Score']['value'])
+    if 'JensenLab PubMed Score' in ptdlis:
+      pms =  float(ptdlis['JensenLab PubMed Score']['value'])
+    else:
+      pms = 0
     rif_ct = 0 # GeneRIF count
     if 'generifs' in p:
       rif_ct = len(p['generifs'])
