@@ -1014,8 +1014,8 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-43 Transcription Factor Flags
-=============================
+43 Animal Transcription Factor DB
+=================================
 
 43.1 *Download Required:* Yes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

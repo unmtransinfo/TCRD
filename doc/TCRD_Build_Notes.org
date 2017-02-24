@@ -296,7 +296,7 @@
 ** *Pre-processing required:* None
 ** *Manual post-processing:* None
 ** *Approx. load time*: 40 minutes
-* Transcription Factor Flags
+* Animal Transcription Factor DB
 ** *Download Required:* Yes
    Go to
    http://www.bioguo.org/AnimalTFDB/BrowseAllTF.php?spe=Homo_sapiens and
