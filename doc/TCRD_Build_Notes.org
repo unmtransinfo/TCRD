@@ -56,12 +56,12 @@
 ** *Approx. load time*: 10 minutes
 * Drug Central
 ** *Download Required:* Yes.
-   Four files are required. Links are provided on the Drug Central
-   downlaod page (http://drugcentral.org/download).
-*** 
-*** 
-*** 
-*** 
+   Four files are required. A link is provided on the Drug Central
+   downlaod page (http://drugcentral.org/download). Look for "Files required for TCRD import. Download Files Here.".
+*** tclin_MMDDYYYY.tsv
+*** tchem_drugs_MMDDYYYY.tsv
+*** drug_info_MMDDYYYY.tsv
+*** drug_indications_MMDDYYYY.tsv
 ** *Pre-processing required:* None
 ** *Manual post-processing:* None
 ** *Approx. load time*: 5 minutes
@@ -145,9 +145,16 @@
 ** *Manual post-processing:* None
 ** *Approx. load time*: < 5 minutes
 * MLP Assay Info
-** *Download Required:* ??
+** *Download Required:* No
+   Uses EUtils.
 ** *Pre-processing required:* Yes
-   
+*** Go_idg_mlp_GetData.sh
+   Assay summary data is obtained from PubChem via Entrez Direct
+   (EDirect) E-utilities esearch and efetch as XML. XML is converted to CSV.
+*** Run python/Go_idg_mlp_DbCreate.sh
+    The CSV files are used to build a staging PostgreSQL db which includes TCRD target IDs
+*** Run python/Go_idg_mlp_DbExport.sh
+    Export CSV from db
 ** *Manual post-processing:* None
 ** *Approx. load time*: 1.5 hours
 * NIH Grant Info
@@ -216,38 +223,48 @@
 ** *Approx. load time*: 1 hour for load. Not sure of time for pre-processing.
 * Consensus Expression Values
 ** *Download Required:* No
-** *Pre-processing required:* No, done by loader.
+** *Pre-processing required:* No
 ** *Manual post-processing:* None
 ** *Approx. load time*: 30 minutes
 * Expression Atlas
 ** *Download Required:* Yes
-** *Pre-processing required:* Yes. R code provided.
+   ftp://ftp.ebi.ac.uk/pub/databases/microarray/data/atlas/experiments/atlas-latest-data.tar.gz
+** *Pre-processing required:* Yes
+   Run R/exp-atlas_process.R on extracted files.
 ** *Manual post-processing:* None
 ** *Approx. load time*: 20 minutes for load. Not sure of time for pre-processing.
 * DTO
 ** *Download Required:* Yes
+   dto.json
 ** *Pre-processing required:* None
-** *Manual post-processing:* Manual database updates for root nodes.
+** *Manual post-processing:* Yes
+*** Manual database updates for root nodes:
+   mysql> UPDATE dto SET parent = NULL WHERE name IN ('GPCR', 'Kinase', 'Nuclear hormone receptor', 'Ion channel');
+*** Then create foreign key:
+    mysql> ALTER TABLE dto ADD CONSTRAINT fk_dto_dto FOREIGN KEY dto_idx1(parent) REFERENCES dto(id) ON DELETE RESTRICT;
 ** *Approx. load time*: < 5 minutes
 
 * Reactome PPIs
-** *Download Required:* Yes
+** *Download Required:* No
+   Done by loader.
 ** *Pre-processing required:* None
 ** *Manual post-processing:* None
 ** *Approx. load time*: < 5 minutes
 * BioPlex PPIs
-** *Download Required:* Yes
+** *Download Required:* No
+   Done by loader
 ** *Pre-processing required:* None
 ** *Manual post-processing:* None
 ** *Approx. load time*: < 5 minutes
 * KEGG Pathways
-** *Download Required:* No. Data loaded via API.
+** *Download Required:* No
+   Data loaded via API.
 ** *Pre-processing required:* None
 ** *Manual post-processing:* None
 ** *Approx. load time*: 10 minutes
 * KEGG Distances
 ** *Download Required:* No
-** *Pre-processing required:* No, done by loader.
+** *Pre-processing required:* No
 ** *Manual post-processing:* None
 ** *Approx. load time*: 10 minutes
 * KEGG Nearest Tclin
@@ -256,53 +273,68 @@
 ** *Manual post-processing:* None
 ** *Approx. load time*: < 5 minutes
 * WikiPathways
-** *Download Required:* Yes
+** *Download Required:* No
+   Done by loader
 ** *Pre-processing required:* None
 ** *Manual post-processing:* None
 ** *Approx. load time*: < 5 minutes
 * Reactome Pathways
-** *Download Required:* Yes
+** *Download Required:* No
+   Done by loader
 ** *Pre-processing required:* None
 ** *Manual post-processing:* None
 ** *Approx. load time*: 15 minutes
 * PathwayCommons
-** *Download Required:* Yes
+** *Download Required:* No
+   Done by loader.
 ** *Pre-processing required:* None
 ** *Manual post-processing:* None
 ** *Approx. load time*: < 5 minutes
 * JensenLab COMPARTMENTS
-** *Download Required:* No, done by loader
+** *Download Required:* No
+   Done by loader
 ** *Pre-processing required:* None
 ** *Manual post-processing:* None
 ** *Approx. load time*: 40 minutes
 * Transcription Factor Flags
 ** *Download Required:* Yes
+   Go to
+   http://www.bioguo.org/AnimalTFDB/BrowseAllTF.php?spe=Homo_sapiens and
+   copy and paste the content into a text file.
 ** *Pre-processing required:* Yes
 ** *Manual post-processing:* None
 ** *Approx. load time*: < 5 minutes
 * TMHMM Predictions
-** *Download Required:* Yes
+** *Download Required:* No
 ** *Pre-processing required:* Yes
+   Go to http://www.cbs.dtu.dk/cgi-bin/nph-sw_request?tmhmm to download TMHMM software.
 ** *Manual post-processing:* None
 ** *Approx. load time*: 1 hour
 * PANTHER Classes
 ** *Download Required:* Yes
+*** ftp://ftp.pantherdb.org//sequence_classifications/current_release/PANTHER_Sequence_Classification_files/PTHR10.0_human
+*** http://pantherdata.usc.edu/PANTHER10.0/ontology/Protein_Class_7.0
+*** http://pantherdata.usc.edu/PANTHER10.0/ontology/Protein_class_relationship
 ** *Pre-processing required:* None
 ** *Manual post-processing:* None
 ** *Approx. load time*: < 5 minutes
 * TechDev Worklist Info
 ** *Download Required:* Yes
    Data obtained directly from Tech Dev contacts.
-** *Pre-processing required:* Yes. Excel files must be converted to CSV and edited.
+** *Pre-processing required:* Yes
+   Excel files must be converted to CSV and edited.
 ** *Manual post-processing:* None
 ** *Approx. load time*: 30 minutes
 * LINCS Cross References
 ** *Download Required:* Yes
 ** *Pre-processing required:* None
-** *Manual post-processing:* Manual database insert for one target.
+** *Manual post-processing:* Yes
+*** Manual database insert for one target:
+    mysql> insert into xref (protein_id, xtype, dataset_id, value) values (7573, 'L1000 ID', 20, 'UUUC11D11');
 ** *Approx. load time*: < 5 minutes
 * IMPC Mice Flags
 ** *Download Required:* Yes
+   
 ** *Pre-processing required:* None
 ** *Manual post-processing:* None
 ** *Approx. load time*: < 5 minutes

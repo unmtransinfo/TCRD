@@ -1248,7 +1248,8 @@ CREATE TABLE `target` (
   `description` text COLLATE utf8_unicode_ci,
   `comment` text COLLATE utf8_unicode_ci,
   `tdl` enum('Tclin+','Tclin','Tchem+','Tchem','Tbio','Tgray','Tdark') COLLATE utf8_unicode_ci DEFAULT NULL,
-  `idgfam` enum('GPCR','oGPCR','Kinase','IC','NR') COLLATE utf8_unicode_ci DEFAULT NULL,
+  `fam` enum('Enzyme','Epigenetic','GPCR','IC','Kinase','NR','oGPCR','TF','TF; Epigenetic','Transporter'),
+  `famext` varchar(255) COLLATE utf8_unicode_ci,
   `idg2` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
