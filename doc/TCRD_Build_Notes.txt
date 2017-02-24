@@ -492,12 +492,34 @@
 22 MLP Assay Info
 =================
 
-22.1 *Download Required:* ??
+22.1 *Download Required:* No
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Uses EUtils.
 
 
 22.2 *Pre-processing required:* Yes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+22.2.1 Go_idg_mlp_GetData.sh
+----------------------------
+
+  Assay summary data is obtained from PubChem via Entrez Direct
+  (EDirect) E-utilities esearch and efetch as XML. XML is converted to
+  CSV.
+
+
+22.2.2 Run python/Go_idg_mlp_DbCreate.sh
+----------------------------------------
+
+  The CSV files are used to build a staging PostgreSQL db which includes
+  TCRD target IDs
+
+
+22.2.3 Run python/Go_idg_mlp_DbExport.sh
+----------------------------------------
+
+  Export CSV from db
 
 
 22.3 *Manual post-processing:* None
