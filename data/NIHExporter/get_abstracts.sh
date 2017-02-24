@@ -4,21 +4,21 @@ baseurl="http://exporter.nih.gov/CSVs/final/"
 
 rm -f abstract_urls.txt
 
-for yr in `seq 2010 2014`; do
+for yr in `seq 2000 2015`; do
     file="RePORTER_PRJABS_C_FY$yr.zip"
     url=$baseurl$file
     #echo "Getting URL $url..."
     echo "$url" >> abstract_urls.txt
 done
 
-ten = 10
-for x in `seq 1 38`; do
-    if (("$x" -lt "$ten"))
-    then
-	file="RePORTER_PRJABS_C_FY2015_00$x.zip"
-    else
-	file="RePORTER_PRJABS_C_FY2015_0$x.zip"
-    fi
+for x in `seq 1 9`; do
+    file="RePORTER_PRJABS_C_FY2016_00$x.zip"
+    url=$baseurl$file
+    #echo "Getting URL $url..."
+    echo "$url" >> abstract_urls.txt
+done
+for x in `seq 10 52`; do
+    file="RePORTER_PRJABS_C_FY2016_0$x.zip"
     url=$baseurl$file
     #echo "Getting URL $url..."
     echo "$url" >> abstract_urls.txt

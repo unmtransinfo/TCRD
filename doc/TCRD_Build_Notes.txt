@@ -540,8 +540,8 @@
 -------------------------------------------------------------
 
   [https://exporter.nih.gov/ExPORTER_Catalog.aspx].  Alternatively, run
-  the scripts bash/get_NIHExPORTER_abstracts.sh and
-  bash/get_NIHExPORTER_projects.sh
+  the scripts data/NIHExporter/get_abstracts.sh and
+  data/NIHExporter/get_projects.sh
 
 
 23.1.2 Download and compile the Jensen Lag tagger from [https://bitbucket.org/larsjuhljensen/tagger]

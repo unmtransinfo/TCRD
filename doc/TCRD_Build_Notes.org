@@ -161,7 +161,7 @@
 ** *Download Required:* Yes
 *** Project and abstract CSV files must be downloaded from
     https://exporter.nih.gov/ExPORTER_Catalog.aspx.
-    Alternatively, run the scripts bash/get_NIHExPORTER_abstracts.sh and bash/get_NIHExPORTER_projects.sh
+    Alternatively, run the scripts data/NIHExporter/get_abstracts.sh and data/NIHExporter/get_projects.sh
 *** Download and compile the Jensen Lag tagger from https://bitbucket.org/larsjuhljensen/tagger
 *** Download and uncompress the dictionary files from http://download.jensenlab.org/human_dictionary.tar.gz
 ** *Pre-processing required:* Yes.
