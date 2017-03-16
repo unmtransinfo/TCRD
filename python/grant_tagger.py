@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2016-12-14 16:06:58 smathias>
+# Time-stamp: <2017-03-07 11:24:51 smathias>
 """Use JensenLab tagger on NIHExporter project info and save results to pickle files.
 
 Usage:
@@ -35,11 +35,15 @@ from progressbar import *
 PROGRAM = os.path.basename(sys.argv[0])
 LOGFILE = '../data/NIHExporter/TCRDv4/%s.log' % PROGRAM
 LOGLEVEL = 20
+
 REPORTER_DATA_DIR = '../data/NIHExporter/'
 PROJECTS_P = '../data/NIHExporter/ProjectInfo2000-2015.p'
-# dictionary comes from here: http://download.jensenlab.org/human_dictionary.tar.gz
-TAGGER_DICT_DIR = '../data/JensenLab/human_dictionary'
 TAGGING_RESULTS_DIR = '../data/NIHExporter/TCRDv4/'
+# The following *_FILE vars point to the dictionary files for the tagger
+# get dictionary here http://download.jensenlab.org/human_dictionary.tar.gz
+ENTITIES_FILE = '/home/app/JensenLab/human_dictionary/human_entities.tsv'
+NAMES_FILE = '/home/app/JensenLab/human_dictionary/human_names.tsv'
+GLOBAL_FILE = '/home/app/JensenLab/human_dictionary/human_global_SLM.tsv'
 
 def main():
   args = docopt(__doc__, version=__version__)
@@ -77,9 +81,8 @@ def main():
   if not quiet:
     print "\nCreating Tagger..."
   tgr = Tagger()
-  tgr.load_names('%s/human_entities.tsv'%TAGGER_DICT_DIR,
-                 '%s/human_names.tsv'%TAGGER_DICT_DIR)
-  tgr.load_global('%s/human_global.tsv'%TAGGER_DICT_DIR)
+  tgr.load_names(ENTITIES_FILE, NAMES_FILE)
+  tgr.load_global(GLOBAL_FILE)
 
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   for year in [str(yr) for yr in range(2000, 2016)]: # 2000-2015

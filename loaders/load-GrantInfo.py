@@ -79,7 +79,7 @@ def main():
     print "WARNING: Error inserting dataset See logfile %s for details." % logfile
     sys.exit(1)
   # Provenance
-  provs = [ {'dataset_id': dataset_id, 'table_name': 'target2grant'},
+  provs = [ {'dataset_id': dataset_id, 'table_name': 'grant'},
             {'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': 'itype is "NIHRePORTER 2000-2015 R01 Count"'} ]
   for prov in provs:
     rv = dba.ins_provenance(prov)

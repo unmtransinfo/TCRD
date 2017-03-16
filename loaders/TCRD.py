@@ -4,7 +4,7 @@
 
   Steve Mathias
   smathias@salud.unm.edu
-  Time-stamp: <2017-01-17 14:33:25 smathias>
+  Time-stamp: <2017-03-01 12:00:30 smathias>
 '''
 from __future__ import print_function
 import sys
@@ -149,7 +149,7 @@ class DBAdaptor:
       return False
     cols = ['name', 'ttype']
     vals = ['%s','%s']
-    for optcol in ['description', 'comment', 'idgfam', 'tdl']:
+    for optcol in ['description', 'comment', 'fam', 'tdl']:
       if optcol in init:
         cols.append(optcol)
         vals.append('%s')
@@ -1673,7 +1673,7 @@ class DBAdaptor:
   def get_techdev_info(self, contact_id):
     tdi = []
     with closing(self._conn.cursor(mysql.cursors.DictCursor)) as curs:
-      curs.execute("SELECT p.sym, p.description, p.uniprot, t.tdl, t.idgfam, tdi.comment, tdi.resource_url, tdi.data_url FROM target t, t2tc, protein p, techdev_info tdi WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = tdi.protein_id AND tdi.contact_id = %s", (contact_id))
+      curs.execute("SELECT p.sym, p.description, p.uniprot, t.tdl, t.fam, tdi.comment, tdi.resource_url, tdi.data_url FROM target t, t2tc, protein p, techdev_info tdi WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = tdi.protein_id AND tdi.contact_id = %s", (contact_id))
       for d in curs:
         tdi.append(d)
     return tdi
@@ -1948,8 +1948,9 @@ class DBAdaptor:
     Function  : Get count of TCRD targets
     Arguments : Two optional args:
                 idg: Get only IDG family targets [Default = False]
-                family: Get targets from a given IDG family
-                        Must be one of: GPCR, Kinase, IC, NR
+                family: Get targets from a given family
+                        Must be one of: Enzyme, Epigenetic, GPCR, IC, Kinase, NR, oGPCR,
+                                        TF, TF; Epigenetic, Transporter.
     Returns   : Integer
     Example   : ct = dba.get_target_count()
     Scope     : Public
@@ -1958,17 +1959,17 @@ class DBAdaptor:
     with closing(self._conn.cursor()) as curs:
       if family:
         if past_id:
-          sql = "SELECT count(*) FROM target WHERE id > %s AND idgfam IS NOT NULL AND idgfam = %s"
+          sql = "SELECT count(*) FROM target WHERE id > %s AND fam IS NOT NULL AND fam = %s"
           curs.execute(sql, (past_id, family))
         else:
-          sql = "SELECT count(*) FROM target WHERE idgfam IS NOT NULL AND idgfam = %s"
+          sql = "SELECT count(*) FROM target WHERE fam IS NOT NULL AND fam = %s"
           curs.execute(sql, (family,))
       elif idg:
         if past_id:
-          sql = "SELECT count(*) FROM target WHERE id > %s AND idgfam IS NOT NULL"
+          sql = "SELECT count(*) FROM target WHERE id > %s AND idg2"
           curs.execute(sql, (past_id,))
         else:
-          sql = "SELECT count(*) FROM target WHERE idgfam IS NOT NULL"
+          sql = "SELECT count(*) FROM target WHERE fam IS NOT NULL"
           curs.execute(sql)
       else:
         if past_id:
@@ -1985,8 +1986,9 @@ class DBAdaptor:
     Function  : Generator function to get TCRD targets
     Arguments : Three optional args:
                 idg: Get only IDG family targets [Default = False]
-                family: Get targets from a given IDG family
-                        Must be one of: GPCR, Kinase, IC, NR
+                family: Get targets from a given family
+                        Must be one of: Enzyme, Epigenetic, GPCR, IC, Kinase, NR, oGPCR,
+                                        TF, TF; Epigenetic, Transporter.
                 include_annotations: See get_target()
     Returns   : One target dictionary - as per get_target() - at a time
     Example   : for target in dba.get_idg_targets():
@@ -1997,17 +1999,17 @@ class DBAdaptor:
     with closing(self._conn.cursor()) as curs:
       if family:
         if past_id:
-          sql = "SELECT id FROM target WHERE id > %s AND idgfam IS NOT NULL AND idgfam = %s"
+          sql = "SELECT id FROM target WHERE id > %s AND fam IS NOT NULL AND fam = %s"
           curs.execute(sql, (past_id, family))
         else:
-          sql = "SELECT id FROM target WHERE idgfam IS NOT NULL AND idgfam = %s"
+          sql = "SELECT id FROM target WHERE fam IS NOT NULL AND fam = %s"
           curs.execute(sql, (family,))
       elif idg:
         if past_id:
-          sql = "SELECT id FROM target WHERE WHERE id > %s AND idgfam IS NOT NULL"
+          sql = "SELECT id FROM target WHERE WHERE id > %s AND idg2"
           curs.execute(sql, (past_id,))
         else:
-          sql = "SELECT id FROM target WHERE idgfam IS NOT NULL"
+          sql = "SELECT id FROM target WHERE fam IS NOT NULL"
           curs.execute(sql)
       else:
         if past_id:
@@ -2024,11 +2026,12 @@ class DBAdaptor:
   def get_tdl_target_count(self, tdl, idg=False, family=False):
     '''
     Function  : Get count of TCRD targets by TDL
-    Arguments : A TDL string: Tclin+, Tclin, Tchem, Tmacro, Tgray or Tdark
+    Arguments : A TDL string: Tclin, Tchem, Tbio or Tdark
                 Two optional args:
                 idg: Get only IDG family targets [Default = False]
                 family: Get targets from a given IDG family
-                        Must be one of: GPCR, Kinase, IC, NR
+                        Must be one of: Enzyme, Epigenetic, GPCR, IC, Kinase, NR, oGPCR,
+                                        TF, TF; Epigenetic, Transporter.
     Returns   : Integer
     Example   : ct = dba.get_tdl_target_count()
     Scope     : Public
@@ -2036,10 +2039,10 @@ class DBAdaptor:
     '''
     with closing(self._conn.cursor()) as curs:
       if family:
-        sql = "SELECT count(*) FROM target WHERE tdl = %s AND idgfam IS NOT NULL AND idgfam = %s"
+        sql = "SELECT count(*) FROM target WHERE tdl = %s AND fam IS NOT NULL AND fam = %s"
         curs.execute(sql, (tdl, family))
       elif idg:
-        sql = "SELECT count(*) FROM target WHERE tdl = %s AND idgfam IS NOT NULL"
+        sql = "SELECT count(*) FROM target WHERE tdl = %s AND idg2"
         curs.execute(sql, (tdl,))
       else:
         sql = "SELECT count(*) FROM target WHERE tdl = %s "
@@ -2050,11 +2053,12 @@ class DBAdaptor:
   def get_tdl_targets(self, tdl, idg=False, family=False, include_annotations=False, get_ga_counts=False):
     '''
     Function  : Generator function to get TCRD targets by TDL
-    Arguments : A TDL string: Tclin+, Tclin, Tchem, Tmacro, Tgray or Tdark
+    Arguments : A TDL string: Tclin, Tchem, Tbio or Tdark
                 Three optional args:
                 idg: Get only IDG family targets [Default = False]
                 family: Get targets from a given IDG family
-                        Must be one of: GPCR, Kinase, IC, NR
+                        Must be one of: Enzyme, Epigenetic, GPCR, IC, Kinase, NR, oGPCR,
+                                        TF, TF; Epigenetic, Transporter.
                 include_annotations: See get_target()
     Returns   : One target dictionary - as per get_target() - at a time
     Example   : for target in dba.get_tdl_targets():
@@ -2064,10 +2068,10 @@ class DBAdaptor:
     '''
     with closing(self._conn.cursor()) as curs:
       if family:
-        sql = "SELECT id FROM target WHERE tdl = %s AND idgfam IS NOT NULL AND idgfam = %s"
+        sql = "SELECT id FROM target WHERE tdl = %s AND fam IS NOT NULL AND fam = %s"
         curs.execute(sql, (tdl, family))
       elif idg:
-        sql = "SELECT id FROM target WHERE tdl = %s AND idgfam IS NOT NULL"
+        sql = "SELECT id FROM target WHERE tdl = %s AND idg2"
         curs.execute(sql, (tdl,))
       else:
         sql = "SELECT id FROM target WHERE tdl = %s"
@@ -2100,7 +2104,7 @@ class DBAdaptor:
                 include_annotations=True
     '''
     if idg:
-      sql = "SELECT t.id FROM target t, t2tc, protein p WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND t.idgfam IS NOT NULL"
+      sql = "SELECT t.id FROM target t, t2tc, protein p WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND t.idg2"
     else:
       sql ="SELECT target_id FROM t2tc, protein p WHERE t2tc.protein_id = p.id"
     if 'sym' in q:
@@ -2152,7 +2156,7 @@ class DBAdaptor:
       tids = []
       # first look by target xrefs
       if idg:
-        sql = "SELECT t.id FROM target t, xref x WHERE t.id = x.target_id AND t.idgfam IS NOT NULL AND x.protein_id IS NULL AND x.xtype = %s AND x.value = %s"
+        sql = "SELECT t.id FROM target t, xref x WHERE t.id = x.target_id AND t.idg2 AND x.protein_id IS NULL AND x.xtype = %s AND x.value = %s"
       else:
         sql = "SELECT target_id FROM xref WHERE protein_id IS NULL AND xtype = %s AND value = %s"
       params = (q['xtype'], q['value'])
@@ -2162,7 +2166,7 @@ class DBAdaptor:
           tids.append(row[0])
       # then look by component xrefs
       if idg:
-        sql ="SELECT t.id FROM target t, t2tc, protein p, xref x WHERE t.id = t2tc.target_id AND t.idgfam IS NOT NULL AND t2tc.protein_id = p.id and p.id = x.protein_id AND x.xtype = %s AND x.value = %s"
+        sql ="SELECT t.id FROM target t, t2tc, protein p, xref x WHERE t.id = t2tc.target_id AND t.idg2 AND t2tc.protein_id = p.id and p.id = x.protein_id AND x.xtype = %s AND x.value = %s"
       else:
         sql ="SELECT t2tc.target_id FROM t2tc, protein p, xref x WHERE t2tc.protein_id = p.id and p.id = x.protein_id AND x.xtype = %s AND x.value = %s"
       params = (q['xtype'], q['value'])
@@ -2208,7 +2212,7 @@ class DBAdaptor:
     tids = []
     targets = []
     if idg:
-      sql = "SELECT t.id FROM target t, protein p, t2tc, alias a WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = a.protein_id AND t.idgfam IS NOT NULL AND a.type = %s AND a.value = %s"
+      sql = "SELECT t.id FROM target t, protein p, t2tc, alias a WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = a.protein_id AND t.idg2 AND a.type = %s AND a.value = %s"
     else:
       sql = "SELECT t.id FROM target t, protein p, t2tc, alias a WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = a.protein_id AND a.type = %s AND a.value = %s"
     params = (q['type'], q['value'])
@@ -2267,7 +2271,7 @@ class DBAdaptor:
     features = {}
     # Classifications
     if idg:
-      sql = "SELECT DISTINCT pc.pcid, pc.name FROM panther_class pc, p2pc, target t, t2tc, protein p WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = p2pc.protein_id AND pc.id = p2pc.panther_class_id AND t.id IN (SELECT id FROM target WHERE idgfam IS NOT NULL)"
+      sql = "SELECT DISTINCT pc.pcid, pc.name FROM panther_class pc, p2pc, target t, t2tc, protein p WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = p2pc.protein_id AND pc.id = p2pc.panther_class_id AND t.id IN (SELECT id FROM target WHERE idg2)"
     else:
       sql = "SELECT DISTINCT pc.pcid, pc.name FROM panther_class pc, p2pc WHERE pc.id = p2pc.panther_class_id"
     classifications = []
@@ -2284,7 +2288,7 @@ class DBAdaptor:
     features['Classifications'] = classifications
     # Domains
     if idg:
-      sql = "SELECT DISTINCT x.value FROM xref x, target t, t2tc, protein p WHERE xtype = 'Pfam' AND t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = x.protein_id AND t.id IN (SELECT id FROM target WHERE idgfam IS NOT NULL)"
+      sql = "SELECT DISTINCT x.value FROM xref x, target t, t2tc, protein p WHERE xtype = 'Pfam' AND t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = x.protein_id AND t.id IN (SELECT id FROM target WHERE idg2)"
     else:
       sql = "SELECT DISTINCT value FROM xref WHERE xtype = 'Pfam'"
     domains = []
@@ -2300,7 +2304,7 @@ class DBAdaptor:
         self._logger.error(msg)
         return False
     if idg:
-      sql = "SELECT DISTINCT x.value FROM xref x, target t, t2tc, protein p WHERE xtype = 'InterPro' AND t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = x.protein_id AND t.id IN (SELECT id FROM target WHERE idgfam IS NOT NULL)"
+      sql = "SELECT DISTINCT x.value FROM xref x, target t, t2tc, protein p WHERE xtype = 'InterPro' AND t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = x.protein_id AND t.id IN (SELECT id FROM target WHERE idg2)"
     else:
       sql = "SELECT DISTINCT value FROM xref WHERE xtype = 'InterPro'"
     with closing(self._conn.cursor()) as curs:
@@ -2315,7 +2319,7 @@ class DBAdaptor:
         self._logger.error(msg)
         return False
     if idg:
-      sql = "SELECT DISTINCT x.value FROM xref x, target t, t2tc, protein p WHERE xtype = 'PROSITE' AND t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = x.protein_id AND t.id IN (SELECT id FROM target WHERE idgfam IS NOT NULL)"
+      sql = "SELECT DISTINCT x.value FROM xref x, target t, t2tc, protein p WHERE xtype = 'PROSITE' AND t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = x.protein_id AND t.id IN (SELECT id FROM target WHERE idg2)"
     else:
       sql = "SELECT DISTINCT value FROM xref WHERE xtype = 'PROSITE'"
     with closing(self._conn.cursor()) as curs:
@@ -2332,7 +2336,7 @@ class DBAdaptor:
     features['Domains'] = domains
     # Expressions
     if idg:
-      sql = "SELECT DISTINCT e.etype, e.tissue FROM expression e, target t, t2tc, protein p WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = e.protein_id AND t.id IN (SELECT id FROM target WHERE idgfam IS NOT NULL)"
+      sql = "SELECT DISTINCT e.etype, e.tissue FROM expression e, target t, t2tc, protein p WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = e.protein_id AND t.id IN (SELECT id FROM target WHERE idg2)"
     else:
       sql = "SELECT DISTINCT etype, tissue FROM expression"
     expressions = []
@@ -2350,7 +2354,7 @@ class DBAdaptor:
     features['Expressions'] = expressions
     # Phenotypes
     if idg:
-      sql = "SELECT DISTINCT pt.ptype, pt.trait, pt.term_id, pt.term_name FROM phenotype pt, target t, t2tc, protein p WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = pt.protein_id AND t.id IN (SELECT id FROM target WHERE idgfam IS NOT NULL)"
+      sql = "SELECT DISTINCT pt.ptype, pt.trait, pt.term_id, pt.term_name FROM phenotype pt, target t, t2tc, protein p WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = pt.protein_id AND t.id IN (SELECT id FROM target WHERE idg2)"
     else:
       sql = "SELECT DISTINCT ptype, trait, term_id, term_name FROM phenotype"
     phenotypes = []
@@ -2370,7 +2374,7 @@ class DBAdaptor:
     features['Phenotypes'] = phenotypes
     # Diseases
     if idg:
-      sql = "SELECT DISTINCT dtype, name FROM disease td, WHERE target_id IN (SELECT id FROM target WHERE idgfam IS NOT NULL)"
+      sql = "SELECT DISTINCT dtype, name FROM disease td, WHERE target_id IN (SELECT id FROM target WHERE idg2)"
     else:
       sql = "SELECT DISTINCT dtype, name FROM disease"
     diseases = []
@@ -2388,7 +2392,7 @@ class DBAdaptor:
     features['Diseases'] = diseases
     # Pathways
     if idg:
-      sql = "SELECT DISTINCT pw.pwtype, pw.name FROM pathway pw, target t, t2tc, protein p  WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = pw.protein_id AND t.id IN (SELECT id FROM target WHERE idgfam IS NOT NULL)"
+      sql = "SELECT DISTINCT pw.pwtype, pw.name FROM pathway pw, target t, t2tc, protein p  WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = pw.protein_id AND t.id IN (SELECT id FROM target WHERE idg2)"
     else:
       sql = "SELECT DISTINCT pwtype, name FROM pathway"
     pathways = []
@@ -2406,7 +2410,7 @@ class DBAdaptor:
     features['Pathways'] = pathways
     # GO Terms
     if idg:
-      sql = "SELECT DISTINCT g.go_term FROM goa g, target t, t2tc, protein p WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = g.protein_id AND t.id IN (SELECT id FROM target WHERE idgfam IS NOT NULL)"
+      sql = "SELECT DISTINCT g.go_term FROM goa g, target t, t2tc, protein p WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = g.protein_id AND t.id IN (SELECT id FROM target WHERE idg2)"
     else:
       sql = "SELECT DISTINCT go_term FROM goa"
     goas = []
@@ -2424,7 +2428,7 @@ class DBAdaptor:
     features['GOAs'] = goas
     # UniProt Features
     if idg:
-      sql = "SELECT DISTINCT f.type FROM feature f, target t, t2tc, protein p WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = g.protein_id AND t.id IN (SELECT id FROM target WHERE idgfam IS NOT NULL)"
+      sql = "SELECT DISTINCT f.type FROM feature f, target t, t2tc, protein p WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = g.protein_id AND t.id IN (SELECT id FROM target WHERE idg2)"
     else:
       sql = "SELECT DISTINCT type FROM feature"
     upfeats = []
