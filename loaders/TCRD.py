@@ -4,7 +4,7 @@
 
   Steve Mathias
   smathias@salud.unm.edu
-  Time-stamp: <2017-03-16 14:23:29 smathias>
+  Time-stamp: <2017-03-16 14:42:37 smathias>
 '''
 from __future__ import print_function
 import sys
@@ -91,7 +91,7 @@ class DBAdaptor:
     self._cache_xref_types()
     self._cache_expression_types()
     self._cache_phenotype_types()
-    self._cache_gene_attribute_types()
+    #self._cache_gene_attribute_types()
 
   def __del__(self):
     #print "Closing connection"
@@ -1560,18 +1560,16 @@ class DBAdaptor:
     self._cache_gene_attribute_types()
     return self._gene_attribute_types
   
-  def get_count_types(self, table):
-    #tab2col = {'expression': 'etype', 'target2disease': 'datype', 'phenotype': 'ptype', 'ppi': 'ppitype', 'tdl_info': 'itype', 'pathway': 'pwtype'}
+  def get_count_typecount(self, table):
+    tab2col = {'expression': 'etype', 'target2disease': 'datype', 'phenotype': 'ptype', 'ppi': 'ppi_type', 'tdl_info': 'itype', 'pathway': 'pwtype'}
     
-    tab2col = {'expression': 'etype', 'disease': 'dtype', 'phenotype': 'ptype', 'ppi': 'ppitype', 'tdl_info': 'itype', 'pathway': 'pwtype'}
+    #tab2col = {'expression': 'etype', 'disease': 'dtype', 'phenotype': 'ptype', 'ppi': 'ppitype', 'tdl_info': 'itype', 'pathway': 'pwtype'}
     with closing(self._conn.cursor()) as curs:
       curs.execute("SELECT count(*) FROM %s" % table)
-      ct = curs.fretchone()[0]
-      types = []
+      ct = curs.fetchone()[0]
       curs.execute("SELECT count(distinct %s) FROM %s" % (tab2col[table], table))
-      for row in curs:
-        types.append(row[0])
-    return (ct, types)
+      type_ct = curs.fetchone()[0]
+    return (ct, type_ct)
 
   def get_tinx_pmids(self):
     pmids = []
