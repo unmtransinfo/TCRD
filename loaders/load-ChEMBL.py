@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-13 12:03:20 smathias>
+# Time-stamp: <2017-05-19 11:53:17 smathias>
 """Load chembl_activity data in TCRD via ChEMBL MySQL database.
 
 Usage:
@@ -24,9 +24,9 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2015-2016, Steve Mathias"
+__copyright__ = "Copyright 2015-2017, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.0.0"
+__version__   = "2.1.0"
 
 import os,sys,time,re
 from docopt import docopt
@@ -43,10 +43,14 @@ from progressbar import *
 
 PROGRAM = os.path.basename(sys.argv[0])
 LOGFILE = './%s.log'%PROGRAM
-CHEMBL_DB = 'chembl_22'
+CHEMBL_DB = 'chembl_23'
 DOWNLOAD_DIR = '../data/ChEMBL/'
 BASE_URL = 'ftp://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/'
 UNIPROT2CHEMBL_FILE = 'chembl_uniprot_mapping.txt'
+# compounds/activities from publications
+SQLq1 = "SELECT acts.molregno, md.pref_name, md.chembl_id, cs.canonical_smiles, acts.pchembl_value, acts.standard_type, cr.compound_name, d.journal, d.year, d.volume, d.issue, d.first_page, d.pubmed_id FROM activities acts, compound_records cr, assays a, target_dictionary t, compound_structures cs, molecule_dictionary md, docs d WHERE acts.record_id = cr.record_id AND cs.molregno = md.molregno AND cs.molregno = acts.molregno AND acts.assay_id = a.assay_id AND a.tid = t.tid AND t.chembl_id = %s AND acts.molregno = md.molregno AND a.assay_type = 'B' AND md.structure_type = 'MOL' AND acts.standard_flag = 1 AND acts.standard_relation = '=' AND t.target_type = 'SINGLE PROTEIN' AND acts.pchembl_value IS NOT NULL AND acts.doc_id = d.doc_id"
+# patent compounds/activities
+SQLq2 = "SELECT acts.molregno, md.pref_name, md.chembl_id, cs.canonical_smiles, acts.pchembl_value, acts.standard_type, cr.compound_name FROM activities acts, compound_records cr, assays a, target_dictionary t, compound_structures cs, molecule_dictionary md WHERE acts.record_id = cr.record_id AND cs.molregno = md.molregno AND cs.molregno = acts.molregno AND acts.assay_id = a.assay_id AND a.tid = t.tid AND t.chembl_id = %s AND acts.molregno = md.molregno AND a.assay_type = 'B' AND md.structure_type = 'MOL' AND acts.standard_flag = 1 AND acts.standard_relation = '=' AND t.target_type = 'SINGLE PROTEIN' AND acts.pchembl_value IS NOT NULL AND cr.src_id = 38"
 
 def download_mappings():
   if os.path.exists(DOWNLOAD_DIR + UNIPROT2CHEMBL_FILE):
@@ -160,8 +164,10 @@ def main():
     logger.info("Loading ChEMBL data for target %d - %s/%s"%(t['id'], t['components']['protein'][0]['sym'], up))
     chembl_acts = []
     for ctid in up2chembl[up]:
+      
       with closing(chembldb.cursor(mysql.cursors.DictCursor)) as curs:
-        curs.execute("SELECT acts.molregno, md.pref_name, md.chembl_id, cs.canonical_smiles, acts.pchembl_value, acts.standard_type, cr.compound_name, d.journal, d.year, d.volume, d.issue, d.first_page, d.pubmed_id FROM activities acts, compound_records cr, assays a, target_dictionary t, compound_structures cs, molecule_dictionary md, docs d WHERE acts.record_id = cr.record_id AND cs.molregno = md.molregno AND cs.molregno = acts.molregno AND acts.assay_id = a.assay_id AND a.tid = t.tid AND t.chembl_id = %s AND acts.molregno = md.molregno AND a.assay_type = 'B' AND md.structure_type = 'MOL' AND acts.standard_flag = 1 AND acts.standard_relation = '=' AND t.target_type = 'SINGLE PROTEIN' AND acts.pchembl_value IS NOT NULL AND acts.doc_id = d.doc_id", (ctid,))
+        # Query 11
+        curs.execute(SQLq1, (ctid,))
         for d in curs:
           if d['year']:
             d['reference'] = "%s, (%d) %s:%s:%s" % (d['journal'], d['year'], d['volume'], d['issue'], d['first_page'] )
@@ -170,24 +176,30 @@ def main():
           for k in ['journal', 'volume', 'issue', 'first_page']:
             del(d[k])
           chembl_acts.append(d)
-    if t['idgfam'] == 'GPCR':
+      # Query 2
+      with closing(chembldb.cursor(mysql.cursors.DictCursor)) as curs:
+        curs.execute(SQLq2, (ctid,))
+        d['reference'] = None
+        chembl_acts.append(d)
+
+    if t['fam'] == 'GPCR':
       cutoff =  7.0 # 100nM
-    elif t['idgfam'] == 'IC':
+    elif t['fam'] == 'IC':
       cutoff = 5.0 # 10uM
-    elif t['idgfam'] == 'Kinase':
+    elif t['fam'] == 'Kinase':
       cutoff = 7.52288 # 30nM
-    elif t['idgfam'] == 'NR':
+    elif t['fam'] == 'NR':
       cutoff =  7.0 # 100nM
     else:
       cutoff = 6.0 # 1uM for non-IDG Family targets
     logger.info("Target %d (%s) filter cutoff: %f " % (tid, t['name'], len(chembl_acts)))
     filtered_acts = [a for a in chembl_acts if a['pchembl_value'] >= cutoff]
     logger.info("%d ChEMBL acts => %d filtered acts" % (len(chembl_acts), len(filtered_acts)))
-    #print 
     if not filtered_acts:
      nga_ct += 1
      continue
     logger.info("  Got %d filtered activities"%len(filtered_acts))
+    
     #
     # if we get here, target is Tchem
     #

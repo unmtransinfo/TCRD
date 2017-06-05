@@ -4,7 +4,7 @@
 
   Steve Mathias
   smathias@salud.unm.edu
-  Time-stamp: <2017-03-16 14:42:37 smathias>
+  Time-stamp: <2017-05-04 11:37:24 smathias>
 '''
 from __future__ import print_function
 import sys
@@ -1526,7 +1526,42 @@ class DBAdaptor:
         curs.execute(sql, params)
       except mysql.Error, e:
         self._conn.rollback()
-        self._logger.error("MySQL Error in ins_do(): %s"%str(e))
+        self._logger.error("MySQL Error in ins_kegg_nearest_tclin(): %s"%str(e))
+        self._logger.error("SQLpat: %s"%sql)
+        self._logger.error("SQLparams: %s"%','.join([str(p) for p in params]))
+        return False
+    if commit:
+      try:
+        self._conn.commit()
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL commit error in ins_do(): %s"%str(e))
+        return False
+    
+    return True
+
+  def ins_locsig(self, init, commit=True):
+    if 'protein_id' in init and 'location' in init and 'signal' in init:
+      cols = ['protein_id', '`location`', '`signal`']
+      vals = ['%s','%s','%s']
+      params = [init['protein_id'], init['location'], init['signal']]
+    else:
+      self.warning("Invalid parameters sent to ins_locsig(): ", init)
+      return False
+    for optcol in ['pmids']:
+      if optcol in init:
+        cols.append(optcol)
+        vals.append('%s')
+        params.append(init[optcol])
+    sql = "INSERT INTO locsig (%s) VALUES (%s)" % (','.join(cols), ','.join(vals))
+    self._logger.debug("SQLpat: %s"%sql)
+    self._logger.debug("SQLparams: %s"%(", ".join([str(p) for p in params])))
+    with closing(self._conn.cursor()) as curs:
+      try:
+        curs.execute(sql, params)
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL Error in ins_locsig(): %s"%str(e))
         self._logger.error("SQLpat: %s"%sql)
         self._logger.error("SQLparams: %s"%','.join([str(p) for p in params]))
         return False

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-03-06 10:16:15 smathias>
+# Time-stamp: <2017-05-01 11:42:31 smathias>
 """ Load Drug Central data into TCRD from TSV files.
 
 Usage:
@@ -38,7 +38,7 @@ from progressbar import *
 PROGRAM = os.path.basename(sys.argv[0])
 LOGFILE = "%s.log" % PROGRAM
 
-FILES_DATE = '03032017'
+FILES_DATE = '04252017'
 TCLIN_FILE = '../data/DrugCentral/tclin_%s.tsv'%FILES_DATE
 TCHEM_FILE = '../data/DrugCentral/tchem_drugs_%s.tsv'%FILES_DATE
 DRUGINFO_FILE = '../data/DrugCentral/drug_info_%s.tsv'%FILES_DATE
