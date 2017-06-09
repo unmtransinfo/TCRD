@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-13 12:38:53 smathias>
+# Time-stamp: <2017-06-08 16:22:27 smathias>
 """Load data for TIN-X into TCRD from TSV files.
 
 Usage:
@@ -24,9 +24,9 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2015-2016, Steve Mathias"
+__copyright__ = "Copyright 2015-2017, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.0.0"
+__version__   = "2.0.1"
 
 import os,sys,time,re
 from docopt import docopt
@@ -44,10 +44,6 @@ PROTEIN_NOVELTY_FILE = '../data/TIN-X/TCRDv4/ProteinNovelty.csv'
 DISEASE_NOVELTY_FILE = '../data/TIN-X/TCRDv4/DiseaseNovelty.csv'
 PMID_RANKING_FILE = '../data/TIN-X/TCRDv4/PMIDRanking.csv'
 IMPORTANCE_FILE = '../data/TIN-X/TCRDv4/Importance.csv'
-SRC_FILES = [os.path.basename(PROTEIN_NOVELTY_FILE),
-             os.path.basename(DISEASE_NOVELTY_FILE),
-             os.path.basename(PMID_RANKING_FILE),
-             os.path.basename(IMPORTANCE_FILE)]
 
 def main():
   args = docopt(__doc__, version=__version__)
@@ -86,8 +82,7 @@ def main():
     print "WARNING: Error inserting dataset See logfile %s for details." % logfile
     sys.exit(1)
   # Provenance
-  provs = [ {'dataset_id': dataset_id, 'table_name': 'tinx_novelty', 'comment': "Prot
-ein novelty scores are generated from results of JensenLab textmining of PubMed in the file http://download.jensenlab.org/human_textmining_mentions.tsv. To calculate novelty scores, each paper (PMID) is assigned a fractional target (FT) score of one divided by the number of targets mentioned in it. The novelty score of a given protein is one divided by the sum of the FT scores for all the papers mentioning that protein."},
+  provs = [ {'dataset_id': dataset_id, 'table_name': 'tinx_novelty', 'comment': "Protein novelty scores are generated from results of JensenLab textmining of PubMed in the file http://download.jensenlab.org/human_textmining_mentions.tsv. To calculate novelty scores, each paper (PMID) is assigned a fractional target (FT) score of one divided by the number of targets mentioned in it. The novelty score of a given protein is one divided by the sum of the FT scores for all the papers mentioning that protein."},
             {'dataset_id': dataset_id, 'table_name': 'tinx_disease', 'comment': "Disease novelty scores are generated from results of JensenLab textmining of PubMed in the file http://download.jensenlab.org/disease_textmining_mentions.tsv. To calculate novelty scores, each paper (PMID) is assigned a fractional disease (FD) score of one divided by the number of targets mentioned in it. The novelty score of a given disease is one divided by the sum of the FT scores for all the papers mentioning that disease."},
             {'dataset_id': dataset_id, 'table_name': 'tinx_importance', 'comment': "To calculate importance scores, each paper is assigned a fractional disease-target (FDT) score of one divided by the product of the number of targets mentioned and the number of diseases mentioned. The importance score for a given disease-target pair is the sum of the FDT scores for all papers mentioning that disease and protein."},
             {'dataset_id': dataset_id, 'table_name': 'tinx_articlerank', 'comment': "PMIDs are ranked for a given disease-target pair based on a score calculated by multiplying the number of targets mentioned and the number of diseases mentioned in that paper. Lower scores have a lower rank (higher priority). If the scores do not discriminate, PMIDs are reverse sorted by value with the assumption that larger PMIDs are newer and of higher priority."}]

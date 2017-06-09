@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2016-12-14 16:56:06 smathias>
+# Time-stamp: <2017-06-08 14:04:08 smathias>
 """Generate TIN-X scores and PubMed ID rankings from Jensen lab's protein and disease mentions TSV files.
 
 Usage:
@@ -24,36 +24,37 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2016, Steve Mathias"
+__copyright__ = "Copyright 2016-2017, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.0.0"
+__version__   = "2.1.0"
 
 import os,sys,time,re
 from docopt import docopt
 from TCRD import DBAdaptor
 import logging
+import urllib
 import obo
 from progressbar import *
 
 PROGRAM = os.path.basename(sys.argv[0])
 LOGFILE = "%s.log" % PROGRAM
 
-DO_BASE_URL = 'https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/src/ontology/'
-DO_DOWNLOAD_DIR = '../data/DiseaseOntology'
+DO_BASE_URL = 'https://raw.githubusercontent.com/DiseaseOntology/HumanDiseaseOntology/master/src/ontology/'
+DO_DOWNLOAD_DIR = '../data/DiseaseOntology/'
 DO_OBO = 'doid.obo'
 JL_BASE_URL = 'http://download.jensenlab.org/'
 JL_DOWNLOAD_DIR = '../data/JensenLab/'
 DISEASE_FILE = 'disease_textmining_mentions.tsv'
 PROTEIN_FILE = 'human_textmining_mentions.tsv'
 # Output CSV files:
-PROTEIN_NOVELTY_FILE = '../data/TIN-X/TCRD4/ProteinNovelty.csv'
-DISEASE_NOVELTY_FILE = '../data/TIN-X/TCRD4/DiseaseNovelty.csv'
-PMID_RANKING_FILE = '../data/TIN-X/TCRD4/PMIDRanking.csv'
-IMPORTANCE_FILE = '../data/TIN-X/TCRD4/Importance.csv'
+PROTEIN_NOVELTY_FILE = '../data/TIN-X/TCRDv4/ProteinNovelty.csv'
+DISEASE_NOVELTY_FILE = '../data/TIN-X/TCRDv4/DiseaseNovelty.csv'
+PMID_RANKING_FILE = '../data/TIN-X/TCRDv4/PMIDRanking.csv'
+IMPORTANCE_FILE = '../data/TIN-X/TCRDv4/Importance.csv'
 
 def download_mentions():
+  print
   for f in [DISEASE_FILE, PROTEIN_FILE]:
-    print
     if os.path.exists(JL_DOWNLOAD_DIR + f):
       os.remove(JL_DOWNLOAD_DIR + f)
     print "Downloading", JL_BASE_URL + f
@@ -95,7 +96,6 @@ def tinx():
   dbi = dba.get_dbinfo()
   logger.info("Connected to TCRD database %s (schema ver %s; data ver %s)", args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
   if not quiet:
-    print "\n%s (v%s) [%s]:" % (PROGRAM, __version__, time.strftime("%c"))
     print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
   # The results of parsing the input mentions files will be the following dictionaries:
@@ -107,8 +107,9 @@ def tinx():
   pmid_protein_ct = {} # PMID => count of proteins mentioned in a given paper 
 
   # First parse the Disease Ontology OBO file to get DO names and defs
-  print "\nParsing Disease Ontology file %s" % DISEASE_ONTOLOGY_OBO
-  do_parser = obo.Parser(open(DISEASE_ONTOLOGY_OBO))
+  dofile = DO_DOWNLOAD_DIR + DO_OBO
+  print "\nParsing Disease Ontology file %s" % dofile
+  do_parser = obo.Parser(open(dofile))
   do = {}
   for stanza in do_parser:
     do[stanza.tags['id'][0].value] = stanza.tags
@@ -117,10 +118,10 @@ def tinx():
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
 
   start_time = time.time()
-  line_ct = wcl(PROTEIN_FILE)
+  line_ct = wcl(JL_DOWNLOAD_DIR+PROTEIN_FILE)
   if not quiet:
-    print "\nProcessing %d input lines in protein file %s" % (line_ct, PROTEIN_FILE)
-  with open(PROTEIN_FILE, 'rU') as tsvf:
+    print "\nProcessing %d input lines in protein file %s" % (line_ct, JL_DOWNLOAD_DIR+PROTEIN_FILE)
+  with open(JL_DOWNLOAD_DIR+PROTEIN_FILE, 'rU') as tsvf:
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
     ct = 0
     skip_ct = 0
@@ -144,17 +145,18 @@ def tinx():
         notfnd.add(ensp)
         continue
       t = targets[0]
-      k = "%s,%s" % (t['components']['protein'][0]['id'],
-                     t['components']['protein'][0]['uniprot'])
-      if k in pid2pmids:
-        pid2pmids[k] = pid2pmids[k].union(pmids)
-      else:
-        pid2pmids[k] = set(pmids)
-      for pmid in pmids:
-        if pmid in pmid_protein_ct:
-          pmid_protein_ct[pmid] += 1.0
+      for t in targets:
+        p = t['components']['protein'][0]
+        k = "%s,%s" % (p['id'], p['uniprot'])
+        if k in pid2pmids:
+          pid2pmids[k] = pid2pmids[k].union(pmids)
         else:
-          pmid_protein_ct[pmid] = 1.0
+          pid2pmids[k] = set(pmids)
+        for pmid in pmids:
+          if pmid in pmid_protein_ct:
+            pmid_protein_ct[pmid] += 1.0
+          else:
+            pmid_protein_ct[pmid] = 1.0
   pbar.finish()
   elapsed = time.time() - start_time
   print "%d input lines processed. Elapsed time: %s" % (ct, secs2str(elapsed))
@@ -166,10 +168,10 @@ def tinx():
   
   start_time = time.time()
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
-  line_ct = wcl(DISEASE_FILE)
+  line_ct = wcl(JL_DOWNLOAD_DIR+DISEASE_FILE)
   if not quiet:
-    print "\nProcessing %d input lines in file %s" % (line_ct, DISEASE_FILE)
-  with open(DISEASE_FILE, 'rU') as tsvf:
+    print "\nProcessing %d input lines in file %s" % (line_ct, JL_DOWNLOAD_DIR+DISEASE_FILE)
+  with open(JL_DOWNLOAD_DIR+DISEASE_FILE, 'rU') as tsvf:
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
     ct = 0
     skip_ct = 0

@@ -1015,6 +1015,7 @@ mysql> update dbinfo set data_ver = '4.6.0';
 [smathias@juniper SQL]$ mysqldump tcrd > dumps/tcrd_v4.6.0.sql
 
 
+
 Next load of UniProt needs to manually fix this:
 mysql> select id, name, description, sym, uniprot, geneid, stringid from protein where id in (9170, 9+------+-------------+-------------------------------+---------+---------+--------+----------+
 | id   | name        | description                   | sym     | uniprot | geneid | stringid |
@@ -1027,3 +1028,111 @@ mysql> select id, name, description, sym, uniprot, geneid, stringid from protein
 P0DN77 -> OPN1MW2 728458
 
 P0DN78 -> OPN1MW3 101060233
+
+But for now, theses need to be set as GPCRs:
+mysql> UPDATE target set fam = 'GPCR' WHERE id in (9170, 9171);
+mysql> update dbinfo set data_ver = '4.6.1';
+[smathias@juniper SQL]$ mysqldump tcrd > dumps/tcrd_v4.6.1.sql
+
+
+#
+# Redo TIN-X
+#
+select id from dataset where name = 'TIN-X Data';
+DELETE FROM provenance WHERE dataset_id = 52;
+DELETE FROM dataset WHERE id = 52;
+
+mysql> delete from tinx_novelty;
+mysql> alter table tinx_novelty AUTO_INCREMENT = 1;
+mysql> delete from tinx_importance;
+mysql> alter table tinx_importance AUTO_INCREMENT = 1;
+mysql> delete from tinx_disease;
+mysql> alter table tinx_disease AUTO_INCREMENT = 1;
+mysql> delete from tinx_articlerank;
+mysql> alter table tinx_articlerank AUTO_INCREMENT = 1;
+
+[smathias@juniper python]$ ./TIN-X.py --dbname tcrd4
+
+TIN-X.py (v2.1.0) [Thu Jun  8 14:04:21 2017]:
+
+Downloading https://raw.githubusercontent.com/DiseaseOntology/HumanDiseaseOntology/master/src/ontology/doid.obo
+         to ../data/DiseaseOntology/doid.obo
+
+Downloading http://download.jensenlab.org/disease_textmining_mentions.tsv
+         to ../data/JensenLab/disease_textmining_mentions.tsv
+Downloading http://download.jensenlab.org/human_textmining_mentions.tsv
+         to ../data/JensenLab/human_textmining_mentions.tsv
+
+Connected to TCRD database tcrd4 (schema ver 4.0.5; data ver 4.6.1)
+
+Parsing Disease Ontology file ../data/DiseaseOntology/doid.obo
+  Got 10892 Disease Ontology terms
+
+Processing 20201 input lines in protein file ../data/JensenLab/human_textmining_mentions.tsv
+Progress: 100% [########################################################################] Time: 0:03:55
+20201 input lines processed. Elapsed time: 0:03:55.517
+  Skipped 2463 non-ENSP lines
+  Saved 17718 protein to PMIDs mappings
+  Saved 4592908 PMID to protein count mappings
+WARNING: No target found for 179 ENSPs. See logfile TIN-X.py.log for details.
+
+Processing 8532 input lines in file ../data/JensenLab/disease_textmining_mentions.tsv
+Progress: 100% [######################################################################] Time: 0:01:12
+8532 input lines processed. Elapsed time: 0:01:13.526
+  Skipped 1668 non-DOID lines
+  Saved 6864 DOID to PMIDs mappings
+  Saved 9300760 PMID to disease count mappings
+
+Computing protein novely scores
+  Wrote 17718 novelty scores to file ../data/TIN-X/TCRDv4/ProteinNovelty.csv
+  Elapsed time: 0:00:02.986
+
+Computing disease novely scores
+  Wrote 6864 novelty scores to file ../data/TIN-X/TCRDv4/DiseaseNovelty.csv
+  Elapsed time: 0:00:22.975
+
+Computing importance scores
+  Wrote 2307334 importance scores to file ../data/TIN-X/TCRDv4/Importance.csv
+  Elapsed time: 0:47:41.067
+
+Computing PubMed rankings
+  Wrote 35835016 PubMed trankings to file ../data/TIN-X/TCRDv4/PMIDRanking.csv
+  Elapsed time: 1:04:48.343
+
+TIN-X.py: Done.
+
+[smathias@juniper loaders]$ ./load-TIN-X.py --dbname tcrd4
+
+load-TIN-X.py (v2.0.1) [Thu Jun  8 16:22:31 2017]:
+
+Connected to TCRD database tcrd4 (schema ver 4.0.5; data ver 4.6.1)
+
+Parsing Disease Ontology file ../data/DiseaseOntology/doid.obo
+  Got 10892 Disease Ontology terms
+
+Processing 6865 input lines in file ../data/TIN-X/TCRDv4/DiseaseNovelty.csv
+Progress: 100% [########################################################################] Time: 0:00:04
+6864 input lines processed. Elapsed time: 0:00:04.501
+  Inserted 6864 new tinx_disease rows
+  Saved 6864 keys in dmap
+
+Processing 17719 input lines in file ../data/TIN-X/TCRDv4/ProteinNovelty.csv
+Progress: 100% [########################################################################] Time: 0:00:11
+17718 input lines processed. Elapsed time: 0:00:11.250
+  Inserted 17718 new tinx_novelty rows
+
+Processing 2307335 input lines in file ../data/TIN-X/TCRDv4/Importance.csv
+Progress: 100% [########################################################################] Time: 0:26:28
+2307334 input lines processed. Elapsed time: 0:26:28.554
+  Inserted 2307334 new tinx_importance rows
+  Saved 2307334 keys in imap
+
+Processing 35835017 input lines in file ../data/TIN-X/TCRDv4/PMIDRanking.csv
+Progress: 100% [########################################################################] Time: 5:49:24
+35835016 input lines processed. Elapsed time: 5:49:27.504
+  Inserted 35835016 new tinx_articlerank rows
+
+load-TIN-X.py: Done.
+
+mysql> update dbinfo set schema_ver = '4.0.6', data_ver = '4.6.2';
+[smathias@juniper SQL]$ mysqldump tcrd > dumps/tcrd_v4.6.2.sql
