@@ -1012,7 +1012,7 @@ Set TDL values for 20120 targets
 load-TDLs.py: Done.
 
 mysql> update dbinfo set data_ver = '4.6.0';
-[smathias@juniper SQL]$ mysqldump tcrd > dumps/tcrd_v4.6.0.sql
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd_v4.6.0.sql
 
 
 
@@ -1032,7 +1032,7 @@ P0DN78 -> OPN1MW3 101060233
 But for now, theses need to be set as GPCRs:
 mysql> UPDATE target set fam = 'GPCR' WHERE id in (9170, 9171);
 mysql> update dbinfo set data_ver = '4.6.1';
-[smathias@juniper SQL]$ mysqldump tcrd > dumps/tcrd_v4.6.1.sql
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd_v4.6.1.sql
 
 
 #
@@ -1111,28 +1111,88 @@ Parsing Disease Ontology file ../data/DiseaseOntology/doid.obo
   Got 10892 Disease Ontology terms
 
 Processing 6865 input lines in file ../data/TIN-X/TCRDv4/DiseaseNovelty.csv
-Progress: 100% [########################################################################] Time: 0:00:04
+Progress: 100% [######################################################################] Time: 0:00:04
 6864 input lines processed. Elapsed time: 0:00:04.501
   Inserted 6864 new tinx_disease rows
   Saved 6864 keys in dmap
 
 Processing 17719 input lines in file ../data/TIN-X/TCRDv4/ProteinNovelty.csv
-Progress: 100% [########################################################################] Time: 0:00:11
+Progress: 100% [######################################################################] Time: 0:00:11
 17718 input lines processed. Elapsed time: 0:00:11.250
   Inserted 17718 new tinx_novelty rows
 
 Processing 2307335 input lines in file ../data/TIN-X/TCRDv4/Importance.csv
-Progress: 100% [########################################################################] Time: 0:26:28
+Progress: 100% [######################################################################] Time: 0:26:28
 2307334 input lines processed. Elapsed time: 0:26:28.554
   Inserted 2307334 new tinx_importance rows
   Saved 2307334 keys in imap
 
 Processing 35835017 input lines in file ../data/TIN-X/TCRDv4/PMIDRanking.csv
-Progress: 100% [########################################################################] Time: 5:49:24
+Progress: 100% [######################################################################] Time: 5:49:24
 35835016 input lines processed. Elapsed time: 5:49:27.504
   Inserted 35835016 new tinx_articlerank rows
 
 load-TIN-X.py: Done.
 
 mysql> update dbinfo set schema_ver = '4.0.6', data_ver = '4.6.2';
-[smathias@juniper SQL]$ mysqldump tcrd > dumps/tcrd_v4.6.2.sql
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd_v4.6.2.sql
+
+
+# Human Cell Atlas
+
+alter table compartment add column reliability enum('Supported', 'Approved', 'Validated') NULL;
+insert into expression_type (name, data_type, description) values ('HCA RNA', 'Number', 'Human Cell Atlas gene expression in cell lines.');
+insert into compartment_type (name, description) values ('Human Cell Atlas', 'Human Cell Atlas protein locations, minus rows with Uncertain reliability.');
+
+[smathias@juniper loaders]$ ./load-HumanCellAtlas.py --dbname tcrd4 
+
+load-HumanCellAtlas.py (v1.0.0) [Mon Jun 19 15:03:38 2017]:
+
+Connected to TCRD database tcrd4 (schema ver 4.0.6; data ver 4.6.2)
+
+Calculating expression level percentiles
+
+Processing 19629 lines from HCA file ../data/HCA/aal3321_Thul_SM_table_S1.csv
+Progress: 100% [######################################################################] Time: 0:13:02
+Processed 19628 HCA lines.
+  Inserted 1057728 new expression rows
+  18870 proteins have HCA RNA expression data
+  No target found for 906 lines. See logfile tcrd4logs/load-HumanCellAtlas.py.log for details.
+
+Processing 12004 lines from HCA file ../data/HCA/aal3321_Thul_SM_table_S6.csv
+Progress: 100% [######################################################################] Time: 0:00:37
+Processed 12003 HCA lines.
+  Inserted 18588 new compartment rows
+  11870 proteins have HCA compartment data
+  No target found for 101 lines. See logfile tcrd4logs/load-HumanCellAtlas.py.log for details.
+
+load-HumanCellAtlas.py: Done. Elapsed time: 0:13:40.085
+
+mysql> update dbinfo set schema_ver = '4.0.7', data_ver = '4.6.3';
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd_v4.6.3.sql
+
+
+# Cell Surface Protein Atlas
+
+insert into expression_type (name, data_type, description) values ('Cell Surface Protein Atlas', 'Boolean', 'Cell Surface Protein Atlas protein expression in cell lines.');
+
+[smathias@juniper loaders]$ ./load-CSPA.py --dbname tcrd4
+
+load-CSPA.py (v1.0.0) [Tue Jun 20 12:39:24 2017]:
+
+Connected to TCRD database tcrd4 (schema ver 4.0.7; data ver 4.6.3)
+
+Processing 1500 lines from CSPA file ../data/CSPA/S1_File.csv
+Progress: 100% [######################################################################] Time: 0:00:07
+Processed 1499 CSPA lines.
+  Inserted 10104 new expression rows
+  Skipped 460 non-high confidence rows
+  1038 proteins have CSPA expression data
+  No target found for 1 lines. See logfile tcrd4logs/load-CSPA.py.log for details.
+
+load-CSPA.py: Done. Elapsed time: 0:00:07.990
+
+mysql> update dbinfo set data_ver = '4.6.4';
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd_v4.6.4.sql
+
+

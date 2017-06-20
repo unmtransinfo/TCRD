@@ -4,7 +4,7 @@
 
   Steve Mathias
   smathias@salud.unm.edu
-  Time-stamp: <2017-05-04 11:37:24 smathias>
+  Time-stamp: <2017-06-16 12:38:37 smathias>
 '''
 from __future__ import print_function
 import sys
@@ -1339,7 +1339,7 @@ class DBAdaptor:
     else:
       self.warning("Invalid parameters sent to ins_compartment(): ", init)
       return False
-    for optcol in ['go_id', 'go_term', 'evidence', 'zscore', 'conf', 'url']:
+    for optcol in ['go_id', 'go_term', 'evidence', 'zscore', 'conf', 'url', 'reliability']:
       if optcol in init:
         cols.append(optcol)
         vals.append('%s')
