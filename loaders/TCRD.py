@@ -4,7 +4,7 @@
 
   Steve Mathias
   smathias@salud.unm.edu
-  Time-stamp: <2017-06-16 12:38:37 smathias>
+  Time-stamp: <2017-11-07 11:41:51 smathias>
 '''
 from __future__ import print_function
 import sys
@@ -1542,7 +1542,7 @@ class DBAdaptor:
 
   def ins_locsig(self, init, commit=True):
     if 'protein_id' in init and 'location' in init and 'signal' in init:
-      cols = ['protein_id', '`location`', '`signal`']
+      cols = ['protein_id', 'location', 'signal']
       vals = ['%s','%s','%s']
       params = [init['protein_id'], init['location'], init['signal']]
     else:
@@ -1570,7 +1570,42 @@ class DBAdaptor:
         self._conn.commit()
       except mysql.Error, e:
         self._conn.rollback()
-        self._logger.error("MySQL commit error in ins_do(): %s"%str(e))
+        self._logger.error("MySQL commit error in ins_locsig(): %s"%str(e))
+        return False
+    
+    return True
+
+  def ins_ortholog(self, init, commit=True):
+    if 'protein_id' in init and 'taxid' in init and 'species' in init and 'symbol' in init and 'name' in init:
+      cols = ['protein_id', 'taxid', 'species', 'symbol', 'name']
+      vals = ['%s','%s','%s', '%s','%s']
+      params = [init['protein_id'], init['taxid'], init['species'], init['symbol'], init['name']]
+    else:
+      self.warning("Invalid parameters sent to ins_ortholog(): ", init)
+      return False
+    for optcol in ['db_id', 'geneid']:
+      if optcol in init:
+        cols.append(optcol)
+        vals.append('%s')
+        params.append(init[optcol])
+    sql = "INSERT INTO ortholog (%s) VALUES (%s)" % (','.join(cols), ','.join(vals))
+    self._logger.debug("SQLpat: %s"%sql)
+    self._logger.debug("SQLparams: %s"%(", ".join([str(p) for p in params])))
+    with closing(self._conn.cursor()) as curs:
+      try:
+        curs.execute(sql, params)
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL Error in ins_ortholog(): %s"%str(e))
+        self._logger.error("SQLpat: %s"%sql)
+        self._logger.error("SQLparams: %s"%','.join([str(p) for p in params]))
+        return False
+    if commit:
+      try:
+        self._conn.commit()
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL commit error in ins_ortholog(): %s"%str(e))
         return False
     
     return True
@@ -1715,6 +1750,22 @@ class DBAdaptor:
         beans["Ma'ayan Lab Gene Attributes"].append(d)
 
     return beans
+
+  def get_chembl_activities(self):
+    chembl_activities = []
+    with closing(self._conn.cursor(mysql.cursors.DictCursor)) as curs:
+      curs.execute("SELECT * FROM chembl_activity")
+      for d in curs:
+        chembl_activities.append(d)
+    return chembl_activities
+
+  def get_drug_activities(self):
+    drug_activities = []
+    with closing(self._conn.cursor(mysql.cursors.DictCursor)) as curs:
+      curs.execute("SELECT * FROM drug_activity")
+      for d in curs:
+        drug_activities.append(d)
+    return drug_activities
 
   def get_techdev_info(self, contact_id):
     tdi = []
@@ -1889,7 +1940,12 @@ class DBAdaptor:
         for ex in curs:
           etype = ex['etype']
           val_col = self._expression_types[etype]
-          p['expressions'].append({'id': ex['id'], 'etype': etype, 'tissue': ex['tissue'], 'evidence': ex['evidence'], 'zscore': str(ex['zscore']), 'conf': ex['conf'], 'oid': ex['oid'], 'value': ex[val_col], 'qual_value': ex['qual_value'], 'confidence': ex['confidence']})
+          ex['value'] = ex[val_col]
+          del(ex['number_value'])
+          del(ex['boolean_value'])
+          del(ex['string_value'])
+          p['expressions'].append(ex)
+          #p['expressions'].append({'id': ex['id'], 'etype': etype, 'tissue': ex['tissue'], 'evidence': ex['evidence'], 'zscore': str(ex['zscore']), 'conf': ex['conf'], 'oid': ex['oid'], 'value': ex[val_col], 'qual_value': ex['qual_value'], 'confidence': ex['confidence'], 'gender': ex['gender']})
         if not p['expressions']: del(p['expressions'])
         # mpl_assay_info
         p['mlp_assay_infos'] = []

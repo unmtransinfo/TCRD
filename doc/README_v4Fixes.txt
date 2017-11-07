@@ -1195,4 +1195,87 @@ load-CSPA.py: Done. Elapsed time: 0:00:07.990
 mysql> update dbinfo set data_ver = '4.6.4';
 [smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd_v4.6.4.sql
 
+#
+# PubChEM CIDs
+#
+ALTER TABLE chembl_activity ADD COLUMN cmpd_pubchem_cid int(11) NULL;
+ALTER TABLE drug_activity ADD COLUMN cmpd_pubchem_cid int(11) NULL;
 
+[smathias@juniper loaders]$ ./load-PubChemCIDs.py --dbname tcrd4
+
+load-PubChemCIDs.py (v1.0.0) [Fri Nov  3 10:45:08 2017]:
+
+Downloading  ftp://ftp.ebi.ac.uk/pub/databases/chembl/UniChem/data/wholeSourceMapping/src_id1/src1src22.txt.gz
+         to  ../data/ChEMBL/UniChem/src1src22.txt.gz
+Uncompressing ../data/ChEMBL/UniChem/src1src22.txt.gz
+Done. Elapsed time: 0:00:06.132
+
+Connected to TCRD database tcrd4 (schema ver 4.0.7; data ver 4.6.4)
+
+Processing 1675428 lines in file ../data/ChEMBL/UniChem/src1src22.txt
+Got 1654610 ChEMBL to PubChem mappings
+
+Loading PubChem CIDs for 362281 ChEMBL activities
+Progress: 100% [######################################################################] Time: 0:03:52
+362281 ChEMBL activities processed. Elapsed time: 0:04:00.018
+  Inserted 344276 new PubChem CIDs
+  [WARNING] 11470 ChEMBL IDs not found
+
+Loading PubChem CIDs for 11289 drug activities
+Progress: 100% [######################################################################] Time: 0:00:06
+11289 drug activities processed. Elapsed time: 0:00:06.416
+  Inserted 8518 new PubChem CIDs
+  Skipped 1920 drug activities with no ChEMBL ID
+  [WARNING] 175 ChEMBL IDs not found
+
+load-PubChemCIDs.py: Done.
+
+mysql> update dbinfo set schema_ver = '4.0.8', data_ver = '4.6.5';
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd_v4.6.5.sql
+
+#
+# Orthologs
+#
+CREATE TABLE `ortholog` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `protein_id` int(11) NOT NULL,
+  `taxid` int(11) NOT NULL,
+  `species` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  `db_id` varchar(255) COLLATE utf8_unicode_ci NULL,
+  `geneid` int(11) NULL,
+  `symbol`varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  `name` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `ortholog_idx1` (`protein_id`),
+  CONSTRAINT `fk_ortholog_protein` FOREIGN KEY (`protein_id`) REFERENCES `protein` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+
+[smathias@juniper loaders]$ ./load-Orthologs.py --dbname tcrd4
+
+load-Orthologs.py (v1.0.0) [Tue Nov  7 11:58:09 2017]:
+
+Downloading  ftp://ftp.ebi.ac.uk/pub/databases/genenames/hcop/human_all_hcop_sixteen_column.txt.gz
+         to  ../data/HGNC/human_all_hcop_sixteen_column.txt.gz
+Uncompressing ../data/HGNC/human_all_hcop_sixteen_column.txt.gz
+Done. Elapsed time: 0:04:22.544
+
+Processing 959021 input lines from file ../data/HGNC/human_all_hcop_sixteen_column.txt
+  Generated ortholog dataframe with 166937 entries
+
+Connected to TCRD database tcrd4 (schema ver 4.0.8; data ver 4.6.5)
+
+Loading ortholog data for 20120 TCRD targets
+Progress: 100% [#######################################################################] Time: 0:13:55
+Processed 20120 targets. Elapsed time: 0:13:55.114
+Loaded 163719 new ortholog rows
+  Skipped 1921 empty ortholog entries
+  Skipped 162 targets with no sym/geneid
+
+load-Orthologs.py: Done.
+
+
+
+
+mysql> update dbinfo set schema_ver = '4.0.9', data_ver = '4.6.6';
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd_v4.6.6.sql

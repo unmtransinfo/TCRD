@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-05 16:24:10 smathias>
+# Time-stamp: <2017-06-22 10:02:21 smathias>
 """Load patent counts into TCRD from CSV file.
 
 Usage:
@@ -24,9 +24,9 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2015-2016, Steve Mathias"
+__copyright__ = "Copyright 2015-2017, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.0.0"
+__version__   = "2.1.0"
 
 import os,sys,time
 from docopt import docopt
@@ -37,9 +37,20 @@ from progressbar import *
 
 PROGRAM = os.path.basename(sys.argv[0])
 LOGFILE = "%s.log" % PROGRAM
-INFILE = '../data/EBI/EBI_PatentCountsJensenTagger_20160711.csv'
+BASE_URL = 'ftp://ftp.ebi.ac.uk/pub/databases/chembl/IDG/patent_counts/'
+DOWNLOAD_DIR = '../data/EBI/patent_counts'
+FILENAME = 'latest'
+#INFILE = '../data/EBI/EBI_PatentCountsJensenTagger_20160711.csv'
 
-def main():
+def download():
+  if os.path.exists(DOWNLOAD_DIR + FILENAME):
+    os.rename(DOWNLOAD_DIR + FILENAME, DOWNLOAD_DIR + FILENAME + '.bak')
+  print "\nDownloading ", BASE_URL + FILENAME
+  print "         to ", DOWNLOAD_DIR + FILENAME
+  urllib.urlretrieve(BASE_URL + FILENAME, DOWNLOAD_DIR + FILENAME)
+  print "Done."
+
+def load():
   args = docopt(__doc__, version=__version__)
   debug = int(args['--debug'])
   if debug:
@@ -65,11 +76,10 @@ def main():
   dbi = dba.get_dbinfo()
   logger.info("Connected to TCRD database %s (schema ver %s; data ver %s)", args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
   if not args['--quiet']:
-    print "\n%s (v%s) [%s]:" % (PROGRAM, __version__, time.strftime("%c"))
     print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
   # Dataset
-  dataset_id = dba.ins_dataset( {'name': 'EBI Patent Counts', 'source': 'File obtained directly from AnneHersey at EBI', 'app': PROGRAM, 'app_version': __version__, 'url': 'https://www.surechembl.org/search/', 'comments': 'Patents from SureChEMBL were tagged using the JensenLab tagger.'} )
+  dataset_id = dba.ins_dataset( {'name': 'EBI Patent Counts', 'source': 'File %s'%BASE_URL+FILENAME, 'app': PROGRAM, 'app_version': __version__, 'url': 'https://www.surechembl.org/search/', 'comments': 'Patents from SureChEMBL were tagged using the JensenLab tagger.'} )
   if not dataset_id:
     print "WARNING: Error inserting dataset See logfile %s for details." % logfile
   # Provenance
@@ -87,10 +97,11 @@ def main():
   notfnd = {}
   pc_ct = 0
   dba_err_ct = 0
-  line_ct = wcl(INFILE)
+  fname = BASE_URL + FILENAME
+  line_ct = wcl(fname)
   if not args['--quiet']:
-    print "\nProcessing %d data lines in file %s" % (line_ct, INFILE)
-  with open(INFILE, 'rU') as csvfile:
+    print "\nProcessing %d data lines in file %s" % (line_ct, fname)
+  with open(fname, 'rU') as csvfile:
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
     csvreader = csv.reader(csvfile)
     header = csvreader.next() # skip header line
@@ -159,4 +170,7 @@ def secs2str(t):
   return "%d:%02d:%02d.%03d" % reduce(lambda ll,b : divmod(ll[0],b) + ll[1:], [(t*1000,),1000,60,60])
 
 if __name__ == '__main__':
-    main()
+  print "\n%s (v%s) [%s]:" % (PROGRAM, __version__, time.strftime("%c"))
+  download()
+  load()
+  print "\n%s: Done.\n" % PROGRAM

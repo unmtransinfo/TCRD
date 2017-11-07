@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-13 12:52:01 smathias>
+# Time-stamp: <2017-07-20 10:43:38 smathias>
 """
 Calculate and load consensus expression values into TCRD.
 Usage:
@@ -305,3 +305,4 @@ if __name__ == '__main__':
   calc_and_load()
   elapsed = time.time() - start_time
   print "\n%s: Done. Elapsed time: %s\n" % (PROGRAM, secs2str(elapsed))
+

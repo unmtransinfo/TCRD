@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-05 16:36:10 smathias>
+# Time-stamp: <2017-11-03 10:23:39 smathias>
 """Load NCBI gi xrefs into TCRD from UniProt ID Mapping file.
 
 Usage:
@@ -33,7 +33,13 @@ from docopt import docopt
 from TCRD import DBAdaptor
 import logging
 import csv
-import urllib
+if sys.version_info[0] < 3:
+  # Python 2
+  from urllib import urlretrieve
+else:
+  # Python 3
+  from urllib.request import urlretrieve
+  from functools import reduce
 import gzip
 from progressbar import *
 
@@ -128,7 +134,6 @@ def load():
   if not args['--quiet']:
     print "\nProcessing %d rows in file %s" % (line_ct, infile)
   with open(infile, 'rU') as tsv:
-    ct = 0
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start()
     ct = 0
     tmark = {}
@@ -179,3 +184,4 @@ if __name__ == '__main__':
   download()
   load()
   print "\n%s: Done.\n" % PROGRAM
+
