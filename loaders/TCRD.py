@@ -4,7 +4,7 @@
 
   Steve Mathias
   smathias@salud.unm.edu
-  Time-stamp: <2017-11-07 11:41:51 smathias>
+  Time-stamp: <2017-11-10 12:48:31 smathias>
 '''
 from __future__ import print_function
 import sys
@@ -799,7 +799,7 @@ class DBAdaptor:
     else:
       self.warning("Invalid parameters sent to ins_disease(): ", init)
       return False
-    for optcol in ['evidence', 'description', 'reference', 'zscore', 'conf', 'did', 'drug_name', 'log2foldchange', 'pvalue', 'score', 'source']:
+    for optcol in ['evidence', 'description', 'reference', 'zscore', 'conf', 'did', 'drug_name', 'log2foldchange', 'pvalue', 'score', 'source', 'O2s', 'S2O']:
       if optcol in init:
         cols.append(optcol)
         vals.append('%s')
@@ -1576,14 +1576,14 @@ class DBAdaptor:
     return True
 
   def ins_ortholog(self, init, commit=True):
-    if 'protein_id' in init and 'taxid' in init and 'species' in init and 'symbol' in init and 'name' in init:
-      cols = ['protein_id', 'taxid', 'species', 'symbol', 'name']
-      vals = ['%s','%s','%s', '%s','%s']
-      params = [init['protein_id'], init['taxid'], init['species'], init['symbol'], init['name']]
+    if 'protein_id' in init and 'taxid' in init and 'species' in init and 'symbol' in init and 'name' in init and 'sources' in init:
+      cols = ['protein_id', 'taxid', 'species', 'symbol', 'name', 'sources']
+      vals = ['%s','%s','%s', '%s','%s', '%s']
+      params = [init['protein_id'], init['taxid'], init['species'], init['symbol'], init['name'], init['sources']]
     else:
       self.warning("Invalid parameters sent to ins_ortholog(): ", init)
       return False
-    for optcol in ['db_id', 'geneid']:
+    for optcol in ['db_id', 'geneid', 'mod_url']:
       if optcol in init:
         cols.append(optcol)
         vals.append('%s')
@@ -2045,33 +2045,23 @@ class DBAdaptor:
       path = self.get_protein_dto(row['parent']) + path
     return path
 
-  def get_target_count(self, idg=False, family=False, past_id=None):
+  def get_target_count(self, idg=False, past_id=None):
     '''
     Function  : Get count of TCRD targets
-    Arguments : Two optional args:
-                idg: Get only IDG family targets [Default = False]
-                family: Get targets from a given family
-                        Must be one of: Enzyme, Epigenetic, GPCR, IC, Kinase, NR, oGPCR,
-                                        TF, TF; Epigenetic, Transporter.
+    Arguments : Optional arg:
+                idg: Get only IDG Phase 2 targets [Default = False]
     Returns   : Integer
     Example   : ct = dba.get_target_count()
     Scope     : Public
     Comments  : The value of idg is ignored if family is set.
     '''
     with closing(self._conn.cursor()) as curs:
-      if family:
-        if past_id:
-          sql = "SELECT count(*) FROM target WHERE id > %s AND fam IS NOT NULL AND fam = %s"
-          curs.execute(sql, (past_id, family))
-        else:
-          sql = "SELECT count(*) FROM target WHERE fam IS NOT NULL AND fam = %s"
-          curs.execute(sql, (family,))
-      elif idg:
+      if idg:
         if past_id:
           sql = "SELECT count(*) FROM target WHERE id > %s AND idg2"
           curs.execute(sql, (past_id,))
         else:
-          sql = "SELECT count(*) FROM target WHERE fam IS NOT NULL"
+          sql = "SELECT count(*) FROM target WHERE idg2"
           curs.execute(sql)
       else:
         if past_id:
@@ -2083,35 +2073,24 @@ class DBAdaptor:
       ct = curs.fetchone()[0]
     return ct
 
-  def get_targets(self, idg=False, family=False, include_annotations=False, past_id=None, get_ga_counts=False):
+  def get_targets(self, idg=False, include_annotations=False, past_id=None, get_ga_counts=False):
     '''
     Function  : Generator function to get TCRD targets
-    Arguments : Three optional args:
-                idg: Get only IDG family targets [Default = False]
-                family: Get targets from a given family
-                        Must be one of: Enzyme, Epigenetic, GPCR, IC, Kinase, NR, oGPCR,
-                                        TF, TF; Epigenetic, Transporter.
+    Arguments : Two optional args:
+                idg: Get only IDG Phase 2 targets [Default = False]
                 include_annotations: See get_target()
     Returns   : One target dictionary - as per get_target() - at a time
     Example   : for target in dba.get_idg_targets():
                   do something with target
     Scope     : Public
-    Comments  : The value of idg is ignored if family is set.
     '''
     with closing(self._conn.cursor()) as curs:
-      if family:
-        if past_id:
-          sql = "SELECT id FROM target WHERE id > %s AND fam IS NOT NULL AND fam = %s"
-          curs.execute(sql, (past_id, family))
-        else:
-          sql = "SELECT id FROM target WHERE fam IS NOT NULL AND fam = %s"
-          curs.execute(sql, (family,))
-      elif idg:
+      if idg:
         if past_id:
           sql = "SELECT id FROM target WHERE WHERE id > %s AND idg2"
           curs.execute(sql, (past_id,))
         else:
-          sql = "SELECT id FROM target WHERE fam IS NOT NULL"
+          sql = "SELECT id FROM target WHERE idg2"
           curs.execute(sql)
       else:
         if past_id:
@@ -2125,25 +2104,19 @@ class DBAdaptor:
         t = self.get_target(i[0], include_annotations, get_ga_counts)
         yield t
 
-  def get_tdl_target_count(self, tdl, idg=False, family=False):
+  def get_tdl_target_count(self, tdl, idg=False):
     '''
     Function  : Get count of TCRD targets by TDL
     Arguments : A TDL string: Tclin, Tchem, Tbio or Tdark
-                Two optional args:
-                idg: Get only IDG family targets [Default = False]
-                family: Get targets from a given IDG family
-                        Must be one of: Enzyme, Epigenetic, GPCR, IC, Kinase, NR, oGPCR,
-                                        TF, TF; Epigenetic, Transporter.
+                Optional arg:
+                idg: Get only IDG Phase 2 targets [Default = False]
     Returns   : Integer
     Example   : ct = dba.get_tdl_target_count()
     Scope     : Public
-    Comments  : The value of idg is ignored if family is set.
+    Comments  : 
     '''
     with closing(self._conn.cursor()) as curs:
-      if family:
-        sql = "SELECT count(*) FROM target WHERE tdl = %s AND fam IS NOT NULL AND fam = %s"
-        curs.execute(sql, (tdl, family))
-      elif idg:
+      if idg:
         sql = "SELECT count(*) FROM target WHERE tdl = %s AND idg2"
         curs.execute(sql, (tdl,))
       else:
@@ -2152,15 +2125,12 @@ class DBAdaptor:
       ct = curs.fetchone()[0]
     return ct
 
-  def get_tdl_targets(self, tdl, idg=False, family=False, include_annotations=False, get_ga_counts=False):
+  def get_tdl_targets(self, tdl, idg=False, include_annotations=False, get_ga_counts=False):
     '''
     Function  : Generator function to get TCRD targets by TDL
     Arguments : A TDL string: Tclin, Tchem, Tbio or Tdark
-                Three optional args:
-                idg: Get only IDG family targets [Default = False]
-                family: Get targets from a given IDG family
-                        Must be one of: Enzyme, Epigenetic, GPCR, IC, Kinase, NR, oGPCR,
-                                        TF, TF; Epigenetic, Transporter.
+                Two optional args:
+                idg: Get only IDG Phase 2 targets [Default = False]
                 include_annotations: See get_target()
     Returns   : One target dictionary - as per get_target() - at a time
     Example   : for target in dba.get_tdl_targets():
@@ -2169,10 +2139,7 @@ class DBAdaptor:
     Comments  : The value of idg is ignored if family is set.
     '''
     with closing(self._conn.cursor()) as curs:
-      if family:
-        sql = "SELECT id FROM target WHERE tdl = %s AND fam IS NOT NULL AND fam = %s"
-        curs.execute(sql, (tdl, family))
-      elif idg:
+      if idg:
         sql = "SELECT id FROM target WHERE tdl = %s AND idg2"
         curs.execute(sql, (tdl,))
       else:

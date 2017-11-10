@@ -1245,6 +1245,8 @@ CREATE TABLE `ortholog` (
   `geneid` int(11) NULL,
   `symbol`varchar(255) COLLATE utf8_unicode_ci NOT NULL,
   `name` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  `mod_url` text COLLATE utf8_unicode_ci NULL,
+  `sources` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
   PRIMARY KEY (`id`),
   KEY `ortholog_idx1` (`protein_id`),
   CONSTRAINT `fk_ortholog_protein` FOREIGN KEY (`protein_id`) REFERENCES `protein` (`id`) ON DELETE CASCADE
@@ -1253,12 +1255,7 @@ CREATE TABLE `ortholog` (
 
 [smathias@juniper loaders]$ ./load-Orthologs.py --dbname tcrd4
 
-load-Orthologs.py (v1.0.0) [Tue Nov  7 11:58:09 2017]:
-
-Downloading  ftp://ftp.ebi.ac.uk/pub/databases/genenames/hcop/human_all_hcop_sixteen_column.txt.gz
-         to  ../data/HGNC/human_all_hcop_sixteen_column.txt.gz
-Uncompressing ../data/HGNC/human_all_hcop_sixteen_column.txt.gz
-Done. Elapsed time: 0:04:22.544
+load-Orthologs.py (v1.2.0) [Fri Nov 10 11:43:18 2017]:
 
 Processing 959021 input lines from file ../data/HGNC/human_all_hcop_sixteen_column.txt
   Generated ortholog dataframe with 166937 entries
@@ -1266,8 +1263,8 @@ Processing 959021 input lines from file ../data/HGNC/human_all_hcop_sixteen_colu
 Connected to TCRD database tcrd4 (schema ver 4.0.8; data ver 4.6.5)
 
 Loading ortholog data for 20120 TCRD targets
-Progress: 100% [#######################################################################] Time: 0:13:55
-Processed 20120 targets. Elapsed time: 0:13:55.114
+Progress: 100% [#########################################################################] Time: 0:14:00
+Processed 20120 targets. Elapsed time: 0:14:00.626
 Loaded 163719 new ortholog rows
   Skipped 1921 empty ortholog entries
   Skipped 162 targets with no sym/geneid
@@ -1275,7 +1272,40 @@ Loaded 163719 new ortholog rows
 load-Orthologs.py: Done.
 
 
-
-
 mysql> update dbinfo set schema_ver = '4.0.9', data_ver = '4.6.6';
 [smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd_v4.6.6.sql
+
+
+#
+# Monarch disease associations
+#
+ALTER TABLE disease ADD COLUMN O2S decimal(16,13) NULL;
+ALTER TABLE disease ADD COLUMN S2O decimal(16,13) NULL;
+INSERT INTO disease_type (name, description) VALUES ("Monarch", "Gene-Disease associations from Monarch that have S2O and/or O2S score(s)");
+
+Setup SSH Tunnel to UMiami MySQL instance on AWS:
+ssh -i SteveSSH.pem -f -N -T -M -4 -L 63334:localhost:3306 steve@184.73.24.43
+
+
+[smathias@juniper loaders]$ ./load-MonarchDiseases.py --dbname tcrd4
+
+load-MonarchDiseases.py (v1.0.0) [Fri Nov 10 13:21:29 2017]:
+
+Connected to TCRD database tcrd4 (schema ver 4.0.9; data ver 4.6.6)
+
+Connecting to UMiami Monarch database.
+  Got 9285 gene-disease records from Monarch database.
+
+Loading 9285 Monarch diseases
+Progress: 100% [######################################################################] Time: 0:03:25
+9285 records processed. Elapsed time: 0:03:25.906
+  3825 targets have Monarch disease association(s)
+  Inserted 9497 new disease rows
+
+load-MonarchDiseases.py: Done.
+
+
+mysql> UPDATE disease SET target_id = protein_id WHERE target_id IS NULL;
+mysql> UPDATE disease SET protein_id = target_id WHERE protein_id IS NULL;
+mysql> update dbinfo set schema_ver = '4.0.10', data_ver = '4.6.7';
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd_v4.6.7.sql

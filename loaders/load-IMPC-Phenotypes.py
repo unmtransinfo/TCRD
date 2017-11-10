@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-26 11:12:24 smathias>
+# Time-stamp: <2017-11-10 12:31:41 smathias>
 """Load IMPC phenotype data into TCRD from CSV file.
 
 Usage:
@@ -91,17 +91,17 @@ def load():
   if not args['--quiet']:
     print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
-  # # Dataset
-  # dataset_id = dba.ins_dataset( {'name': 'IMPC Phenotypes', 'source': "File %s from %s"%(IMPC_FILE, BASE_URL), 'app': PROGRAM, 'app_version': __version__, 'url': '%sREADME'%BASE_URL} )
-  # if not dataset_id:
-  #   print "WARNING: Error inserting dataset See logfile %s for details." % logfile
-  #   sys.exit(1)
-  # # Provenance
-  # rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'phenotype', 'where_clause': "ptype = 'IMPC'"})
-  # if not rv:
-  #   print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
-  #   sys.exit(1)
-  dataset_id = 60
+  # Dataset
+  dataset_id = dba.ins_dataset( {'name': 'IMPC Phenotypes', 'source': "File %s from %s"%(IMPC_FILE, BASE_URL), 'app': PROGRAM, 'app_version': __version__, 'url': '%sREADME'%BASE_URL} )
+  if not dataset_id:
+    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
+    sys.exit(1)
+  # Provenance
+  rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'phenotype', 'where_clause': "ptype = 'IMPC'"})
+  if not rv:
+    print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
+    sys.exit(1)
+  #dataset_id = 60
   
   start_time = time.time()
   infile = (DOWNLOAD_DIR + IMPC_FILE).replace('.gz', '')

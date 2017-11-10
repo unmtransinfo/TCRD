@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-11-07 12:15:50 smathias>
+# Time-stamp: <2017-11-10 11:41:06 smathias>
 """Load ortholog data into TCRD via HGNC web API.
 
 Usage:
@@ -26,7 +26,7 @@ __email__ = "smathias@salud.unm.edu"
 __org__ = "Translational Informatics Division, UNM School of Medicine"
 __copyright__ = "Copyright 2017, Steve Mathias"
 __license__ = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__ = "1.0.0"
+__version__ = "1.2.0"
 
 import os,sys,time
 from docopt import docopt
@@ -111,13 +111,18 @@ def parse_hcop16(filepath, args):
       # ortholog_species_assert_ids
       # support
       src_ct = 0
+      srcs = []
       if 'Inparanoid' in d['support']:
         src_ct += 1
+        srcs.append('Inparanoid')
       if 'OMA' in d['support']:
         src_ct += 1
+        srcs.append('OMA')
       if 'EggNOG' in d['support']:
         src_ct += 1
+        srcs.append('EggNOG')
       if src_ct >= 2: # Only take rows with at least 2 out of three
+        d['sources'] = ', '.join(srcs)
         orthos.append(d)
   ortho_df = pd.DataFrame(orthos)
   if not args['--quiet']:
@@ -149,7 +154,7 @@ def load(ortho_df, args, logger):
   start_time = time.time()
   
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
-  tct = dba.get_target_count(idg=False)
+  tct = dba.get_target_count()
   if not args['--quiet']:
     print "\nLoading ortholog data for %d TCRD targets" % tct
   logger.info("Loading ortholog data for %d TCRD targets" % tct)
@@ -178,13 +183,30 @@ def load(ortho_df, args, logger):
       if row['ortholog_species_symbol'] == '-' and row['ortholog_species_name'] == '-':
         skip_ct += 1
         continue
+      sp = TAXID2SP[row['ortholog_species']]
       init = {'protein_id': p['id'], 'taxid': row['ortholog_species'],
-              'species': TAXID2SP[row['ortholog_species']],
+              'species': sp, 'sources': row['sources'],
               'symbol': row['ortholog_species_symbol'], 'name': row['ortholog_species_name']}
+      # Add MOD DB ID if it's there
       if row['ortholog_species_db_id'] != '-':
         init['db_id'] = row['ortholog_species_db_id']
+      # Add NCBI Gene ID if it's there
       if row['ortholog_species_entrez_gene'] != '-':
         init['geneid'] = row['ortholog_species_entrez_gene']
+      # Construct MOD URLs for mouse, rat, zebrafish, fly, worm and yeast
+      if sp == 'Mouse':
+        init['mod_url'] = 'http://www.informatics.jax.org/marker/' + row['ortholog_species_db_id']
+      elif sp == 'Rat':
+        rgdid = row['ortholog_species_db_id'].replace('RGD:', '')
+        init['mod_url'] = 'http://rgd.mcw.edu/rgdweb/report/gene/main.html?id=' + rgdid
+      elif sp == 'Zebrafish':
+        init['mod_url'] = 'http://zfin.org/' + row['ortholog_species_db_id']
+      elif sp == 'Fruitfly':
+        init['mod_url'] = "http://flybase.org/reports/%s.html" % row['ortholog_species_db_id']
+      elif sp == 'C. elegans':
+        init['mod_url'] = 'http://www.wormbase.org/search/gene/' + row['ortholog_species_symbol']
+      elif sp == 'S.cerevisiae':
+        init['mod_url'] = 'https://www.yeastgenome.org/locus/' + row['ortholog_species_db_id']
       rv = dba.ins_ortholog(init)
       if rv:
         ortho_ct += 1
