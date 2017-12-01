@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-11-10 11:41:06 smathias>
+# Time-stamp: <2017-11-30 14:35:28 smathias>
 """Load ortholog data into TCRD via HGNC web API.
 
 Usage:
@@ -88,10 +88,10 @@ def download(args):
 def parse_hcop16(filepath, args):
   orthos = list()
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
-  line_ct = wcl(fn)
+  line_ct = wcl(filepath)
   if not args['--quiet']:
-    print "\nProcessing %d input lines from file %s" % (line_ct, fn)
-  with open(fn, 'rU') as tsv:
+    print "\nProcessing %d input lines from file %s" % (line_ct, filepath)
+  with open(filepath, 'rU') as tsv:
     tsvreader = csv.DictReader(tsv, delimiter='\t')
     for d in tsvreader:
       # ortholog_species

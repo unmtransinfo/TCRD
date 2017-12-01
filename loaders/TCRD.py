@@ -4,7 +4,7 @@
 
   Steve Mathias
   smathias@salud.unm.edu
-  Time-stamp: <2017-11-10 12:48:31 smathias>
+  Time-stamp: <2017-11-16 11:44:09 smathias>
 '''
 from __future__ import print_function
 import sys
@@ -1774,6 +1774,23 @@ class DBAdaptor:
       for d in curs:
         tdi.append(d)
     return tdi
+
+  def get_generifs(self):
+    generifs = []
+    with closing(self._conn.cursor(mysql.cursors.DictCursor)) as curs:
+      curs.execute("SELECT * FROM generif")
+      for d in curs:
+        generifs.append(d)
+    return generifs
+
+  def get_pubmed(self, pmid):
+    with closing(self._conn.cursor(mysql.cursors.DictCursor)) as curs:
+      curs.execute("SELECT * FROM pubmed WHERE id = %s", (pmid,))
+      pm = curs.fetchone()
+      if pm:
+        return pm
+      else:
+        return None
 
   def get_target(self, id, include_annotations=False, get_ga_counts=False):
     '''

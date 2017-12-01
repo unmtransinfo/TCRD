@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-11 13:06:31 smathias>
+# Time-stamp: <2017-11-20 10:57:48 smathias>
 """ Load BioPlex ppis into TCRD from TSV file.
 
 Usage:
@@ -71,91 +71,91 @@ def load():
   if not args['--quiet']:
     print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
-  # # Dataset
-  # dataset_id = dba.ins_dataset( {'name': 'BioPlex Protein-Protein Interactions', 'source': "Files %s from http://wren.hms.harvard.edu/bioplex/downloadInteractions.php"%", ".join(SRC_FILES), 'app': PROGRAM, 'app_version': __version__, 'url': 'http://wren.hms.harvard.edu/bioplex/index.php'} )
-  # if not dataset_id:
-  #   print "WARNING: Error inserting dataset See logfile %s for details." % logfile
-  #   sys.exit(1)
-  # # Provenance
-  # rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'ppi', 'where_clause': "ppitype = 'BioPlex'"})
-  # if not rv:
-  #   print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
-  #   sys.exit(1)
+  # Dataset
+  dataset_id = dba.ins_dataset( {'name': 'BioPlex Protein-Protein Interactions', 'source': "Files %s from http://wren.hms.harvard.edu/bioplex/downloadInteractions.php"%", ".join(SRC_FILES), 'app': PROGRAM, 'app_version': __version__, 'url': 'http://wren.hms.harvard.edu/bioplex/index.php'} )
+  if not dataset_id:
+    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
+    sys.exit(1)
+  # Provenance
+  rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'ppi', 'where_clause': "ppitype = 'BioPlex'"})
+  if not rv:
+    print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
+    sys.exit(1)
     
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
 
-  # start_time = time.time()
-  # f = PPI_FILES[0]
-  # line_ct = wcl(f)
-  # line_ct -= 1
-  # if not args['--quiet']:
-  #   print "\nProcessing %d lines from BioPlex PPI file %s" % (line_ct, f)
-  # pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
-  # with open(f, 'rU') as tsv:
-  #   tsvreader = csv.reader(tsv, delimiter='\t')
-  #   header = tsvreader.next() # skip header line
-  #   # GeneA   GeneB   UniprotA        UniprotB        SymbolA SymbolB pW      pNI     pInt
-  #   ct = 0
-  #   ppi_ct = 0
-  #   k2pid = {}
-  #   notfnd = {}
-  #   dba_err_ct = 0
-  #   for row in tsvreader:
-  #     ct += 1
-  #     pbar.update(ct)
-  #     geneid1 = row[0]
-  #     geneid2 = row[1]
-  #     up1 = row[2]
-  #     up2 = row[3]
-  #     sym1 = row[4]
-  #     sym2 = row[5]
-  #     pw = row[6]
-  #     pni = row[7]
-  #     pint = row[8]
-  #     # protein1
-  #     k1 = "%s|%s|%s" % (up1, sym1, geneid1)
-  #     if k1 in k2pid:
-  #       pid1 = k2pid[k1]
-  #     elif k1 in notfnd:
-  #       continue
-  #     else:
-  #       t1 = find_target(dba, k1)
-  #       if not t1:
-  #         notfnd[k1] = True
-  #         continue
-  #       pid1 = t1['components']['protein'][0]['id']
-  #     k2pid[k1] = pid1
-  #     # protein2
-  #     k2 = "%s|%s|%s" % (up2, sym2, geneid2)
-  #     if k2 in k2pid:
-  #       pid2 = k2pid[k2]
-  #     elif k2 in notfnd:
-  #       continue
-  #     else:
-  #       t2 = find_target(dba, k2)
-  #       if not t2:
-  #         notfnd[k2] = True
-  #         continue
-  #       pid2 = t2['components']['protein'][0]['id']
-  #     k2pid[k2] = pid2
-  #     # Insert PPI
-  #     rv = dba.ins_ppi( {'ppitype': 'BioPlex','p_int': pint, 'p_ni': pni, 'p_wrong': pw,
-  #                        'protein1_id': pid1, 'protein1_str': k1,
-  #                        'protein2_id': pid2, 'protein2_str': k2} )
-  #     if rv:
-  #       ppi_ct += 1
-  #     else:
-  #       dba_err_ct += 1
-  # pbar.finish()
-  # elapsed = time.time() - start_time
-  # print "%d BioPlex PPI rows processed." % ct
-  # print "  Inserted %d new ppi rows" % ppi_ct
-  # if len(notfnd) > 0:
-  #   print "  %d proteins NOT FOUND in TCRD:" % len(notfnd)
-  #   #for d in notfnd:
-  #   #  print d
-  # if dba_err_ct > 0:
-  #   print "WARNNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
+  start_time = time.time()
+  f = PPI_FILES[0]
+  line_ct = wcl(f)
+  line_ct -= 1
+  if not args['--quiet']:
+    print "\nProcessing %d lines from BioPlex PPI file %s" % (line_ct, f)
+  pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
+  with open(f, 'rU') as tsv:
+    tsvreader = csv.reader(tsv, delimiter='\t')
+    header = tsvreader.next() # skip header line
+    # GeneA   GeneB   UniprotA        UniprotB        SymbolA SymbolB pW      pNI     pInt
+    ct = 0
+    ppi_ct = 0
+    k2pid = {}
+    notfnd = {}
+    dba_err_ct = 0
+    for row in tsvreader:
+      ct += 1
+      pbar.update(ct)
+      geneid1 = row[0]
+      geneid2 = row[1]
+      up1 = row[2]
+      up2 = row[3]
+      sym1 = row[4]
+      sym2 = row[5]
+      pw = row[6]
+      pni = row[7]
+      pint = row[8]
+      # protein1
+      k1 = "%s|%s|%s" % (up1, sym1, geneid1)
+      if k1 in k2pid:
+        pid1 = k2pid[k1]
+      elif k1 in notfnd:
+        continue
+      else:
+        t1 = find_target(dba, k1)
+        if not t1:
+          notfnd[k1] = True
+          continue
+        pid1 = t1['components']['protein'][0]['id']
+      k2pid[k1] = pid1
+      # protein2
+      k2 = "%s|%s|%s" % (up2, sym2, geneid2)
+      if k2 in k2pid:
+        pid2 = k2pid[k2]
+      elif k2 in notfnd:
+        continue
+      else:
+        t2 = find_target(dba, k2)
+        if not t2:
+          notfnd[k2] = True
+          continue
+        pid2 = t2['components']['protein'][0]['id']
+      k2pid[k2] = pid2
+      # Insert PPI
+      rv = dba.ins_ppi( {'ppitype': 'BioPlex','p_int': pint, 'p_ni': pni, 'p_wrong': pw,
+                         'protein1_id': pid1, 'protein1_str': k1,
+                         'protein2_id': pid2, 'protein2_str': k2} )
+      if rv:
+        ppi_ct += 1
+      else:
+        dba_err_ct += 1
+  pbar.finish()
+  elapsed = time.time() - start_time
+  print "%d BioPlex PPI rows processed." % ct
+  print "  Inserted %d new ppi rows" % ppi_ct
+  if len(notfnd) > 0:
+    print "  %d proteins NOT FOUND in TCRD:" % len(notfnd)
+    #for d in notfnd:
+    #  print d
+  if dba_err_ct > 0:
+    print "WARNNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
 
   for f in PPI_FILES[1:]:
     start_time = time.time()

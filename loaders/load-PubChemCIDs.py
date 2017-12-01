@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-11-07 10:41:15 smathias>
+# Time-stamp: <2017-11-16 10:04:38 smathias>
 """Load PubChem CIDs into TCRD from TSV file.
 
 Usage:
@@ -26,7 +26,7 @@ __email__ = "smathias@salud.unm.edu"
 __org__ = "Translational Informatics Division, UNM School of Medicine"
 __copyright__ = "Copyright 2017, Steve Mathias"
 __license__ = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 import os,sys,time
 from docopt import docopt
@@ -133,7 +133,9 @@ def load(infile, args, logger):
   print "  Inserted %d new PubChem CIDs" % pcid_ct
   if len(notfnd) > 0:
     print "  [WARNING] %d ChEMBL IDs not found" % len(notfnd)
-  
+  if dba_err_ct > 0:
+    print "WARNNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
+    
   start_time = time.time()
   drug_activities = dba.get_drug_activities()
   if not args['--quiet']:
@@ -169,7 +171,9 @@ def load(infile, args, logger):
   print "  Skipped %d drug activities with no ChEMBL ID" % skip_ct
   if len(notfnd) > 0:
     print "  [WARNING] %d ChEMBL IDs not found" % len(notfnd)
-  
+  if dba_err_ct > 0:
+    print "WARNNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
+
 def wcl(fname):
   with open(fname) as f:
     for i, l in enumerate(f):
