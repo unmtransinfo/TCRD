@@ -4,7 +4,7 @@
 
   Steve Mathias
   smathias@salud.unm.edu
-  Time-stamp: <2017-11-16 11:44:09 smathias>
+  Time-stamp: <2017-12-01 12:55:00 smathias>
 '''
 from __future__ import print_function
 import sys
@@ -1970,18 +1970,12 @@ class DBAdaptor:
         for mai in curs:
           p['mlp_assay_infos'].append(mai)
         if not p['mlp_assay_infos']: del(p['mlp_assay_infos'])
-        # # compartments
-        # p['compartments'] = []
-        # curs.execute("SELECT * FROM compartment WHERE protein_id = %s", (id,))
-        # for comp in curs:
-        #   p['compartments'].append(comp)
-        # if not p['compartments']: del(p['compartments'])
-        # mpl_assay_info
-        p['mlp_assay_infos'] = []
-        curs.execute("SELECT * FROM mlp_assay_info WHERE protein_id = %s", (id,))
-        for mai in curs:
-          p['mlp_assay_infos'].append(mai)
-        if not p['mlp_assay_infos']: del(p['mlp_assay_infos'])
+        # compartments
+        p['compartments'] = []
+        curs.execute("SELECT * FROM compartment WHERE protein_id = %s", (id,))
+        for comp in curs:
+          p['compartments'].append(comp)
+        if not p['compartments']: del(p['compartments'])
         # phenotypes
         p['phenotypes'] = []
         curs.execute("SELECT * FROM phenotype WHERE protein_id = %s", (id,))
@@ -2017,6 +2011,12 @@ class DBAdaptor:
         for pc in curs:
           p['panther_classes'].append(pc)
         if not p['panther_classes']: del(p['panther_classes'])
+        # orthologs
+        p['orthologs'] = []
+        curs.execute("SELECT * FROM ortholog WHERE protein_id = %s", (id,))
+        for o in curs:
+          p['orthologs'].append(o)
+        if not p['orthologs']: del(p['orthologs'])
         ## DTO classification
         #if p['dtoid']:
         #  p['dto_classification'] = "::".join(self.get_protein_dto(p['dtoid']))

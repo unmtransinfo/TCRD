@@ -1309,3 +1309,82 @@ mysql> UPDATE disease SET target_id = protein_id WHERE target_id IS NULL;
 mysql> UPDATE disease SET protein_id = target_id WHERE protein_id IS NULL;
 mysql> update dbinfo set schema_ver = '4.0.10', data_ver = '4.6.7';
 [smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd_v4.6.7.sql
+
+
+#
+# GeneRIF years
+#
+[smathias@juniper python]$ ./mk-PubMed2YearMap.py --dbname tcrd4
+
+mk-PubMed2YearMap.py (v1.0.0) [Fri Nov 17 13:10:09 2017]:
+
+Connected to TCRD database tcrd4 (schema ver 4.0.10; data ver 4.6.7)
+
+Processing 617026 GeneRIFs
+Progress: 100% [######################################################################] Time: 0:02:56
+617026 GeneRIFs processed. Elapsed time: 0:02:59.948
+Got date mapping for 395618 PubMeds in TCRD
+
+Getting 4705 missing PubMeds from E-Utils
+  Processing chunk 1
+  Processing chunk 2
+...
+  Processing chunk 23
+  Processing chunk 24
+617026 PubMed IDs processed. Elapsed time: 0:04:43.194
+Got date mapping for 4649 PubMeds not in TCRD
+No date for 56 PubMeds
+Dumping map to file: ./TCRDv4.6.7_PubMed2Date.p
+
+mk-PubMed2YearMap.py: Done.
+
+ALTER TABLE generif ADD COLUMN years text NULL;
+
+[smathias@juniper loaders]$ ./load-GeneRIF_Years.py --dbname tcrd4
+
+load-GeneRIF_Years.py (v1.0.0) [Mon Nov 20 15:23:53 2017]:
+
+Connected to TCRD database tcrd4 (schema ver 4.0.10; data ver 4.6.7)
+
+Got 400267 PubMed date mappings from file ../data/TCRDv4.6.7_PubMed2Date.p
+
+Processing 617026 GeneRIFs
+Progress: 100% [######################################################################] Time: 0:07:15
+617026 GeneRIFs processed. Elapsed time: 0:07:19.370
+  Updated 600498 genefifs with years
+  Skipped 16528 generifs with no years.
+
+load-GeneRIF_Years.py: Done.
+
+mysql> update dbinfo set schema_ver = '4.0.11', data_ver = '4.6.8';
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd_v4.6.8.sql
+
+
+
+delete from tdl_info where itype = 'IMPC Mice Produced';
+delete from tdl_info where itype = 'IMPC Mice In Progress';
+delete from info_type where name = 'IMPC Mice Produced';
+delete from info_type where name = 'IMPC Mice In Progress';
+insert into info_type (name, data_type, description) values ('IMPC Clones', 'String', '#Clones from IMPC Spreadsheet');
+insert into info_type (name, data_type, description) values ('IMPC Status', 'String', 'Best Status from IMPC Spreadsheet');
+
+[smathias@juniper loaders]$ ./load-IMPCMiceTDLInfos.py --dbname tcrd4
+
+load-IMPCMiceTDLInfos.py (v2.0.0) [Fri Dec  1 10:33:29 2017]:
+
+Connected to TCRD database tcrd4 (schema ver 4.0.11; data ver 4.6.8)
+
+Processing 385 rows from input file ../data/IMPC/IDG summary-1.csv
+Progress: 100% [#####################################################################] Time: 0:00:13
+384 rows processed.
+Inserted 312 new 'IMPC Status' tdl_info rows
+Inserted 272 new 'IMPC Clones' tdl_info rows
+Skipped 35 rows with no relevant info
+No target found for 38 rows. See logfile load-IMPCMiceTDLInfos.py.log for details.
+Writing 312 annotated rows to file ../data/IMPC/IDGSummary-1_TCRD.csv.
+
+load-IMPCMiceTDLInfos.py: Done. Elapsed time: 0:00:13.762
+
+
+mysql> update dbinfo set data_ver = '4.6.9';
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd_v4.6.9.sql
