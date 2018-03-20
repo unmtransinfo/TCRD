@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-02-07 11:10:47 smathias>
+# Time-stamp: <2018-01-25 17:10:55 smathias>
 """Load CMap Landmark Gene ID xrefs into TCRD from CSV file.
 
 Usage:
@@ -75,6 +75,11 @@ def main():
   dataset_id = dba.ins_dataset( {'name': 'LINCS L1000 XRefs', 'source': 'File %s'%os.path.basename(L1000_FILE), 'app': PROGRAM, 'app_version': __version__, 'url': 'http://support.lincscloud.org/hc/en-us/articles/202092616-The-Landmark-Genes'} )
   if not dataset_id:
     print "WARNING: Error inserting dataset See logfile %s for details." % logfile
+    sys.exit(1)
+  # Provenance
+  rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'xref', 'where_clause': "dataset_id = %d"%dataset_id})
+  if not rv:
+    print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
     sys.exit(1)
   
   start_time = time.time()

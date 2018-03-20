@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-05 16:39:39 smathias>
+# Time-stamp: <2018-01-29 11:57:16 smathias>
 """TCRD with latest NCBI Gene data via EUtils.
 
 Usage:
-    load-NCBIGene.py [--debug=<int> | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
+    load-NCBIGene.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
     load-NCBIGene.py -h | --help
 
 Options:
@@ -18,15 +18,15 @@ Options:
                          10: DEBUG
                           0: NOTSET
   -q --quiet           : set output verbosity to minimal level
-  -d --debug DEBUGL    : set debugging output level (0-3) [default: 0]
+  -d --debug           : turn on debugging output
   -? --help            : print this message and exit 
 """
 __author__ = "Steve Mathias"
 __email__ = "smathias@salud.unm.edu"
 __org__ = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2014-2016, Steve Mathias"
+__copyright__ = "Copyright 2014-2018, Steve Mathias"
 __license__ = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__ = "2.0.0"
+__version__ = "2.1.1"
 
 import os,sys,time
 from docopt import docopt
@@ -37,32 +37,29 @@ import logging
 from collections import defaultdict
 import shelve
 from progressbar import *
+import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGFILE = "%s.log" % PROGRAM
+LOGDIR = "./tcrd5logs"
+LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
+EFETCH_GENE_URL = "http://www.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=Gene&rettype=xml&id="
+SHELF_FILE = '%s/load-NCBIGene.db'%LOGDIR
 
 # find proteins with the same geneid:
 #select count(*) from protein where geneid in (select geneid from protein group by geneid having count(*) > 1);
 
-EFETCH_GENE_URL = "http://www.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=Gene&rettype=xml&id="
-SHELF_FILE = 'tcrd4logs/load-NCBIGene.db'
 xtypes = {}
 
-def main():
-  args = docopt(__doc__, version=__version__)
-  debug = int(args['--debug'])
-  if debug:
-    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
-  
+def load(args):
   loglevel = int(args['--loglevel'])
   if args['--logfile']:
     logfile = args['--logfile']
   else:
-    logfile = "%s.log" % PROGRAM
+    logfile = LOGFILE
   logger = logging.getLogger(__name__)
   logger.setLevel(loglevel)
-  if not debug:
-    logger.propagate = False # turns off console logging when debug is 0
+  if not args['--debug']:
+    logger.propagate = False # turns off console logging
   fh = logging.FileHandler(logfile)
   fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
   fh.setFormatter(fmtr)
@@ -74,7 +71,6 @@ def main():
   dbi = dba.get_dbinfo()
   logger.info("Connected to TCRD database %s (schema ver %s; data ver %s)", args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
   if not args['--quiet']:
-    print "\n%s (v%s) [%s]:" % (PROGRAM, __version__, time.strftime("%c"))
     print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
     
   # Dataset
@@ -85,7 +81,9 @@ def main():
   # Provenance
   provs = [ {'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': "itype = 'NCBI Gene Summary'"},
             {'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': "itype = 'NCBI Gene PubMed Count'"},
-            {'dataset_id': dataset_id, 'table_name': 'generif'} ]
+            {'dataset_id': dataset_id, 'table_name': 'generif'},
+            {'dataset_id': dataset_id, 'table_name': 'xref', 'where_clause': "dataset_id = %d"%dataset_id},
+            {'dataset_id': dataset_id, 'table_name': 'alias', 'where_clause': "dataset_id = %d"%dataset_id} ]
   for prov in provs:
     rv = dba.ins_provenance(prov)
     if not rv:
@@ -101,9 +99,9 @@ def main():
   s['retries'] = {}
   s['counts'] = defaultdict(int)
   
-  tct = dba.get_target_count(idg=False)
+  tct = dba.get_target_count()
   if not args['--quiet']:
-    print "\nLoading NCBI Gene annotations for %d TCRD targets\n" % tct
+    print "\nLoading NCBI Gene annotations for %d TCRD targets" % tct
   logger.info("Loading NCBI Gene annotations for %d TCRD targets\n" % tct)
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   pbar = ProgressBar(widgets=pbar_widgets, maxval=tct).start()  
@@ -133,6 +131,7 @@ def main():
     if not gene_annotations:
       s['counts']['xml_err'] += 1
       logger.error("XML Error for Gene ID %s" % geneid)
+      s['retries'][tid] = True
       continue
     load_annotations(dba, t, dataset_id, gene_annotations, s)
     time.sleep(0.5)
@@ -176,6 +175,9 @@ def main():
       time.sleep(0.5)
       pbar.update(ct)
     loop += 1
+    if loop ==5:
+      print("Completed 5 retry loops. Aborting.")
+      break
     pbar.finish()
     print "Processed %d targets." % ct
     print "  Annotated %d additional targets" % act
@@ -190,13 +192,9 @@ def main():
   print "Inserted %d PubMed xrefs" % s['counts']['pmxr']
   print "Inserted %d other xrefs" % s['counts']['xref']  
   if s['counts']['xml_err'] > 0:
-    print "WARNNING: %d XML parsing errors occurred. See logfile %s for details." % (s['counts']['xml_err'], args.logfile)
+    print "WARNNING: %d XML parsing errors occurred. See logfile %s for details." % (s['counts']['xml_err'], logfile)
   if s['counts']['dba_err'] > 0:
     print "WARNNING: %d DB errors occurred. See logfile %s for details." % (s['counts']['dba_err'], logfile)
-
-  elapsed = time.time() - start_time
-  print "\n%s: Done. Elapsed time: %s" % (PROGRAM, secs2str(elapsed))
-  print
 
 def get_ncbigene(id):
   url = "%s%s.xml" % (EFETCH_GENE_URL, id)
@@ -223,6 +221,8 @@ def parse_genexml(xml):
   try:
     g = soup.find('Entrezgene')
   except:
+    return False
+  if not g:
     return False
   comments = g.find('Entrezgene_comments')
   # Aliases
@@ -324,9 +324,13 @@ def load_annotations(dba, t, dataset_id, gene_annotations, shelf):
         shelf['counts']['dba_err'] += 1
   shelf['loaded'].append(t['id'])
 
-def secs2str(t):
-  return "%d:%02d:%02d.%03d" % reduce(lambda ll,b : divmod(ll[0],b) + ll[1:], [(t*1000,),1000,60,60])
 
 if __name__ == '__main__':
-    main()
-
+  print "\n{} (v{}) [{}]:".format(PROGRAM, __version__, time.strftime("%c"))
+  args = docopt(__doc__, version=__version__)
+  if args['--debug']:
+    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
+  start_time = time.time()
+  load(args)
+  elapsed = time.time() - start_time
+  print "\n{}: Done. Elapsed time: {}\n".format(PROGRAM, slmf.secs2str(elapsed))

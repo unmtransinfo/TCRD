@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-05 16:37:20 smathias>
+# Time-stamp: <2018-01-25 16:55:14 smathias>
 """Load HGNC annotations for TCRD targets via web API.
 
 Usage:
-    load-HGNC.py [--debug=<int> | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
+    load-HGNC.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
     load-HGNC.py -h | --help
 
 Options:
@@ -18,15 +18,15 @@ Options:
                          10: DEBUG
                           0: NOTSET
   -q --quiet           : set output verbosity to minimal level
-  -d --debug DEBUGL    : set debugging output level (0-3) [default: 0]
+  -d --debug           : turn on debugging output
   -? --help            : print this message and exit 
 """
 __author__ = "Steve Mathias"
 __email__ = "smathias@salud.unm.edu"
 __org__ = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2014-2016, Steve Mathias"
+__copyright__ = "Copyright 2014-2018, Steve Mathias"
 __license__ = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 
 import os,sys,time
 from docopt import docopt
@@ -37,27 +37,24 @@ from bs4 import BeautifulSoup
 from collections import defaultdict
 import shelve
 from progressbar import *
+import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGFILE = "%s.log" % PROGRAM
+LOGDIR = "./tcrd5logs"
+LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 HGNC_URL = 'http://rest.genenames.org/fetch'
-SHELF_FILE = 'tcrd4logs/load-HGNC.db'
+SHELF_FILE = '%s/load-HGNC.db' % LOGDIR
 
-def main():
-  args = docopt(__doc__, version=__version__)
-  debug = int(args['--debug'])
-  if debug:
-    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
-  
+def load(args):
   loglevel = int(args['--loglevel'])
   if args['--logfile']:
     logfile = args['--logfile']
   else:
-    logfile = "%s.log" % PROGRAM
+    logfile = LOGFILE
   logger = logging.getLogger(__name__)
   logger.setLevel(loglevel)
-  if not debug:
-    logger.propagate = False # turns off console logging when debug is 0
+  if not args['--debug']:
+    logger.propagate = False # turns off console logging
   fh = logging.FileHandler(logfile)
   fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
   fh.setFormatter(fmtr)
@@ -69,7 +66,6 @@ def main():
   dbi = dba.get_dbinfo()
   logger.info("Connected to TCRD database %s (schema ver %s; data ver %s)", args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
   if not args['--quiet']:
-    print "\n%s (v%s) [%s]:" % (PROGRAM, __version__, time.strftime("%c"))
     print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
   # Dataset
@@ -80,14 +76,13 @@ def main():
   # Provenance
   provs = [ {'dataset_id': dataset_id, 'table_name': 'protein', 'column_name': 'sym', 'comment': "This is only updated with HGNC data if data from UniProt is absent or discrepant."},
             {'dataset_id': dataset_id, 'table_name': 'protein', 'column_name': 'geneid', 'comment': "This is only updated with HGNC data if data from UniProt is absent or discrepant."},
-            {'dataset_id': dataset_id, 'table_name': 'protein', 'column_name': 'chr'} ]
+            {'dataset_id': dataset_id, 'table_name': 'protein', 'column_name': 'chr'},
+            {'dataset_id': dataset_id, 'table_name': 'xref', 'where_clause': "dataset_id = %d"%dataset_id} ]
   for prov in provs:
     rv = dba.ins_provenance(prov)
     if not rv:
       print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
       sys.exit(1)
-
-  start_time = time.time()
 
   s = shelve.open(SHELF_FILE, writeback=True)
   s['loaded'] = []
@@ -181,11 +176,6 @@ def main():
     print "WARNNING: %d targets did not find an HGNC record." % len(s['notfound'])
   if s['counts']['dba_err'] > 0:
     print "WARNNING: %d DB errors occurred. See logfile %s for details." % (len(shelf['counts']['dba_err']), logfile)
-    
-  elapsed = time.time() - start_time
-  print "\n%s: Done. Elapsed time: %s" % (PROGRAM, secs2str(elapsed))
-  print
-
 
 def get_hgnc(sym=None, hgnc_id=None, geneid=None, uniprot=None):
   if sym:
@@ -278,9 +268,13 @@ def load_annotations(dba, t, dataset_id, hgnc_annotations, shelf):
       shelf['counts']['dba_err'] += 1
   shelf['loaded'].append(t['id'])
 
-def secs2str(t):
-  return "%d:%02d:%02d.%03d" % reduce(lambda ll,b : divmod(ll[0],b) + ll[1:], [(t*1000,),1000,60,60])
-
 
 if __name__ == '__main__':
-    main()
+  print "\n{} (v{}) [{}]:".format(PROGRAM, __version__, time.strftime("%c"))
+  args = docopt(__doc__, version=__version__)
+  if args['--debug']:
+    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
+  start_time = time.time()
+  load(args)
+  elapsed = time.time() - start_time
+  print "\n{}: Done. Elapsed time: {}\n".format(PROGRAM, slmf.secs2str(elapsed))

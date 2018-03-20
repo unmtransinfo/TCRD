@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-02-22 15:56:53 smathias>
+# Time-stamp: <2018-01-22 12:29:50 smathias>
 """Load IDG family and extended family designations into TCRD from text file.
 
 Usage:
-    load-IDGFamsExt.py [--debug=<int> | --quiet] [--dbhost=<str>] [--dbname=<str>]
+    load-IDGFamsExt.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>]
     load-IDGFamsExt.py -h | --help
 
 Options:
@@ -11,36 +11,31 @@ Options:
   -h --dbhost DBHOST   : MySQL database host name [default: localhost]
   -n --dbname DBNAME   : MySQL database name [default: tcrdev]
   -q --quiet           : set output verbosity to minimal level
-  -d --debug DEBUGL    : set debugging output level (0-3) [default: 0]
+  -d --debug           : turn on debugging output
   -? --help            : print this message and exit 
 """
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2017, Steve Mathias"
+__copyright__ = "Copyright 2017-2018, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "1.0.0"
+__version__   = "1.1.0"
 
 import os,sys,time
 from docopt import docopt
 from TCRD import DBAdaptor
 import csv
 from progressbar import *
+import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-INFILE = '../data/TCRD_3.1.4_TDL_families_Updated.txt'
+INFILE = '../data/IDG_Families_UNM_UMiami_v1.csv'
 
-def main():
-  args = docopt(__doc__, version=__version__)
-  debug = int(args['--debug'])
-  if debug > 1:
-    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
-  
+def load(args):
   dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
   dba = DBAdaptor(dba_params)
   dbi = dba.get_dbinfo()
   if not args['--quiet']:
-    print "\n%s (v%s) [%s]:" % (PROGRAM, __version__, time.strftime("%c"))
     print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
   # Dataset
@@ -55,7 +50,7 @@ def main():
     sys.exit(1)
   
   start_time = time.time()
-  line_ct = wcl(INFILE)
+  line_ct = slmf.wcl(INFILE)
   if not args['--quiet']:
     print "\nProcessing %d lines in inut file %s" % (line_ct, INFILE)
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
@@ -66,15 +61,15 @@ def main():
   null_ct = 0
   notfnd = []
   mulfnd = []
-  with open(INFILE, 'rU') as tsv:
-    tsvreader = csv.reader(tsv, delimiter='\t')
-    header = tsvreader.next() # skip header line
-    for row in tsvreader:
+  with open(INFILE, 'rU') as csvfile:
+    csvreader = csv.reader(csvfile)
+    header = csvreader.next() # skip header line
+    for row in csvreader:
       ct += 1
       pbar.update(ct)
-      up = row[5].strip()
-      fam = row[2].strip()
-      famext = row[3].strip()
+      up = row[2].strip()
+      fam = row[3].strip()
+      famext = row[4].strip()
       if not fam:
         null_ct += 1
         continue
@@ -99,24 +94,21 @@ def main():
           upd_ct2 += 1
   pbar.finish()
   elapsed = time.time() - start_time
-  print "%d rows processed. Elapsed time: %s" % (ct, secs2str(elapsed))
-  print "%d IDG family designations loaded into TCRD." % upd_ct1
-  print "%d IDG extended family designations loaded into TCRD." % upd_ct2
+  print "{} rows processed.".format(ct)
+  print "{} IDG family designations loaded into TCRD.".format(upd_ct1)
+  print "{} IDG extended family designations loaded into TCRD.".format(upd_ct2)
   if notfnd:
-    print "  No target found for %d UniProt accessions: %s" % (len(notfnd), ", ".join(notfnd))
+    print "  No target found for {} UniProt accessions: {}".format(len(notfnd), ", ".join(notfnd))
   if mulfnd:
-    print "[WARNING] Multiple targets found for %d UniProt accessions: %s" % (len(mulfnd), ", ".join(mulfnd))
-  print "\n%s: Done.\n" % PROGRAM
+    print "[WARNING] Multiple targets found for {} UniProt accessions: {}".format(len(mulfnd), ", ".join(mulfnd))
   
 
-def wcl(fname):
-  with open(fname) as f:
-    for i, l in enumerate(f):
-      pass
-  return i + 1
-
-def secs2str(t):
-  return "%d:%02d:%02d.%03d" % reduce(lambda ll,b : divmod(ll[0],b) + ll[1:], [(t*1000,),1000,60,60])
-
 if __name__ == '__main__':
-  main()
+  print "\n{} (v{}) [{}]:".format(PROGRAM, __version__, time.strftime("%c"))
+  args = docopt(__doc__, version=__version__)
+  if args['--debug']:
+    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
+  start_time = time.time()
+  load(args)
+  elapsed = time.time() - start_time
+  print "\n{}: Done. Elapsed time: {}\n".format(PROGRAM, slmf.secs2str(elapsed))

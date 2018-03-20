@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-11-10 12:11:07 smathias>
+# Time-stamp: <2018-02-05 11:44:00 smathias>
 """Load chembl_activity data in TCRD via ChEMBL MySQL database.
 
 Usage:
-    load-ChEMBL.py [--debug=<int> | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
+    load-ChEMBL.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
     load-ChEMBL.py -h | --help
 
 Options:
@@ -18,15 +18,15 @@ Options:
                          10: DEBUG
                           0: NOTSET
   -q --quiet           : set output verbosity to minimal level
-  -d --debug DEBUGL    : set debugging output level (0-3) [default: 0]
+  -d --debug           : turn on debugging output
   -? --help            : print this message and exit 
 """
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2015-2017, Steve Mathias"
+__copyright__ = "Copyright 2015-2018, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.1.0"
+__version__   = "2.2.0"
 
 import os,sys,time,re
 from docopt import docopt
@@ -40,9 +40,11 @@ import logging
 import string
 import urllib
 from progressbar import *
+import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGFILE = './%s.log'%PROGRAM
+LOGDIR = "./tcrd5logs"
+LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 CHEMBL_DB = 'chembl_23'
 DOWNLOAD_DIR = '../data/ChEMBL/'
 BASE_URL = 'ftp://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/'
@@ -52,7 +54,7 @@ SQLq1 = "SELECT acts.molregno, md.pref_name, md.chembl_id, cs.canonical_smiles, 
 # patent compounds/activities
 SQLq2 = "SELECT acts.molregno, md.pref_name, md.chembl_id, cs.canonical_smiles, acts.pchembl_value, acts.standard_type, cr.compound_name FROM activities acts, compound_records cr, assays a, target_dictionary t, compound_structures cs, molecule_dictionary md WHERE acts.record_id = cr.record_id AND cs.molregno = md.molregno AND cs.molregno = acts.molregno AND acts.assay_id = a.assay_id AND a.tid = t.tid AND t.chembl_id = %s AND acts.molregno = md.molregno AND a.assay_type = 'B' AND md.structure_type = 'MOL' AND acts.standard_flag = 1 AND acts.standard_relation = '=' AND t.target_type = 'SINGLE PROTEIN' AND acts.pchembl_value IS NOT NULL AND cr.src_id = 38"
 
-def download_mappings():
+def download_mappings(args):
   if os.path.exists(DOWNLOAD_DIR + UNIPROT2CHEMBL_FILE):
     os.remove(DOWNLOAD_DIR + UNIPROT2CHEMBL_FILE)
   start_time = time.time()
@@ -60,29 +62,24 @@ def download_mappings():
   print "         to ", DOWNLOAD_DIR + UNIPROT2CHEMBL_FILE
   urllib.urlretrieve(BASE_URL + UNIPROT2CHEMBL_FILE, DOWNLOAD_DIR + UNIPROT2CHEMBL_FILE)
   elapsed = time.time() - start_time
-  print "Done. Elapsed time: %s" % secs2str(elapsed)
+  print "Done."
 
-def main():
-  args = docopt(__doc__, version=__version__)
-  debug = int(args['--debug'])
-  if debug:
-    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
-  
+def load(args):
   loglevel = int(args['--loglevel'])
   if args['--logfile']:
     logfile = args['--logfile']
   else:
-    logfile = "%s.log" % PROGRAM
+    logfile = LOGFILE
   logger = logging.getLogger(__name__)
   logger.setLevel(loglevel)
-  if not debug:
-    logger.propagate = False # turns off console logging when debug is 0
+  if not args['--debug']:
+    logger.propagate = False # turns off console logging
   fh = logging.FileHandler(logfile)
   fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
   fh.setFormatter(fmtr)
   logger.addHandler(fh)
 
-  # DBAdaptor uses same logger as main()
+  # DBAdaptor uses same logger as load()
   dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
   dba = DBAdaptor(dba_params)
   dbi = dba.get_dbinfo()
@@ -117,7 +114,7 @@ def main():
   # First get mapping of UniProt accestions to ChEMBL IDs
   up2chembl = {}
   f = DOWNLOAD_DIR + UNIPROT2CHEMBL_FILE
-  line_ct = wcl(f)
+  line_ct = slmf.wcl(f)
   if not args['--quiet']:
     print "\nProcessing %d input lines in file %s" % (line_ct, f)
   with open(f, 'rU') as tsv:
@@ -130,7 +127,8 @@ def main():
         up2chembl[row[0]].append(row[1])
       else:
         up2chembl[row[0]] = [row[1]]
-  print "%d input lines processed." % ct
+  if not args['--quiet']:
+    print "%d input lines processed." % ct
   #print "Saved %d keys in up2chembl dict" % len(up2chembl.keys())
 
   upct = len(up2chembl.keys())
@@ -258,7 +256,8 @@ def main():
     print "WARNING: %d database errors occured. See logfile %s for details." % (dba_err_ct, logfile)
   
   # Selective compound calculations
-  print "\nRunning selective compound analysis..."
+  if not args['--quiet']:
+    print "\nRunning selective compound analysis..."
   #pickle.dump(t2acts, open('T2ChEMBLActs.p', 'wb'))
   #print "%d target to activities mappings saved to pickle T2ChEMBLActs.p" % len(t2acts.keys())
   #pickle.dump(c2acts, open('C2AllChEMBLActs.p', 'wb'))
@@ -290,7 +289,8 @@ def main():
       i += 1
   #pickle.dump(selective, open(SC_PFILE, 'wb'))
   #print "%d selective compounds saved to %s" % (len(selective), SC_PFILE)
-  print "  Found %d selective compounds" % len(selective)
+  if not args['--quiet']:
+    print "  Found %d selective compounds" % len(selective)
   cscti_ct = 0
   for tid,acts in t2acts.items():
     for a in acts:
@@ -303,24 +303,18 @@ def main():
         else:
           dba_err_ct += 1
         break
-  print "Inserted %d new ChEMBL Selective Compound tdl_infos" % cscti_ct
-  
-  elapsed = time.time() - start_time
-  print "\n%s: Done. Elapsed time: %s" % (PROGRAM, secs2str(elapsed))
-  print
-
-def wcl(fname):
-  with open(fname) as f:
-    for i, l in enumerate(f):
-      pass
-  return i + 1
-
-def secs2str(t):
-  return "%d:%02d:%02d.%03d" % reduce(lambda ll,b : divmod(ll[0],b) + ll[1:], [(t*1000,),1000,60,60])
+  if not args['--quiet']:
+    print "Inserted %d new ChEMBL Selective Compound tdl_infos" % cscti_ct
 
 
 if __name__ == '__main__':
-  print "\n%s (v%s) [%s]:" % (PROGRAM, __version__, time.strftime("%c"))
-  download_mappings()
-  main()
+  print "\n{} (v{}) [{}]:".format(PROGRAM, __version__, time.strftime("%c"))
+  args = docopt(__doc__, version=__version__)
+  if args['--debug']:
+    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
+  download_mappings(args)
+  start_time = time.time()
+  load(args)
+  elapsed = time.time() - start_time
+  print "\n{}: Done. Elapsed time: {}\n".format(PROGRAM, slmf.secs2str(elapsed))
 
