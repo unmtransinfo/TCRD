@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-13 11:45:47 smathias>
+# Time-stamp: <2018-01-31 10:48:50 smathias>
 """Load protein data from UniProt.org into TCRD via the web.
 
 Usage:
-    load-UniProt.py [--debug=<int> | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
+    load-UniProt.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
     load-UniProt.py -? | --help
 
 Options:
@@ -18,15 +18,15 @@ Options:
                          10: DEBUG
                           0: NOTSET
   -q --quiet           : set output verbosity to minimal level
-  -d --debug DEBUGL    : set debugging output level (0-3) [default: 0]
+  -d --debug           : turn on debugging output
   -? --help            : print this message and exit 
 """
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2014-2016, Steve Mathias"
+__copyright__ = "Copyright 2014-2018, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.0.0"
+__version__   = "2.1.0"
 
 import os,sys,time,re
 from docopt import docopt
@@ -37,43 +37,39 @@ import requests
 from bs4 import BeautifulSoup
 import shelve
 from progressbar import *
+import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGFILE = "%s.log" % PROGRAM
+LOGDIR = "./tcrd5logs"
+LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 
 # Download tab-delimited file from:
-# http://www.uniprot.org/uniprot/?query=reviewed:yes+AND+organism:9606
-UPHUMAN_FILE = '../data/UniProt/uniprot-human-reviewed_20161116.tab'
-BASEURL = "http://www.uniprot.org/uniprot/"
-SHELF_FILE = './tcrd4logs/load-UniProt.db'
+# https://www.uniprot.org/uniprot/?query=reviewed:yes+AND+organism:9606
+UPHUMAN_FILE = '../data/UniProt/uniprot-human-reviewed_20180118.tab'
+BASEURL = "https://www.uniprot.org/uniprot/"
+SHELF_FILE = '%s/load-UniProt.db' % LOGDIR
 
-def main():
-  args = docopt(__doc__, version=__version__)
-  debug = int(args['--debug'])
-  if debug:
-    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
-  
+def load(args):
   loglevel = int(args['--loglevel'])
   if args['--logfile']:
     logfile = args['--logfile']
   else:
-    logfile = "%s.log" % PROGRAM
+    logfile = LOGFILE
   logger = logging.getLogger(__name__)
   logger.setLevel(loglevel)
   if not debug:
-    logger.propagate = False # turns off console logging when debug is 0
+    logger.propagate = False # turns off console logging
   fh = logging.FileHandler(logfile)
   fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
   fh.setFormatter(fmtr)
   logger.addHandler(fh)
 
-  # DBAdaptor uses same logger as main()
+  # DBAdaptor uses same logger as load()
   dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
   dba = DBAdaptor(dba_params)
   dbi = dba.get_dbinfo()
   logger.info("Connected to TCRD database %s (schema ver %s; data ver %s)", args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
   if not args['--quiet']:
-    print "\n%s (v%s) [%s]:" % (PROGRAM, __version__, time.strftime("%c"))
     print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
   # Dataset
@@ -90,7 +86,9 @@ def main():
             {'dataset_id': dataset_id, 'table_name': 'expression', 'where_clause': "etype = 'UniProt Tissue'"},
             {'dataset_id': dataset_id, 'table_name': 'pathway', 'where_clause': "type = 'uniprot'"},
             {'dataset_id': dataset_id, 'table_name': 'disease', 'where_clause': "dtype = 'uniprot'"},
-            {'dataset_id': dataset_id, 'table_name': 'feature'} ]
+            {'dataset_id': dataset_id, 'table_name': 'feature'},
+            {'dataset_id': dataset_id, 'table_name': 'xref', 'where_clause': "dataset_id = %d"%dataset_id},
+            {'dataset_id': dataset_id, 'table_name': 'alias', 'where_clause': "dataset_id = %d"%dataset_id} ]
   for prov in provs:
     rv = dba.ins_provenance(prov)
     if not rv:
@@ -232,17 +230,6 @@ def main():
       print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
   
   s.close()
-
-  elapsed = time.time() - start_time
-  print "\n%s: Done. Elapsed time: %s" % (PROGRAM, secs2str(elapsed))
-  print
-  
-
-def wcl(fname):
-  with open(fname) as f:
-    for i, l in enumerate(f):
-      pass
-  return i + 1
 
 def get_uniprot(acc):
   url = "%s%s.xml" % (BASEURL, acc)
@@ -406,11 +393,17 @@ def uniprotxml2target(up, upxml, dataset_id, xtypes, e2e):
 
   return target
 
-def secs2str(t):
-  return "%d:%02d:%02d.%03d" % reduce(lambda ll,b : divmod(ll[0],b) + ll[1:], [(t*1000,),1000,60,60])
 
 if __name__ == '__main__':
-  main()
+  print "\n%s (v%s) [%s]:\n" % (PROGRAM, __version__, time.strftime("%c"))
+  args = docopt(__doc__, version=__version__)
+  if int(args['--debug'])
+    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
+  start_time = time.time()
+  load(args)
+  elapsed = time.time() - start_time
+  print "\n%s: Done. Elapsed time: %s\n" % (PROGRAM, slmf.secs2str(elapsed))
+
 
 # # for ipython:
 # import requests

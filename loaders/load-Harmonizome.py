@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-02-23 11:10:15 smathias>
+# Time-stamp: <2018-01-04 11:37:56 smathias>
 """Load Ma'ayan Lab Harmonizome data into TCRD via API.
 
 Usage:
@@ -146,7 +146,8 @@ def main():
       for f in gs['associations']: # used to be 'features'
         sym = f['gene']['symbol']
         if sym not in sym2pid: continue # symbol does not map to a TCRD target
-        rv = dba.ins_gene_attribute( {'protein_id': sym2pid[sym], 'gat_id': gat_id, 'name': name, 'value':  f['thresholdValue']} )
+        rv = dba.ins_gene_attribute( {'protein_id': sym2pid[sym], 'gat_id': gat_id,
+                                      'name': name, 'value': f['thresholdValue']} )
         if not rv:
           dba_err_ct += 1
         else:

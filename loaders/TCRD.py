@@ -4,7 +4,7 @@
 
   Steve Mathias
   smathias@salud.unm.edu
-  Time-stamp: <2017-12-01 12:55:00 smathias>
+  Time-stamp: <2018-03-16 11:16:55 smathias>
 '''
 from __future__ import print_function
 import sys
@@ -814,6 +814,29 @@ class DBAdaptor:
       except mysql.Error, e:
         self._conn.rollback()
         self._logger.error("MySQL Error in ins_disease(): %s"%str(e))
+        self._logger.error("SQLpat: %s"%sql)
+        self._logger.error("SQLparams: %s"%','.join([str(p) for p in params]))
+        return False
+    return True
+
+  def ins_ortholog_disease(self, init, commit=True):
+    if 'did' in init and 'name' in init and 'target_id' in init and 'protein_id' in init and 'ortholog_id' in init and 'score' in init:
+      cols = ['target_id', 'protein_id', 'did', 'name', 'ortholog_id', 'score']
+      vals = ['%s','%s','%s','%s','%s','%s']
+      params = [init['target_id'], init['protein_id'], init['did'], init['name'], init['ortholog_id'], init['score']]
+    else:
+      self.warning("Invalid parameters sent to ins_ortholog_disease(): ", init)
+      return False
+    sql = "INSERT INTO ortholog_disease (%s) VALUES (%s)" % (','.join(cols), ','.join(vals))
+    self._logger.debug("SQLpat: %s"%sql)
+    self._logger.debug("SQLparams: %s"%','.join([str(p) for p in params]))
+    with closing(self._conn.cursor()) as curs:
+      try:
+        curs.execute(sql, tuple(params))
+        if commit: self._conn.commit()
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL Error in ins_ortholog_disease(): %s"%str(e))
         self._logger.error("SQLpat: %s"%sql)
         self._logger.error("SQLparams: %s"%','.join([str(p) for p in params]))
         return False
@@ -1631,9 +1654,7 @@ class DBAdaptor:
     return self._gene_attribute_types
   
   def get_count_typecount(self, table):
-    tab2col = {'expression': 'etype', 'target2disease': 'datype', 'phenotype': 'ptype', 'ppi': 'ppi_type', 'tdl_info': 'itype', 'pathway': 'pwtype'}
-    
-    #tab2col = {'expression': 'etype', 'disease': 'dtype', 'phenotype': 'ptype', 'ppi': 'ppitype', 'tdl_info': 'itype', 'pathway': 'pwtype'}
+    tab2col = {'compartment': 'ctype', 'expression': 'etype', 'disease': 'dtype', 'expression': 'etype', 'phenotype': 'ptype', 'ppi': 'ppi_type', 'tdl_info': 'itype', 'pathway': 'pwtype'}
     with closing(self._conn.cursor()) as curs:
       curs.execute("SELECT count(*) FROM %s" % table)
       ct = curs.fetchone()[0]
@@ -2807,6 +2828,38 @@ class DBAdaptor:
         self._logger.error(msg)
         return False
     return pwname
+
+  def get_complex_goas(self):
+    goas = []
+    sql = "SELECT * FROM goa WHERE go_term LIKE '%complex'"
+    self._logger.error("Executing SQL: %s"%sql)
+    with closing(self._conn.cursor(mysql.cursors.DictCursor)) as curs:
+      try:
+        curs.execute(sql)
+        for d in curs:
+          goas.append(d)
+      except mysql.Error, e:
+        msg = "MySQL Error: %s" % str(e)
+        #self.error(msg)
+        self._logger.error(msg)
+        return False
+    return goas
+
+  def get_orthologs_dbid2id(self):
+    dbid2id = {}
+    sql = "SELECT * FROM ortholog"
+    self._logger.error("Executing SQL: %s"%sql)
+    with closing(self._conn.cursor(mysql.cursors.DictCursor)) as curs:
+      try:
+        curs.execute(sql)
+        for d in curs:
+          dbid2id[d['db_id']] = d['id']
+      except mysql.Error, e:
+        msg = "MySQL Error: %s" % str(e)
+        #self.error(msg)
+        self._logger.error(msg)
+        return False
+    return dbid2id
 
   #
   # Update Methods

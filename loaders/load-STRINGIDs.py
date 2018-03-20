@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-02-22 10:35:36 smathias>
+# Time-stamp: <2018-01-31 11:01:29 smathias>
 """Load JensenLab STRING IDs (ENSPs) into TCRD protein.ensp.
 
 Usage:
-    load-STRINGIDs.py [--debug=<int> | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
+    load-STRINGIDs.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
     load-STRINGIDs.py -h | --help
 
 Options:
@@ -18,15 +18,15 @@ Options:
                          10: DEBUG
                           0: NOTSET
   -q --quiet           : set output verbosity to minimal level
-  -d --debug DEBUGL    : set debugging output level (0-3) [default: 0]
+  -d --debug           : turn on debugging output
   -? --help            : print this message and exit 
 """
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2014-2016, Steve Mathias"
+__copyright__ = "Copyright 2014-2018, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.2.0"
+__version__   = "2.4.0"
 
 import os,sys,time
 from docopt import docopt
@@ -34,64 +34,59 @@ from TCRD import DBAdaptor
 import csv
 import logging
 from progressbar import *
+import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGFILE = "%s.log" % PROGRAM
+LOGDIR = "./tcrd5logs"
+LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 # http://string-db.org/mapping_files/uniprot_mappings/9606_reviewed_uniprot_2_string.04_2015.tsv.gz
 INFILE1 = '../data/JensenLab/9606_reviewed_uniprot_2_string.04_2015.tsv'
-# http://string-db.org/download/protein.aliases.v10/9606.protein.aliases.v10.txt.gz
+# https://stringdb-static.org/download/protein.aliases.v10.5.txt.gz
 INFILE2 = '../data/JensenLab/9606.protein.aliases.v10.txt'
 
-def main():
-  args = docopt(__doc__, version=__version__)
-  debug = int(args['--debug'])
-  if debug:
-    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
-
+def load(args):
   loglevel = int(args['--loglevel'])
   if args['--logfile']:
     logfile = args['--logfile']
   else:
-    logfile = "%s.log" % PROGRAM    
+    logfile = LOGFILE
   logger = logging.getLogger(__name__)
   logger.setLevel(loglevel)
-  if not debug:
+  if not args['--debug']:
     logger.propagate = False # turns off console logging when debug is 0
   fh = logging.FileHandler(logfile)
   fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
   fh.setFormatter(fmtr)
   logger.addHandler(fh)
 
-  # DBAdaptor uses same logger as main()
+  # DBAdaptor uses same logger as load()
   dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
   dba = DBAdaptor(dba_params)
   dbi = dba.get_dbinfo()
-  logger.info("Connected to TCRD database %s (schema ver %s; data ver %s)", args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
   if not args['--quiet']:
-    print "\n%s (v%s) [%s]:" % (PROGRAM, __version__, time.strftime("%c"))
-    print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+    print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
   # Dataset
-  dataset_id = dba.ins_dataset( {'name': 'JensenLab STRING IDs', 'source': 'Files %s and %s from from http://string-db.org/'%(os.path.basename(INFILE1), os.path.basename(INFILE2)), 'app': PROGRAM, 'app_version': __version__, 'columns_touched': 'protein.string_id', 'url': 'http://string-db.org/'} )
+  dataset_id = dba.ins_dataset( {'name': 'JensenLab STRING IDs', 'source': 'Files %s and %s from from http://string-db.org/'%(os.path.basename(INFILE1), os.path.basename(INFILE2)), 'app': PROGRAM, 'app_version': __version__, 'url': 'http://string-db.org/'} )
   if not dataset_id:
-    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
+    print "WARNING: Error inserting dataset See logfile {} for details.".format(logfile)
   # Provenance
   rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'protein', 'column_name': 'stringid'})
   if not rv:
-    print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
+    print "WARNING: Error inserting provenance. See logfile {} for details.".format(logfile)
     sys.exit(1)
 
   aliasmap = {}
   
-  start_time = time.time()
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   skip_ct = 0
   notfnd = {}
   mult_ct = 0
-  line_ct = wcl(INFILE1)
+  line_ct = slmf.wcl(INFILE1)
   line_ct -= 1 # file has header
   if not args['--quiet']:
-    print "\nProcessing %d input lines in file %s" % (line_ct, INFILE1)
+    print "\nProcessing {} input lines in file {}".format(line_ct, INFILE1)
   with open(INFILE1, 'rU') as tsv:
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
     tsvreader = csv.reader(tsv, delimiter='\t')
@@ -120,19 +115,17 @@ def main():
       else:
         aliasmap[name] = (ensp, bitscore)
   pbar.finish()
-  elapsed = time.time() - start_time
   unmap_ct = len(aliasmap.keys())
-  print "%d input lines processed. Elapsed time: %s" % (ct, secs2str(elapsed))
-  print "  Skipped %d non-identity lines" % skip_ct
-  print "  Got %d uniprot/name to STRING ID mappings" % unmap_ct
+  print "{} input lines processed.".format(ct)
+  print "  Skipped {} non-identity lines".format(skip_ct)
+  print "  Got {} uniprot/name to STRING ID mappings".format(unmap_ct)
   if notfnd:
-    print "No target found for %d UniProts/Names:" % len(notfnd.keys())
+    print "No target found for {} UniProts/Names:".format(len(notfnd.keys()))
 
-  start_time = time.time()
-  line_ct = wcl(INFILE2)
+  line_ct = slmf.wcl(INFILE2)
   line_ct -= 1 # file has header
   if not args['--quiet']:
-    print "\nProcessing %d input lines in file %s" % (line_ct, INFILE2)
+    print "\nProcessing {} input lines in file {}".format(line_ct, INFILE2)
   with open(INFILE2, 'rU') as tsv:
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
     tsvreader = csv.reader(tsv, delimiter='\t')
@@ -147,22 +140,20 @@ def main():
       ensp = row[0].replace('9606.', '')
       if alias in aliasmap and aliasmap[alias][0] != ensp:
         # do not replace mappings from *reviewed_uniprot_2_string* with aliases
-        logger.info("Different ENSPs found for same alias %s: %s vs %s" % (alias, aliasmap[alias][0], ensp))
+        logger.info("Different ENSPs found for same alias {}: {} vs {}".format(alias, aliasmap[alias][0], ensp))
         err_ct += 1
         continue
       aliasmap[alias] = (ensp, None)
   pbar.finish()
-  elapsed = time.time() - start_time
   amap_ct = len(aliasmap.keys()) - unmap_ct
-  print "%d input lines processed. Elapsed time: %s" % (ct, secs2str(elapsed))
-  print "  Got %d alias to STRING ID mappings" % amap_ct
+  print "{} input lines processed.".format(ct)
+  print "  Got {} alias to STRING ID mappings".format(amap_ct)
   if err_ct > 0:
-    print "  Skipped %d aliases that would override reviewed mappings . See logfile %s for details." % (err_ct, logfile)
+    print "  Skipped {} aliases that would override reviewed mappings. See logfile {} for details.".format(err_ct, logfile)
 
-  start_time = time.time()
   tct = dba.get_target_count(idg=False)
   if not args['--quiet']:
-    print "\nLoading STRING IDs for %d TCRD targets" % tct
+    print "\nLoading STRING IDs for {} TCRD targets".format(tct)
   pbar = ProgressBar(widgets=pbar_widgets, maxval=tct).start()
   ct = 0
   upd_ct = 0
@@ -191,25 +182,20 @@ def main():
     else:
       dba_err_ct += 1
   pbar.finish()
-  elapsed = time.time() - start_time
-  print "Updated %d STRING ID values" % upd_ct
+  print "Updated {} STRING ID values".format(upd_ct)
   if dba_err_ct > 0:
-    print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
-  
-  print "\n%s: Done.\n" % PROGRAM
-  
+    print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
 
-def wcl(fname):
-  with open(fname) as f:
-    for i, l in enumerate(f):
-      pass
-  return i + 1
-
-def secs2str(t):
-  return "%d:%02d:%02d.%03d" % reduce(lambda ll,b : divmod(ll[0],b) + ll[1:], [(t*1000,),1000,60,60])
 
 if __name__ == '__main__':
-  main()
+  print "\n{} (v{}) [{}]:".format(PROGRAM, __version__, time.strftime("%c"))
+  args = docopt(__doc__, version=__version__)
+  if args['--debug']:
+    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
+  start_time = time.time()
+  load(args)
+  elapsed = time.time() - start_time
+  print "\n{}: Done. Elapsed time: {}\n".format(PROGRAM, slmf.secs2str(elapsed))
 
 # with open(INFILE1, 'rU') as tsv:
 #   tsvreader = csv.reader(tsv, delimiter='\t')

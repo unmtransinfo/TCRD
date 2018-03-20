@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-05 16:38:26 smathias>
+# Time-stamp: <2018-01-25 17:09:54 smathias>
 """Load Jackson Labs phenotype data into TCRD from TSV files.
 
 Usage:
@@ -24,9 +24,9 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2015-2016, Steve Mathias"
+__copyright__ = "Copyright 2015-2018, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.0.0"
+__version__   = "2.1.0"
 
 import os,sys,time,re
 from docopt import docopt
@@ -86,10 +86,13 @@ def load():
     print "WARNING: Error inserting dataset See logfile %s for details." % logfile
     sys.exit(1)
   # Provenance
-  rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'phenotype', 'where_clause': "ptype = 'JAX/MGI Human Ortholog Phenotyp'"})
-  if not rv:
-    print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
-    sys.exit(1)
+  provs = [ {'dataset_id': dataset_id, 'table_name': 'phenotype', 'where_clause': "ptype = 'JAX/MGI Human Ortholog Phenotyp'"},
+            {'dataset_id': dataset_id, 'table_name': 'xref', 'where_clause': "dataset_id = %d"%dataset_id} ]
+  for prov in provs:
+    rv = dba.ins_provenance()
+    if not rv:
+      print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
+      sys.exit(1)
   
   mpo = {}
   fn = DOWNLOAD_DIR + MPO_FILE

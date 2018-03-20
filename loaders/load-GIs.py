@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-11-03 10:23:39 smathias>
+# Time-stamp: <2018-01-25 16:52:08 smathias>
 """Load NCBI gi xrefs into TCRD from UniProt ID Mapping file.
 
 Usage:
-    load-GIs.py [--debug=<int> | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
+    load-GIs.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
     load-GIs.py -? | --help
 
 Options:
@@ -18,15 +18,15 @@ Options:
                          10: DEBUG
                           0: NOTSET
   -q --quiet           : set output verbosity to minimal level
-  -d --debug DEBUGL    : set debugging output level (0-3) [default: 0]
+  -d --debug           : turn on debugging output
   -? --help            : print this message and exit 
 """
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2016, Steve Mathias"
+__copyright__ = "Copyright 2016-2018, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.0.0"
+__version__   = "2.1.0"
 
 import os,sys,time
 from docopt import docopt
@@ -39,9 +39,9 @@ if sys.version_info[0] < 3:
 else:
   # Python 3
   from urllib.request import urlretrieve
-  from functools import reduce
 import gzip
 from progressbar import *
+import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
 LOGFILE = './%s.log'%PROGRAM
@@ -49,7 +49,7 @@ DOWNLOAD_DIR = '../data/UniProt/'
 BASE_URL = 'ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/idmapping/by_organism/'
 FILENAME = 'HUMAN_9606_idmapping_selected.tab.gz'
 
-def download():
+def download(args):
   gzfn = DOWNLOAD_DIR + FILENAME
   if os.path.exists(gzfn):
     os.remove(gzfn)
@@ -57,24 +57,21 @@ def download():
   if os.path.exists(fn):
     os.remove(fn)
   start_time = time.time()
-  print "\nDownloading ", BASE_URL + FILENAME
-  print "         to ", gzfn
-  urllib.urlretrieve(BASE_URL + FILENAME, gzfn)
+  if not args['--quiet']:
+    print "\nDownloading ", BASE_URL + FILENAME
+    print "         to ", gzfn
+  urlretrieve(BASE_URL + FILENAME, gzfn)
   print "Uncompressing", gzfn
   ifh = gzip.open(gzfn, 'rb')
   ofh = open(fn, 'wb')
   ofh.write( ifh.read() )
   ifh.close()
   ofh.close()
-  elapsed = time.time() - start_time
-  print "Done. Elapsed time: %s" % secs2str(elapsed)
+  if not args['--quiet']:
+    elapsed = time.time() - start_time
+    print "Done. Elapsed time: %s" % slmf.secs2str(elapsed)
 
-def load():
-  args = docopt(__doc__, version=__version__)
-  debug = int(args['--debug'])
-  if debug:
-    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
-  
+def load(args):
   loglevel = int(args['--loglevel'])
   if args['--logfile']:
     logfile = args['--logfile']
@@ -82,20 +79,19 @@ def load():
     logfile = "%s.log" % PROGRAM
   logger = logging.getLogger(__name__)
   logger.setLevel(loglevel)
-  if not debug:
-    logger.propagate = False # turns off console logging when debug is 0
+  if not args['--debug']:
+    logger.propagate = False # turns off console logging
   fh = logging.FileHandler(logfile)
   fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
   fh.setFormatter(fmtr)
   logger.addHandler(fh)
 
-  # DBAdaptor uses same logger as main()
+  # DBAdaptor uses same logger as load()
   dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
   dba = DBAdaptor(dba_params)
   dbi = dba.get_dbinfo()
   logger.info("Connected to TCRD database %s (schema ver %s; data ver %s)", args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
   if not args['--quiet']:
-    print "\n%s (v%s) [%s]:" % (PROGRAM, __version__, time.strftime("%c"))
     print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
   # Dataset
@@ -103,11 +99,15 @@ def load():
   if not dataset_id:
     print "WARNING: Error inserting dataset See logfile %s for details." % logfile
     sys.exit(1)
+  rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'xref', 'where_clause': "dataset_id = %d"%dataset_id})
+  if not rv:
+    print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
+    sys.exit(1)
 
   start_time = time.time()
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   infile = (DOWNLOAD_DIR + FILENAME).replace('.gz', '')
-  line_ct = wcl(infile)
+  line_ct = slmf.wcl(infile)
   # ID Mappiing fields
   # 1. UniProtKB-AC
   # 2. UniProtKB-ID
@@ -165,23 +165,21 @@ def load():
 
   elapsed = time.time() - start_time
   if not args['--quiet']:
-    print "\n%d rows processed. Elapsed time: %s" % (ct, secs2str(elapsed))
-  print "%d targets annotated with GI xref(s)" % len(tmark.keys())
-  print "  Skipped %d rows" % skip_ct
-  print "  Inserted %d new GI xref rows" % xref_ct
-
-def wcl(fname):
-  with open(fname) as f:
-    for i, l in enumerate(f):
-      pass
-  return i + 1
-
-def secs2str(t):
-  return "%d:%02d:%02d.%03d" % reduce(lambda ll,b : divmod(ll[0],b) + ll[1:], [(t*1000,),1000,60,60])
+    print "\n{} rows processed".format(ct)
+  print "{} targets annotated with GI xref(s)".format(len(tmark))
+  print "  Skipped {} rows".format(skip_ct)
+  print "  Inserted {} new GI xref rows".format(xref_ct)
+  if dba_err_ct > 0:
+    print "WARNING: {} database errors occured. See logfile {} for details.".format(dba_err_ct, logfile)
 
 if __name__ == '__main__':
-  print "\n%s (v%s) [%s]:" % (PROGRAM, __version__, time.strftime("%c"))
-  download()
-  load()
-  print "\n%s: Done.\n" % PROGRAM
+  print "\n{} (v{}) [{}]:".format(PROGRAM, __version__, time.strftime("%c"))
+  args = docopt(__doc__, version=__version__)
+  if args['--debug']:
+    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
+  download(args)
+  start_time = time.time()
+  load(args)
+  elapsed = time.time() - start_time
+  print "\n{}: Done. Elapsed time: {}\n".format(PROGRAM, slmf.secs2str(elapsed))
 

@@ -1388,3 +1388,27 @@ load-IMPCMiceTDLInfos.py: Done. Elapsed time: 0:00:13.762
 
 mysql> update dbinfo set data_ver = '4.6.9';
 [smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd_v4.6.9.sql
+
+
+CREATE TABLE `ortholog_disease` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `target_id` int(11) NOT NULL,
+  `protein_id` int(11) NOT NULL,
+  `did` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  `name` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  `ortholog_id` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  `score` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `ortholog_disease_idx1` (`target_id`),
+  CONSTRAINT `fk_ortholog_disease__target` FOREIGN KEY (`target_id`) REFERENCES `target` (`id`) ON DELETE CASCADE,
+  KEY `ortholog_disease_idx2` (`protein_id`),
+  CONSTRAINT `fk_ortholog_disease__protein` FOREIGN KEY (`protein_id`) REFERENCES `protein` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+
+
+CREATE INDEX ortholog_disease_idx3 ON ortholog_disease(ortholog_id);
+ALTER TABLE ortholog_disease ADD CONSTRAINT fk_ortholog_disease__ortholog FOREIGN KEY ortholog_disease_idx3(ortholog_id) REFERENCES ortholog(id) ON DELETE RESTRICT;
+
+mysql> update dbinfo set schema_ver = '4.0.12', data_ver = '4.6.10';
+[smathias@juniper SQL]$ mysqldump tcrd4 > dumps/tcrd_v4.6.10.sql
