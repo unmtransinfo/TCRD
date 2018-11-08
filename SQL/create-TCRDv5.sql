@@ -382,8 +382,7 @@ CREATE TABLE `dto` (
   `name` text COLLATE utf8_unicode_ci NOT NULL,
   `parent` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `dto_idx1` (`parent`),
-  CONSTRAINT `fk_dto_dto` FOREIGN KEY (`parent`) REFERENCES `dto` (`id`)
+  KEY `dto_idx1` (`parent`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -1606,20 +1605,9 @@ UNLOCK TABLES;
 --
 -- Temporary view structure for view `tinx_target`
 --
+DROP VIEW IF EXISTS `tinx_target`;
+CREATE VIEW tinx_target AS SELECT t.id AS target_id, p.id AS protein_id, p.uniprot, p.sym, t.tdl, t.fam, p.family FROM target t, t2tc, protein p WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id IN (SELECT DISTINCT protein_id FROM tinx_novelty);
 
-DROP TABLE IF EXISTS `tinx_target`;
-/*!50001 DROP VIEW IF EXISTS `tinx_target`*/;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
-/*!50001 CREATE VIEW `tinx_target` AS SELECT 
- 1 AS `target_id`,
- 1 AS `protein_id`,
- 1 AS `uniprot`,
- 1 AS `sym`,
- 1 AS `tdl`,
- 1 AS `fam`,
- 1 AS `family`*/;
-SET character_set_client = @saved_cs_client;
 
 --
 -- Table structure for table `xref`
