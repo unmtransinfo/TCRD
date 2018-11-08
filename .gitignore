@@ -15,10 +15,15 @@ __pycache__/
 data/
 
 # log files from load scripts
-scripts/tcrd4logs/
+loaders/tcrd4logs/
+loaders/tcrd5logs/
 *.log
 
 # Database dump files
 SQL/dumps/
+SQL/dumps5/
+
+webapp/
+exports/
 
 
