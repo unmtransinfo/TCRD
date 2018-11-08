@@ -26,4 +26,6 @@ SQL/dumps5/
 webapp/
 exports/
 
-
+# sym links
+python/slm_dataframe_functions.py
+python/slm_tcrd_functions.py
