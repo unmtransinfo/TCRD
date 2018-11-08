@@ -35,3 +35,15 @@ for(i in 1:nrow(ct.test)) {
 }
 
 write.table(all, file = "disease_assoc.tsv", sep = "\t", row.names = F, col.names = T)
+all[, ldisease := tolower(disease)]
+doid <- fread("doid.dict.tsv", header = F, sep = "\t", quote = "", col.names = c("DOID", "disease"))
+doid[, ldisease := tolower(disease)]
+doid[, disease := NULL]
+
+all <- merge(all, doid, by.x = "ldisease", by.y = "ldisease", all.x = T)
+all <- all[!is.na(DOID)]
+all <- all[`Gene ID` %like% "ENSG0"]
+all[, ldisease := NULL]
+all <- unique(all, by = c("Gene ID", "DOID"))
+setcolorder(all, c("Gene ID","DOID","Gene Name","log2foldchange","p-value","disease","experiment_id","contrast_id"))
+fwrite(all, file = "disease_assoc_human_do_uniq.tsv", sep = "\t", quote = T, col.names = T, row.names = F)
