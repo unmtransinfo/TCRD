@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-13 12:21:19 smathias>
+# Time-stamp: <2018-05-01 12:15:06 smathias>
 """Calculate CDFs for Harmonizome data and load into TCRD.
 
 Usage:
-    load-HGramCDFs.py [--debug=<int> | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
+    load-HGramCDFs.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
     load-HGramCDFs.py -? | --help
 
 Options:
@@ -18,15 +18,15 @@ Options:
                          10: DEBUG
                           0: NOTSET
   -q --quiet           : set output verbosity to minimal level
-  -d --debug DEBUGL    : set debugging output level (0-3) [default: 0]
+  -d --debug           : turn on debugging output
   -? --help            : print this message and exit 
 """
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2016, Steve Mathias"
+__copyright__ = "Copyright 2016-2018, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.0.0"
+__version__   = "2.1.0"
 
 import os,sys,time
 from docopt import docopt
@@ -35,15 +35,13 @@ import math
 import numpy
 import logging
 from progressbar import *
+import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGFILE = 'tcrd4logs/%s.log'%PROGRAM
+LOGDIR = 'tcrd5logs/'
+LOGFILE = LOGDIR + '%s.log'%PROGRAM
 
-def main():
-  args = docopt(__doc__, version=__version__)
-  debug = int(args['--debug'])
-  if debug:
-    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
+def load(args):
   loglevel = int(args['--loglevel'])
   if args['--logfile']:
     logfile = args['--logfile']
@@ -51,8 +49,8 @@ def main():
     logfile = LOGFILE
   logger = logging.getLogger(__name__)
   logger.setLevel(loglevel)
-  if not debug:
-    logger.propagate = False # turns off console logging when debug is 0
+  if not args['--debug']:
+    logger.propagate = False # turns off console logging
   fh = logging.FileHandler(logfile)
   fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
   fh.setFormatter(fmtr)
@@ -61,23 +59,17 @@ def main():
   dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
   dba = DBAdaptor(dba_params)
   dbi = dba.get_dbinfo()
-  logger.info("Connected to TCRD database %s (schema ver %s; data ver %s)", args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
   if not args['--quiet']:
-    print "\n%s (v%s) [%s]:" % (PROGRAM, __version__, time.strftime("%c"))
-    print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+    print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
   # Dataset
   dataset_id = dba.ins_dataset( {'name': 'Harmonogram CDFs', 'source': 'IDG-KMC generated data by Steve Mathias at UNM.', 'app': PROGRAM, 'app_version': __version__, 'comments': 'CDFs are calculated by the loader app based on gene_attribute data in TCRD.'} )
-  if not dataset_id:
-    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
-    sys.exit(1)
+  assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
   # Provenance
   rv = dba.ins_provenance({'dataset_id': 1, 'table_name': 'hgram_cdf'})
-  if not rv:
-    print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
-    sys.exit(1)
+  assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
 
-  start_time = time.time()
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
 
   # Create a dictionary of gene_attribute_type.name => [] pairs
@@ -88,9 +80,10 @@ def main():
   for ga in gatypes:
     counts[ga] = []
     stats[ga] = {}
-  start_time = time.time()
+
   tct = dba.get_target_count(idg=False)
-  print "\nCollecting counts for %d gene attribute types on %d TCRD targets" % (len(gatypes), tct)
+  if not args['--quiet']:
+    print "\nCollecting counts for {} gene attribute types on {} TCRD targets".format(len(gatypes), tct)
   pbar = ProgressBar(widgets=pbar_widgets, maxval=tct).start()
   ct = 0
   for t in dba.get_targets(idg=False, include_annotations=True, get_ga_counts=True):
@@ -104,7 +97,7 @@ def main():
       #p2cts[pid] = attr_count
   pbar.finish()
 
-  print "\nCalculatig Gene Attribute stats. See logfile %s." % logfile
+  print "\nCalculatig Gene Attribute stats. See logfile {}.".format(logfile)
   logger.info("Calculatig Gene Attribute stats:")
   for type,l in counts.items():
     if len(l) == 0:
@@ -115,7 +108,7 @@ def main():
     stats[type]['mean'] = npa.mean()
     stats[type]['std'] = npa.std()
 
-  print "\nLoading HGram CDFs for %d TCRD targets" % tct
+  print "\nLoading HGram CDFs for {} TCRD targets".format(tct)
   pbar = ProgressBar(widgets=pbar_widgets, maxval=tct).start()
   ct = 0
   nan_ct = 0
@@ -141,27 +134,28 @@ def main():
       cdf_ct += 1
     pbar.update(ct)
   pbar.finish()
-  print "Processed %d targets." % ct
-  print "  Loaded %d new hgram_cdf rows" % cdf_ct
-  print "  Skipped %d NaN CDFs" % nan_ct
+  print "Processed {} targets.".format(ct)
+  print "  Loaded {} new hgram_cdf rows".format(cdf_ct)
+  print "  Skipped {} NaN CDFs".format(nan_ct)
   if dba_err_ct > 0:
-    print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
-
-  elapsed = time.time() - start_time
-  print "\n%d targets processed." % ct
-  print "\n%s: Done. Elapsed time: %s" % (PROGRAM, secs2str(elapsed))
-  print
+    print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
 
 def gaussian_cdf(ct, mu, sigma):
   err = math.erf((ct - mu) / (sigma * math.sqrt(2.0)))
   cdf = 0.5 * ( 1.0 + err )
   return cdf
 
-def secs2str(t):
-  return "%d:%02d:%02d.%03d" % reduce(lambda ll,b : divmod(ll[0],b) + ll[1:], [(t*1000,),1000,60,60])
 
 if __name__ == '__main__':
-    main()
+  print "\n{} (v{}) [{}]:".format(PROGRAM, __version__, time.strftime("%c"))
+  args = docopt(__doc__, version=__version__)
+  if args['--debug']:
+    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
+  start_time = time.time()
+  load(args)
+  elapsed = time.time() - start_time
+  print "\n{}: Done. Elapsed time: {}\n".format(PROGRAM, slmf.secs2str(elapsed))
+
 
 
 

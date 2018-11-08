@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-13 12:12:28 smathias>
+# Time-stamp: <2018-05-31 10:48:02 smathias>
 """Load mlp_assay_infos into TCRD from CSV files.
 
 Usage:
-    load-MLPAssayInfos.py [--debug=<int> | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
+    load-MLPAssayInfos.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
     load-MLPAssayInfos.py -? | --help
 
 Options:
@@ -18,15 +18,15 @@ Options:
                          10: DEBUG
                           0: NOTSET
   -q --quiet           : set output verbosity to minimal level
-  -d --debug DEBUGL    : set debugging output level (0-3) [default: 0]
+  -d --debug           : turn on debugging output
   -? --help            : print this message and exit 
 """
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2015-2016, Steve Mathias"
+__copyright__ = "Copyright 2015-2018, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.0.0"
+__version__   = "2.1.0"
 
 import os,sys,time
 from docopt import docopt
@@ -37,29 +37,26 @@ import requests
 from bs4 import BeautifulSoup
 import cPickle as pickle
 from progressbar import *
+import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGFILE = './%s.log'%PROGRAM
+LOGDIR = "./tcrd5logs"
+LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 AIDGI_FILE = '../data/PubChem/entrez_assay_summ_mlp_tgt.csv'
 ASSAYS_FILE = '../data/PubChem/entrez_assay_summ_mlp.csv'
 EFETCH_PROTEIN_URL = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=protein&rettype=xml&id="
-T2AID_PICKLE = 'tcrd4logs/Target2PubChemMLPAIDs.p'
+T2AID_PICKLE = 'tcrd5logs/Target2PubChemMLPAIDs.p'
 
-def main():
-  args = docopt(__doc__, version=__version__)
-  debug = int(args['--debug'])
-  if debug:
-    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
-  
+def load(args):
   loglevel = int(args['--loglevel'])
   if args['--logfile']:
     logfile = args['--logfile']
   else:
-    logfile = "%s.log" % PROGRAM
+    logfile = LOGFILE
   logger = logging.getLogger(__name__)
   logger.setLevel(loglevel)
-  if not debug:
-    logger.propagate = False # turns off console logging when debug is 0
+  if not args['--debug']:
+    logger.propagate = False # turns off console logging
   fh = logging.FileHandler(logfile)
   fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
   fh.setFormatter(fmtr)
@@ -68,21 +65,16 @@ def main():
   dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
   dba = DBAdaptor(dba_params)
   dbi = dba.get_dbinfo()
-  logger.info("Connected to TCRD database %s (schema ver %s; data ver %s)", args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
   if not args['--quiet']:
-    print "\n%s (v%s) [%s]:" % (PROGRAM, __version__, time.strftime("%c"))
-    print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+    print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
   # Dataset
   dataset_id = dba.ins_dataset( {'name': 'MLP Assay Info', 'source': 'IDG-KMC generated data by Jeremy Yang at UNM.', 'app': PROGRAM, 'app_version': __version__, 'comments': "This data is generated at UNM from PubChem and EUtils data. It contains details about targets studied in assays that were part of NIH's Molecular Libraries Program."} )
-  if not dataset_id:
-    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
-    sys.exit(1)
+  assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
   # Provenance
   rv = dba.ins_provenance({'dataset_id': 3, 'table_name': 'mlp_assay_info'})
-  if not rv:
-    print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
-    sys.exit(1)
+  assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
 
   if os.path.isfile(T2AID_PICKLE):
     t2aid = pickle.load( open(T2AID_PICKLE, 'rb'))
@@ -90,14 +82,14 @@ def main():
     for tid in t2aid.keys():
       for aid in t2aid[tid]:
         act += 1
-    print "\n%d targets have link(s) to %d PubChem MLP assay(s)" % (len(t2aid.keys()), act)
+    if not args['--debug']:
+      print "\n{} targets have link(s) to {} PubChem MLP assay(s)".format(len(t2aid), act)
   else:
-    start_time = time.time()
     pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
-    line_ct = wcl(AIDGI_FILE)
+    line_ct = slmf.wcl(AIDGI_FILE)
     t2aid = {}
     if not args['--quiet']:
-      print "\nProcessing %d lines in file %s" % (line_ct, AIDGI_FILE)
+      print "\nProcessing {} lines in file {}".format(line_ct, AIDGI_FILE)
     with open(AIDGI_FILE, 'rU') as csvfile:
       pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start()
       csvreader = csv.reader(csvfile)
@@ -105,7 +97,7 @@ def main():
       skip_ct = 0
       fndgi_ct = 0
       fndpl_ct = 0
-      notfnd = []
+      notfnd = set()
       assay_ct = 0
       dba_err_ct = 0
       for row in csvreader:
@@ -132,6 +124,7 @@ def main():
             fndpl_ct += 1
           else:
             notfnd.append(gi)
+            logger.warn("No target found for GI {}".format(gi))
             continue
         t = targets[0]
         tid = t['id']
@@ -143,25 +136,18 @@ def main():
           assay_ct += 1
         pbar.update(ct)
     pbar.finish()
-    elapsed = time.time() - start_time
     pickle.dump(t2aid, open(T2AID_PICKLE, "wb"))
-    print "\n%d rows processed. Elapsed time: %s" % (ct, secs2str(elapsed))
-    print "  Skipped %d non-huamn assay rows" % skip_ct
-    print "  %d assays linked to TCRD targets" % assay_ct
-    print "    %d linked by GI; %d linked via EUtils" % (fndgi_ct, fndpl_ct)
-    print "  No target found for %d GIs" % len(notfnd)
-    with open('GIsNotFound.csv', 'wb') as csvfile:
-      csvwriter = csv.writer(csvfile)
-      for gi in notfnd:
-        csvwriter.writerow([gi])
-    print "  %d distinct targets have PubChem MLP assay link(s)" % len(t2aid.keys())
+    print "\n{} rows processed.".format(ct)
+    print "  {} assays linked to {} TCRD targets".format(assay_ct, len(t2aid))
+    print "  Skipped {} non-huamn assay rows".format(skip_ct)
+    print "    {} linked by GI; {} linked via EUtils".format(fndgi_ct, fndpl_ct)
+    print "  No target found for {} GIs. See logfile {} for details".format(len(notfnd), logfile)
 
   assay_info = {}
-  start_time = time.time()
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
-  line_ct = wcl(ASSAYS_FILE)
+  line_ct = slmf.wcl(ASSAYS_FILE)
   if not args['--quiet']:
-    print "\nProcessing %d rows in file %s" % (line_ct, ASSAYS_FILE)
+    print "\nProcessing {} rows in file {}".format(line_ct, ASSAYS_FILE)
   with open(ASSAYS_FILE, 'rU') as csvfile:
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start()
     csvreader = csv.reader(csvfile)
@@ -173,13 +159,12 @@ def main():
       pbar.update(ct)
   pbar.finish()
   elapsed = time.time() - start_time
-  print "Got assay info for %d assays. Elapsed time: %s" % (len(assay_info), secs2str(elapsed))
+  print "Got assay info for {} assays.".format(len(assay_info))
 
-  start_time = time.time()
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   tct = len(t2aid.keys())
   if not args['--quiet']:
-    print "\nLoading MLP Assay Info for %d targets" % tct
+    print "\nLoading MLP Assay Info for {} targets".format(tct)
   pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start()
   ct = 0
   ti_ct = 0
@@ -196,24 +181,18 @@ def main():
         dba_err_ct += 1
     pbar.update(ct)
   pbar.finish()
-  elapsed = time.time() - start_time
-  print "\n%d targets processed. Elapsed time: %s" % (ct, secs2str(elapsed))
-  print "  Inserted %d new mlp_assay_info rows" % mai_ct
+  print "\n{} targets processed.".format(ct)
+  print "  Inserted {} new mlp_assay_info rows".format(mai_ct)
   if dba_err_ct > 0:
-    print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
-  
-  if not args['--quiet']:
-    print "\n%s: Done.\n" % PROGRAM
+    print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
 
-
-def wcl(fname):
-  with open(fname) as f:
-    for i, l in enumerate(f):
-      pass
-  return i + 1
-
-def secs2str(t):
-  return "%d:%02d:%02d.%03d" % reduce(lambda ll,b : divmod(ll[0],b) + ll[1:], [(t*1000,),1000,60,60])
 
 if __name__ == '__main__':
-    main()
+  print "\n{} (v{}) [{}]:".format(PROGRAM, __version__, time.strftime("%c"))
+  args = docopt(__doc__, version=__version__)
+  if args['--debug']:
+    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
+  start_time = time.time()
+  load(args)
+  elapsed = time.time() - start_time
+  print "\n{}: Done. Elapsed time: {}\n".format(PROGRAM, slmf.secs2str(elapsed))

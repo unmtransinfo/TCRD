@@ -3,7 +3,7 @@
 """Load grant_info data into TCRD from pickle files produced from tagging NIHExporter data.
 
 Usage:
-    load-GrantInfo.py [--debug=<int> | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
+    load-GrantInfo.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
     load-GrantInfo.py -h | --help
 
 Options:
@@ -18,15 +18,15 @@ Options:
                          10: DEBUG
                           0: NOTSET
   -q --quiet           : set output verbosity to minimal level
-  -d --debug DEBUGL    : set debugging output level (0-3) [default: 0]
+  -d --debug           : turn on debugging output
   -? --help            : print this message and exit 
 """
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2015-2016, Steve Mathias"
+__copyright__ = "Copyright 2015-2018, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.0.0"
+__version__   = "2.1.0"
 
 import os,sys,time
 from docopt import docopt
@@ -34,28 +34,24 @@ from TCRD import DBAdaptor
 import cPickle as pickle
 import logging
 from progressbar import *
+import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGFILE = "%s.log" % PROGRAM
-PROJECTS_P = '../data/NIHExporter/ProjectInfo2000-2015.p'
-TAGGING_RESULTS_DIR = '../data/NIHExporter/TCRDv4/'
+LOGDIR = 'tcrd5logs/'
+LOGFILE = LOGDIR + '%s.log'%PROGRAM
+PROJECTS_P = '../data/NIHExporter/ProjectInfo2000-2017.p'
+TAGGING_RESULTS_DIR = '../data/NIHExporter/TCRDv5/'
 
-def main():
-  args = docopt(__doc__, version=__version__)
+def load(args):
   loglevel = int(args['--loglevel'])
   if args['--logfile']:
     logfile = args['--logfile']
   else:
-    logfile = "%s.log" % PROGRAM
-  debug = int(args['--debug'])
-  quiet = args['--quiet']
-  if debug:
-    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
-    
+    logfile = LOGFILE
   logger = logging.getLogger(__name__)
   logger.setLevel(loglevel)
-  if not debug:
-    logger.propagate = False # turns off console logging when debug is 0
+  if not args['--debug']:
+    logger.propagate = False # turns off console logging
   fh = logging.FileHandler(logfile)
   fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
   fh.setFormatter(fmtr)
@@ -64,40 +60,35 @@ def main():
   dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
   dba = DBAdaptor(dba_params)
   dbi = dba.get_dbinfo()
-  logger.info("Connected to TCRD database %s (schema ver %s; data ver %s)", args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
-  if not quiet:
-    print "\n%s (v%s) [%s]:" % (PROGRAM, __version__, time.strftime("%c"))
-    print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
+  if not args['--quiet']:
+    print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
-  if not quiet:
+  if not args['--quiet']:
     print "\nLoading project info from pickle file %s" % PROJECTS_P
     projects = pickle.load( open(PROJECTS_P, 'rb') )
 
   # Dataset
-  dataset_id = dba.ins_dataset( {'name': 'NIH Grant Info', 'source': 'IDG-KMC generated data by Steve Mathias at UNM.', 'app': PROGRAM, 'app_version': __version__, 'comments': "Grant info is generated from textmining results of running Lars Jensen's tagger software on project info downloaded from NIHExporter."} )
-  if not dataset_id:
-    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
-    sys.exit(1)
+  dataset_id = dba.ins_dataset( {'name': 'NIH Grant Textmining Info', 'source': 'IDG-KMC generated data by Steve Mathias at UNM.', 'app': PROGRAM, 'app_version': __version__, 'comments': "Grant info is generated from textmining results of running Lars Jensen's tagger software on project info downloaded from NIHExporter."} )
+  assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
   # Provenance
   provs = [ {'dataset_id': dataset_id, 'table_name': 'grant'},
-            {'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': 'itype is "NIHRePORTER 2000-2015 R01 Count"'} ]
+            {'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': 'itype is "NIHRePORTER 2000-2017 R01 Count"'} ]
   for prov in provs:
     rv = dba.ins_provenance(prov)
-    if not rv:
-      print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
-      sys.exit(1)
+    assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
   
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
 
-  if not quiet:
+  if not args['--quiet']:
     print "\nLoading tagging results in %s" % TAGGING_RESULTS_DIR
   r01cts = {}
-  for year in [str(yr) for yr in range(2000, 2016)]: # 2000-2015
-    start_time = time.time()
+  for year in [str(yr) for yr in range(2000, 2018)]: # 2000-2017
     pfile = "%s/Target2AppIDs%s.p" % (TAGGING_RESULTS_DIR, year)
     target2appids = pickle.load( open(pfile, 'rb') )
     tct = len(target2appids.keys())
-    print "\nProcessing tagging results for %s: %d targets" % (year, tct)
+    if not args['--quiet']:
+      print "\nProcessing tagging results for {}: {} targets".format(year, tct)
     pfile = "%s/AppID2Targets%s.p" % (TAGGING_RESULTS_DIR, year)
     appid2targets = pickle.load( open(pfile, 'rb') )
     pbar = ProgressBar(widgets=pbar_widgets, maxval=tct).start()
@@ -138,29 +129,31 @@ def main():
           else:
             r01cts[tid] = 1
     pbar.finish()
-    elapsed = time.time() - start_time
-    print "Processed %d target tagging records. Elapsed time: %s" % (ct, secs2str(elapsed))
-    print "  Inserted %d new target2grant rows" % t2g_ct
+    print "Processed {} target tagging records.".format(ct)
+    print "  Inserted {} new target2grant rows".format(t2g_ct)
 
-  # Now save 'NIHRePORTER 2000-2015 R01 Count' tdl_infos
-  print "\nLoading 'NIHRePORTER 2010-2015 R01 Count' tdl_infos for %d targets" % len(r01cts.keys())
+  # Now load 'NIHRePORTER 2000-2017 R01 Count' tdl_infos
+  print "\nLoading 'NIHRePORTER 2010-2017 R01 Count' tdl_infos for {} targets".format(len(r01cts))
   ti_ct = 0
   for tid in r01cts:
-    rv = dba.ins_tdl_info( {'target_id': tid, 'itype': 'NIHRePORTER 2000-2015 R01 Count',
+    rv = dba.ins_tdl_info( {'target_id': tid, 'itype': 'NIHRePORTER 2000-2017 R01 Count',
                             'integer_value': r01cts[tid]} )
     if not rv:
       dba_err_ct += 1
       continue
     ti_ct += 1
-  print "  Inserted %d new tdl_info rows" % ti_ct
+  print "  Inserted {} new tdl_info rows".format(ti_ct)
   if dba_err_ct > 0:
-    print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
+    print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
   
-  print "\n%s: Done.\n" % PROGRAM
-
-
-def secs2str(t):
-  return "%d:%02d:%02d.%03d" % reduce(lambda ll,b : divmod(ll[0],b) + ll[1:], [(t*1000,),1000,60,60])
 
 if __name__ == '__main__':
-  main()
+  print "\n{} (v{}) [{}]:".format(PROGRAM, __version__, time.strftime("%c"))
+  args = docopt(__doc__, version=__version__)
+  if args['--debug']:
+    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
+  start_time = time.time()
+  load(args)
+  elapsed = time.time() - start_time
+  print "\n{}: Done. Elapsed time: {}\n".format(PROGRAM, slmf.secs2str(elapsed))
+

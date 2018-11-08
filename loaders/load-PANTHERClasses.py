@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-02-23 12:23:17 smathias>
+# Time-stamp: <2018-05-31 15:45:06 smathias>
 """Load PANTHER family classes into TCRD from TSV files.
 
 Usage:
-    load-PANTHERClasses.py [--debug=<int> | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>] [--pastid=<int>]
+    load-PANTHERClasses.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>] [--pastid=<int>]
     load-PANTHERClasses.py -h | --help
 
 Options:
@@ -19,15 +19,15 @@ Options:
                           0: NOTSET
   -p --pastid PASTID   : TCRD target id to start at (for restarting frozen run)
   -q --quiet           : set output verbosity to minimal level
-  -d --debug DEBUGL    : set debugging output level (0-3) [default: 0]
+  -d --debug           : turn on debugging output
   -? --help            : print this message and exit 
 """
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2015, Steve Mathias"
+__copyright__ = "Copyright 2015-2018, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.0.0"
+__version__   = "2.1.0"
 
 import os,sys,time,re
 from docopt import docopt
@@ -35,62 +35,54 @@ from TCRD import DBAdaptor
 import csv
 import logging
 from progressbar import *
+import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-# ftp://ftp.pantherdb.org//sequence_classifications/current_release/PANTHER_Sequence_Classification_files/PTHR10.0_human
-P2PC_FILE = '/home/app/TCRD/data/PANTHER/PTHR10.0_human'
-# http://pantherdata.usc.edu/PANTHER10.0/ontology/Protein_Class_7.0
-CLASS_FILE = '/home/app/TCRD/data/PANTHER/Protein_Class_7.0'
-# http://pantherdata.usc.edu/PANTHER10.0/ontology/Protein_class_relationship
-RELN_FILE = '/home/app/TCRD/data/PANTHER/Protein_class_relationship'
+LOGDIR = "./tcrd5logs"
+LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
+# ftp://ftp.pantherdb.org//sequence_classifications/current_release/PANTHER_Sequence_Classification_files/PTHR13.1_human
+P2PC_FILE = '../data/PANTHER/PTHR13.1_human'
+# http://data.pantherdb.org/PANTHER13.1/ontology/Protein_Class_13.0
+CLASS_FILE = '../data/PANTHER/Protein_Class_13.0'
+# http://data.pantherdb.org/PANTHER13.1/ontology/Protein_class_relationship
+RELN_FILE = '../data/PANTHER/Protein_class_relationship'
 
-def main():
-  args = docopt(__doc__, version=__version__)
-  debug = int(args['--debug'])
-  if debug:
-    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
-  
+def load(args):
   loglevel = int(args['--loglevel'])
   if args['--logfile']:
     logfile = args['--logfile']
   else:
-    logfile = "%s.log" % PROGRAM
+    logfile = LOGFILE
   logger = logging.getLogger(__name__)
   logger.setLevel(loglevel)
-  if not debug:
-    logger.propagate = False # turns off console logging when debug is 0
+  if not args['--debug']:
+    logger.propagate = False # turns off console logging
   fh = logging.FileHandler(logfile)
   fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
   fh.setFormatter(fmtr)
   logger.addHandler(fh)
 
-  # DBAdaptor uses same logger as main()
   dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
   dba = DBAdaptor(dba_params)
   dbi = dba.get_dbinfo()
-  logger.info("Connected to TCRD database %s (schema ver %s; data ver %s)", args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
   if not args['--quiet']:
-    print "\n%s (v%s) [%s]:" % (PROGRAM, __version__, time.strftime("%c"))
-    print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+    print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
   # Dataset
-  dataset_id = dba.ins_dataset( {'name': 'PANTHER protein classes', 'source': 'File %s from ftp://ftp.pantherdb.org/sequence_classifications/10.0/PANTHER_Sequence_Classification_files/, and files %s and %s from http://pantherdata.usc.edu/PANTHER10.0/ontology/'%(os.path.basename(P2PC_FILE), os.path.basename(CLASS_FILE), os.path.basename(RELN_FILE)), 'app': PROGRAM, 'app_version': __version__, 'url': 'http://www.pantherdb.org/'} )
-  if not dataset_id:
-    print "WARNING: Error inserting dataset. See logfile %s for details." % logfile
-    sys.exit(1)
+  dataset_id = dba.ins_dataset( {'name': 'PANTHER protein classes', 'source': 'File %s from ftp://ftp.pantherdb.org//sequence_classifications/current_release/PANTHER_Sequence_Classification_files/, and files %s and %s from http://data.pantherdb.org/PANTHER13.1/ontology/'%(os.path.basename(P2PC_FILE), os.path.basename(CLASS_FILE), os.path.basename(RELN_FILE)), 'app': PROGRAM, 'app_version': __version__, 'url': 'http://www.pantherdb.org/'} )
+  assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
   # Provenance
   provs = [ {'dataset_id': dataset_id, 'table_name': 'panther_class'},
             {'dataset_id': dataset_id, 'table_name': 'p2pc'} ]
   for prov in provs:
     rv = dba.ins_provenance(prov)
-    if not rv:
-      print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
-      sys.exit(1)
+    assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
     
   relns = {}
-  line_ct = wcl(RELN_FILE)
+  line_ct = slmf.wcl(RELN_FILE)
   if not args['--quiet']:
-    print "\nProcessing %d lines in input file %s" % (line_ct, RELN_FILE)
+    print "\nProcessing {} lines in relationships file {}".format(line_ct, RELN_FILE)
   with open(RELN_FILE, 'rU') as tsv:
     tsvreader = csv.reader(tsv, delimiter='\t')
     ct = 0
@@ -102,14 +94,13 @@ def main():
         relns[pcid].append(parentid)
       else:
         relns[pcid] = [parentid]
-  print "%d input lines processed." % ct
-  print "  Got %d PANTHER Class relationships" % len(relns)
+  print "{} input lines processed.".format(ct)
+  print "  Got {} PANTHER Class relationships".format(len(relns))
 
-  start_time = time.time()
   pc2dbid = {}
-  line_ct = wcl(CLASS_FILE)
+  line_ct = slmf.wcl(CLASS_FILE)
   if not args['--quiet']:
-    print "\nProcessing %d lines in input file %s" % (line_ct, CLASS_FILE)
+    print "\nProcessing {} lines in class file {}".format(line_ct, CLASS_FILE)
   with open(CLASS_FILE, 'rU') as tsv:
     tsvreader = csv.reader(tsv, delimiter='\t')
     ct = 0
@@ -133,26 +124,24 @@ def main():
           dba_err_ct += 1
         pc2dbid[pc] = rv
         pcmark[pc] = True
-  elapsed = time.time() - start_time
-  print "%d input lines processed. Elapsed time: %s" % (ct, secs2str(elapsed))
-  print "  Inserted %d new panther_class rows" % pc_ct
+  print "{} lines processed.".format(ct)
+  print "  Inserted {} new panther_class rows".format(pc_ct)
   if dba_err_ct > 0:
-    print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
+    print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
 
-  start_time = time.time()
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
-  line_ct = wcl(P2PC_FILE)
+  line_ct = slmf.wcl(P2PC_FILE)
   regex = re.compile(r'#(PC\d{5})')
   if not args['--quiet']:
-    print "\nProcessing %d lines in input file %s" % (line_ct, P2PC_FILE)
+    print "\nProcessing {} lines in classification file {}".format(line_ct, P2PC_FILE)
   with open(P2PC_FILE, 'rU') as tsv:
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
     tsvreader = csv.reader(tsv, delimiter='\t')
     ct = 0
-    skip_ct = 0
+    skip_ct = 02
     pmark = {}
     p2pc_ct = 0
-    notfnd = []
+    notfnd = set()
     dba_err_ct = 0
     for row in tsvreader:
       ct += 1
@@ -168,8 +157,9 @@ def main():
         #print "[DEBUG] searching by Ensembl xref", ensg 
         targets = dba.find_targets_by_xref({'xtype': 'HGNC', 'value': hgnc})
       if not targets:
-        notfnd.append("%s|%s"%(up,hgnc))
-        #print "[DEBUG] Not found"
+        k = "%s|%s"%(up,hgnc)
+        notfnd.add(k)
+        logger.warn("No target found for: {}".format(k))
         continue
       t = targets[0]
       pid = t['components']['protein'][0]['id']
@@ -185,27 +175,21 @@ def main():
           dba_err_ct += 1
       pbar.update(ct)
   pbar.finish()
-  elapsed = time.time() - start_time
-  print "%d input lines processed. Elapsed time: %s" % (ct, secs2str(elapsed))
-  print "  Inserted %d new p2pc rows for %d distinct proteins" % (p2pc_ct, len(pmark))
-  print "  Skipped %d rows without PCs" % skip_ct
+  print "{} lines processed.".format(ct)
+  print "  Inserted {} new p2pc rows for {} distinct proteins".format(p2pc_ct, len(pmark))
+  print "  Skipped {} rows without PCs".format(skip_ct)
   if notfnd:
-    print "No target found for %d rows:" % len(notfnd)
-    with open("tcrd4logs/PNTHR_NotFound.txt", 'wb') as outf:
-      for uh in notfnd:
-        outf.write("%s\n" % uh)
+    print "No target found for {} UniProt/HGNCs. See logfile {} for details.".format(len(notfnd), logfile)
   if dba_err_ct > 0:
-    print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
+    print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
 
-
-def wcl(fname):
-  with open(fname) as f:
-    for i, l in enumerate(f):
-      pass
-  return i + 1
-
-def secs2str(t):
-  return "%d:%02d:%02d.%03d" % reduce(lambda ll,b : divmod(ll[0],b) + ll[1:], [(t*1000,),1000,60,60])
 
 if __name__ == '__main__':
-  main()
+  print "\n{} (v{}) [{}]:".format(PROGRAM, __version__, time.strftime("%c"))
+  args = docopt(__doc__, version=__version__)
+  if args['--debug']:
+    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
+  start_time = time.time()
+  load(args)
+  elapsed = time.time() - start_time
+  print "\n{}: Done. Elapsed time: {}\n".format(PROGRAM, slmf.secs2str(elapsed))

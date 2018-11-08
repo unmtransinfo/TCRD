@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-11-10 13:24:10 smathias>
+# Time-stamp: <2018-03-22 11:48:23 smathias>
 """Load Monarch disease association data in TCRD from UMiami MySQL database on AWS.
 
 Usage:
-    load-MonarchDiseases.py [--debug=<int> | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
+    load-MonarchDiseases.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
     load-MonarchDiseases.py -h | --help
 
 Options:
@@ -18,15 +18,15 @@ Options:
                          10: DEBUG
                           0: NOTSET
   -q --quiet           : set output verbosity to minimal level
-  -d --debug DEBUGL    : set debugging output level (0-3) [default: 0]
+  -d --debug           : turn on debugging output
   -? --help            : print this message and exit 
 """
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2017, Steve Mathias"
+__copyright__ = "Copyright 2017-2018, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "1.0.0"
+__version__   = "1.1.0"
 
 import os,sys,time
 from docopt import docopt
@@ -35,10 +35,14 @@ import MySQLdb as mysql
 from contextlib import closing
 import logging
 from progressbar import *
+import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGFILE = './%s.log'%PROGRAM
-#
+LOGDIR = "./tcrd5logs"
+LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
+# Monarch MySQL connection parameters
+# SSH tunnel must be in place for this to work:
+# ssh -i SteveSSH.pem -f -N -T -M -4 -L 63334:localhost:3306 steve@184.73.24.43
 MONARCH_DB_HOST = '127.0.0.1'
 MONARCH_DB_PORT = 63334
 MONARCH_DB_NAME = 'monarch2'
@@ -46,59 +50,42 @@ MONARCH_DB_USER = 'Jeremy'
 MONARCH_DB_PW = 'pTSqdqEIsHCuxH21'
 SQLq = "SELECT * FROM `gene-disease` WHERE subject_taxon = 'NCBITaxon:9606' AND (S2O IS NOT NULL OR O2S IS NOT NULL)"
 
-def load():
-  args = docopt(__doc__, version=__version__)
-  debug = int(args['--debug'])
-  if debug:
-    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
-  
+def load(args):
   loglevel = int(args['--loglevel'])
   if args['--logfile']:
     logfile = args['--logfile']
   else:
-    logfile = "%s.log" % PROGRAM
+    logfile = LOGFILE
   logger = logging.getLogger(__name__)
   logger.setLevel(loglevel)
-  if not debug:
-    logger.propagate = False # turns off console logging when debug is 0
+  if not args['--debug']:
+    logger.propagate = False # turns off console logging
   fh = logging.FileHandler(logfile)
   fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
   fh.setFormatter(fmtr)
   logger.addHandler(fh)
 
-  # DBAdaptor uses same logger as main()
   dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
   dba = DBAdaptor(dba_params)
   dbi = dba.get_dbinfo()
-  logger.info("Connected to TCRD database %s (schema ver %s; data ver %s)", args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
   if not args['--quiet']:
-    print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+    print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
-  start_time = time.time()
-  
   # Dataset
   dataset_id = dba.ins_dataset( {'name': 'Monarch Disease Associations', 'source': 'UMiami Monarch MySQL database {} on AWS server.'.format(MONARCH_DB_NAME), 'app': PROGRAM, 'app_version': __version__, 'comments': "Monarch database contact: John Turner <jpt55@med.miami.edu>"} )
-  if not dataset_id:
-    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
+  assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
   # Provenance
   provs = [ {'dataset_id': dataset_id, 'table_name': 'disease', 'where_clause': "dtype = 'Monarch'", 'comment': ""} ]
   for prov in provs:
     rv = dba.ins_provenance(prov)
-    if not rv:
-      print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
-      sys.exit(1)
-
-  # Monarch MySQL connection
-  # SSH tunnel must be in place for this to work:
-  # ssh -i SteveSSH.pem -f -N -T -M -4 -L 63334:localhost:3306 steve@184.73.24.43
-  monarchdb =  mysql.connect(host=MONARCH_DB_HOST, port=MONARCH_DB_PORT, db=MONARCH_DB_NAME,
-                             user=MONARCH_DB_USER, passwd=MONARCH_DB_PW)
-  if not monarchdb:
-    print "ERROR connecting to Monarch database. Exiting."
-    sys.exit(1)
+    assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
 
   if not args['--quiet']:
     print "\nConnecting to UMiami Monarch database."
+  monarchdb =  mysql.connect(host=MONARCH_DB_HOST, port=MONARCH_DB_PORT, db=MONARCH_DB_NAME,
+                             user=MONARCH_DB_USER, passwd=MONARCH_DB_PW)
+  assert monarchdb, "ERROR connecting to Monarch database. Exiting."
   monarch_g2ds = []
   with closing(monarchdb.cursor(mysql.cursors.DictCursor)) as curs:
     curs.execute(SQLq)
@@ -107,12 +94,11 @@ def load():
     if not args['--quiet']:
       print "  Got {} gene-disease records from Monarch database.".format(len(monarch_g2ds))
   
-  start_time = time.time()
-  pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   gdct = len(monarch_g2ds)
+  logger.info("Loading %d Monarch diseases" % gdct)
   if not args['--quiet']:
     print "\nLoading %d Monarch diseases" % gdct
-    logger.info("Loading %d Monarch diseases" % gdct)
+  pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   pbar = ProgressBar(widgets=pbar_widgets, maxval=gdct).start()  
   ct = 0
   dis_ct = 0
@@ -130,6 +116,7 @@ def load():
     if not targets:
       k = "%s|%s"%(sym,geneid)
       notfnd.add(k)
+      logger.warn("No target found for {}".format(k))
       continue
     for t in targets:
       tmark[t['id']] = True
@@ -141,18 +128,20 @@ def load():
       dis_ct += 1
     pbar.update(ct)
   pbar.finish()
-  elapsed = time.time() - start_time
-  print "%d records processed. Elapsed time: %s" % (ct, secs2str(elapsed))
-  print "  %d targets have Monarch disease association(s)" % len(tmark.keys())
-  print "  Inserted %d new disease rows" % dis_ct
+  print "{} records processed.".format(ct)
+  print "Loaded {} new disease rows for {} targets".format(dis_ct, len(tmark))
+  if notfnd:
+    print "No target found for {} symbols/geneids. See logfile {} for details.".format(len(notfnd), logfile)
   if dba_err_ct > 0:
-    print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
-    
+    print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
 
-def secs2str(t):
-  return "%d:%02d:%02d.%03d" % reduce(lambda ll,b : divmod(ll[0],b) + ll[1:], [(t*1000,),1000,60,60])
 
 if __name__ == '__main__':
-  print "\n%s (v%s) [%s]:" % (PROGRAM, __version__, time.strftime("%c"))
-  load()
-  print "\n%s: Done.\n" % PROGRAM
+  print "\n{} (v{}) [{}]:".format(PROGRAM, __version__, time.strftime("%c"))
+  args = docopt(__doc__, version=__version__)
+  if args['--debug']:
+    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
+  start_time = time.time()
+  load(args)
+  elapsed = time.time() - start_time
+  print "\n{}: Done. Elapsed time: {}\n".format(PROGRAM, slmf.secs2str(elapsed))

@@ -4,7 +4,7 @@
 
   Steve Mathias
   smathias@salud.unm.edu
-  Time-stamp: <2018-03-16 11:16:55 smathias>
+  Time-stamp: <2018-10-25 11:08:06 smathias>
 '''
 from __future__ import print_function
 import sys
@@ -633,13 +633,13 @@ class DBAdaptor:
     return True
 
   def ins_drug_activity(self, init, commit=True):
-    if 'target_id' in init and 'drug' in init and 'has_moa' in init:
-      params = [init['target_id'], init['drug'], init['has_moa']]
+    if 'target_id' in init and 'drug' in init and 'dcid' in init and 'has_moa' in init:
+      params = [init['target_id'], init['drug'], init['dcid'], init['has_moa']]
     else:
       self.warning("Invalid parameters sent to ins_drug_activity(): ", init)
       return False
-    cols = ['target_id', 'drug', 'has_moa']
-    vals = ['%s','%s','%s']
+    cols = ['target_id', 'drug', 'dcid', 'has_moa']
+    vals = ['%s','%s','%s','%s']
     for optcol in ['act_value', 'act_type', 'action_type', 'source', 'reference', 'smiles', 'cmpd_chemblid', 'nlm_drug_info']:
       if optcol in init:
         cols.append(optcol)
@@ -660,20 +660,20 @@ class DBAdaptor:
         return False
     return True
 
-  def ins_chembl_activity(self, init, commit=True):
-    if 'target_id' in init and 'cmpd_chemblid' in init:
-      params = [init['target_id'], init['cmpd_chemblid']]
+  def ins_cmpd_activity(self, init, commit=True):
+    if 'target_id' in init and 'catype' in init and 'cmpd_id_in_src' in init:
+      params = [init['target_id'], init['catype'], init['cmpd_id_in_src']]
     else:
-      self.warning("Invalid parameters sent to ins_chembl_activity(): ", init)
+      self.warning("Invalid parameters sent to ins_cmpd_activity(): ", init)
       return False
-    cols = ['target_id', 'cmpd_chemblid']
-    vals = ['%s','%s']
-    for optcol in ['cmpd_name_in_ref', 'smiles', 'act_value', 'act_type', 'reference', 'pubmed_id']:
+    cols = ['target_id', 'catype', 'cmpd_id_in_src']
+    vals = ['%s','%s', '%s']
+    for optcol in ['cmpd_name_in_src', 'smiles', 'act_value', 'act_type', 'reference', 'pubmed_ids', 'cmpd_pubchem_cid']:
       if optcol in init:
         cols.append(optcol)
         vals.append('%s')
         params.append(init[optcol])
-    sql = "INSERT INTO chembl_activity (%s) VALUES (%s)" % (','.join(cols), ','.join(vals))
+    sql = "INSERT INTO cmpd_activity (%s) VALUES (%s)" % (','.join(cols), ','.join(vals))
     self._logger.debug("SQLpat: %s"%sql)
     self._logger.debug("SQLparams: %s"%','.join([str(p) for p in params]))
     with closing(self._conn.cursor()) as curs:
@@ -682,7 +682,7 @@ class DBAdaptor:
         if commit: self._conn.commit()
       except mysql.Error, e:
         self._conn.rollback()
-        self._logger.error("MySQL Error in ins_chembl_activity(): %s"%str(e))
+        self._logger.error("MySQL Error in ins_cmpd_activity(): %s"%str(e))
         self._logger.error("SQLpat: %s"%sql)
         self._logger.error("SQLparams: %s"%','.join([str(p) for p in params]))
         return False
@@ -705,7 +705,7 @@ class DBAdaptor:
     else:
       self.warning("Invalid parameters sent to ins_phenotype(): ", init)
       return False
-    for optcol in ['trait', 'pmid', 'top_level_term_id', 'top_level_term_name', 'term_id', 'term_name', 'term_description', 'snps', 'p_value', 'percentage_change', 'effect_size', 'statistical_method']:
+    for optcol in ['trait', 'pmid', 'top_level_term_id', 'top_level_term_name', 'term_id', 'term_name', 'term_description', 'snps', 'p_value', 'percentage_change', 'effect_size', 'statistical_method', 'sex']:
       if optcol in init:
         cols.append(optcol)
         vals.append('%s')
@@ -1565,7 +1565,7 @@ class DBAdaptor:
 
   def ins_locsig(self, init, commit=True):
     if 'protein_id' in init and 'location' in init and 'signal' in init:
-      cols = ['protein_id', 'location', 'signal']
+      cols = ['protein_id', 'location', '`signal`'] # NB. signal needs backticks in MySQL
       vals = ['%s','%s','%s']
       params = [init['protein_id'], init['location'], init['signal']]
     else:
@@ -1670,6 +1670,14 @@ class DBAdaptor:
         pmids.append(pmid[0])
     return pmids
 
+  def get_pmids(self):
+    pmids = []
+    with closing(self._conn.cursor()) as curs:
+      curs.execute("SELECT id FROM pubmed")
+      for pmid in curs:
+        pmids.append(pmid[0])
+    return pmids
+
   def get_beans(self):
     beans = {}
     with closing(self._conn.cursor(mysql.cursors.DictCursor)) as curs:
@@ -1736,8 +1744,8 @@ class DBAdaptor:
 
       curs.execute("SELECT COUNT(*) AS CT FROM drug_activity")
       beans['Drug Example Activities'] = curs.fetchone()['CT']
-      curs.execute("SELECT COUNT(*) AS CT FROM chembl_activity")
-      beans['ChEMBL Example Activities'] = curs.fetchone()['CT']
+      curs.execute("SELECT COUNT(*) AS CT FROM cmpd_activity")
+      beans['Cmpd Example Activities'] = curs.fetchone()['CT']
 
       curs.execute("SELECT pwtype, count(*) AS CT FROM pathway GROUP BY pwtype ORDER BY CT DESC")
       beans['Pathway Links'] = []
@@ -1772,13 +1780,16 @@ class DBAdaptor:
 
     return beans
 
-  def get_chembl_activities(self):
-    chembl_activities = []
+  def get_cmpd_activities(self, catype=None):
+    cmpd_activities = []
+    sql = "SELECT * FROM cmpd_activity"
+    if catype:
+      sql += " WHERE catype = '%s'" % catype
     with closing(self._conn.cursor(mysql.cursors.DictCursor)) as curs:
-      curs.execute("SELECT * FROM chembl_activity")
+      curs.execute(sql)
       for d in curs:
-        chembl_activities.append(d)
-    return chembl_activities
+        cmpd_activities.append(d)
+    return cmpd_activities
 
   def get_drug_activities(self):
     drug_activities = []
@@ -1872,12 +1883,12 @@ class DBAdaptor:
         for da in curs:
           t['drug_activities'].append(da)
         if not t['drug_activities']: del(t['drug_activities'])
-        # ChEMBL Activity
-        t['chembl_activities'] = []
-        curs.execute("SELECT * FROM chembl_activity WHERE target_id = %s", (id,))
+        # Cmpd Activity
+        t['cmpd_activities'] = []
+        curs.execute("SELECT * FROM cmpd_activity WHERE target_id = %s", (id,))
         for ca in curs:
-          t['chembl_activities'].append(ca)
-        if not t['chembl_activities']: del(t['chembl_activities'])
+          t['cmpd_activities'].append(ca)
+        if not t['cmpd_activities']: del(t['cmpd_activities'])
         # phenotypes
         t['phenotypes'] = []
         curs.execute("SELECT * FROM phenotype WHERE target_id = %s", (id,))
@@ -1890,12 +1901,12 @@ class DBAdaptor:
         for pw in curs:
           t['pathways'].append(pw)
         if not t['pathways']: del(t['pathways'])
-        # grants
-        t['grants'] = []
-        curs.execute("SELECT * FROM `grant` WHERE target_id = %s", (id,))
-        for t2g in curs:
-          t['grants'].append(t2g)
-        if not t['grants']: del(t['grants'])
+        # # grants
+        # t['grants'] = []
+        # curs.execute("SELECT * FROM `grant` WHERE target_id = %s", (id,))
+        # for t2g in curs:
+        #   t['grants'].append(t2g)
+        # if not t['grants']: del(t['grants'])
       # Components
       t['components'] = {}
       t['components']['protein'] = []
@@ -3260,19 +3271,19 @@ class DBAdaptor:
         return False
     return True
 
-  def del_target_chembl_activity(self, tid):
+  def del_target_cmpd_activity(self, tid):
     '''
-    Function  : Delete chembl_activity for a given target
+    Function  : Delete cmpd_activity for a given target
     Arguments : A target id
     Returns   : Boolean indicating success or failure
-    Example   : rv = dba.del_target_chembl_activity(42)
+    Example   : rv = dba.del_target_cmpd_activity(42)
     Scope     : Public
     Comments  :
     '''
     if not tid:
-      self.warning("No target_id sent to del_target_chembl_activity(): ")
+      self.warning("No target_id sent to del_target_cmpd_activity(): ")
       return False
-    sql = "DELETE FROM chembl_activity WHERE target_id = %s"
+    sql = "DELETE FROM cmpd_activity WHERE target_id = %s"
     params = (tid,)
     self._logger.debug("SQLpat: %s"%sql)
     self._logger.debug("SQLparams: %d"%params)

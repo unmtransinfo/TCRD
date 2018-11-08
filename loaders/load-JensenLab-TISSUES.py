@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-02-23 12:16:21 smathias>
+# Time-stamp: <2018-03-29 13:13:11 smathias>
 """Load expression data into TCRD from JensenLab TISSUES TSV files..
 
 Usage:
-    load-JensenLabTISSUES.py [--debug=<int> | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
+    load-JensenLabTISSUES.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
     load-JensenLabTISSUES.py -? | --help
 
 Options:
@@ -18,15 +18,15 @@ Options:
                          10: DEBUG
                           0: NOTSET
   -q --quiet           : set output verbosity to minimal level
-  -d --debug DEBUGL    : set debugging output level (0-3) [default: 0]
+  -d --debug           : turn on debugging output
   -? --help            : print this message and exit 
 """
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2014-2017, Steve Mathias"
+__copyright__ = "Copyright 2014-2018, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.0.0"
+__version__   = "2.1.0"
 
 import os,sys,time
 from docopt import docopt
@@ -36,11 +36,11 @@ import csv
 import urllib
 import shelve
 from progressbar import *
+import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = 'tcrd4logs/'
-LOGFILE = LOGDIR+'%s.log'%PROGRAM
-LOGFILE = "%s.log" % PROGRAM
+LOGDIR = "./tcrd5logs"
+LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 DOWNLOAD_DIR = '../data/JensenLab/'
 BASE_URL = 'http://download.jensenlab.org/'
 FILE_K = 'human_tissue_knowledge_filtered.tsv'
@@ -50,20 +50,16 @@ SRC_FILES = [os.path.basename(FILE_K),
              os.path.basename(FILE_E),
              os.path.basename(FILE_T)]
 
-def download():
+def download(args):
   for f in [FILE_K, FILE_E, FILE_T]:
     if os.path.exists(DOWNLOAD_DIR + f):
       os.remove(DOWNLOAD_DIR + f)
-    print "Downloading ", BASE_URL + f
-    print "         to ", DOWNLOAD_DIR + f
+    if not args['--quiet']:
+      print "Downloading ", BASE_URL + f
+      print "         to ", DOWNLOAD_DIR + f
     urllib.urlretrieve(BASE_URL + f, DOWNLOAD_DIR + f)
 
-def load():
-  args = docopt(__doc__, version=__version__)
-  debug = int(args['--debug'])
-  if debug:
-    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
-  
+def load(args):
   loglevel = int(args['--loglevel'])
   if args['--logfile']:
     logfile = args['--logfile']
@@ -71,8 +67,8 @@ def load():
     logfile = LOGFILE
   logger = logging.getLogger(__name__)
   logger.setLevel(loglevel)
-  if not debug:
-    logger.propagate = False # turns off console logging when debug is 0
+  if not args['--debug']:
+    logger.propagate = False # turns off console logging
   fh = logging.FileHandler(logfile)
   fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
   fh.setFormatter(fmtr)
@@ -81,9 +77,9 @@ def load():
   dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
   dba = DBAdaptor(dba_params)
   dbi = dba.get_dbinfo()
-  logger.info("Connected to TCRD database %s (schema ver %s; data ver %s)", args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
   if not args['--quiet']:
-    print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+    print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
   # Dataset
   dataset_id = dba.ins_dataset( {'name': 'Jensen Lab TISSUES', 'source': 'Files %s from %s'%(", ".join(SRC_FILES), BASE_URL), 'app': PROGRAM, 'app_version': __version__, 'url': 'http://tissues.jensenlab.org/'} )
@@ -102,20 +98,18 @@ def load():
   pmap = {}
 
   # Knowledge channel
-  start_time = time.time()
   fn = DOWNLOAD_DIR+FILE_K
-  line_ct = wcl(fn)
+  line_ct = slmf.wcl(fn)
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   if not args['--quiet']:
-    print "\nProcessing %d lines in input file %s" % (line_ct, fn)
+    print "\nProcessing {} lines in input file {}".format(line_ct, fn)
   with open(fn, 'rU') as tsv:
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
     tsvreader = csv.reader(tsv, delimiter='\t')
     ct = 0
     pmark = {}
     exp_ct = 0
-    dbmfile = LOGDIR + 'TISSUESk_not-found.db'
-    notfnd = shelve.open(dbmfile)
+    notfnd = set()
     dba_err_ct = 0
     for row in tsvreader:
       ct += 1
@@ -125,7 +119,8 @@ def load():
         continue
       pids = find_pids(dba, k, pmap)
       if not pids:
-        notfnd[k] = True
+        notfnd.add(k)
+        logger.warn("No target found for {}".format(k))
         continue
       etype = 'JensenLab Knowledge ' + row[4]
       for pid in pids:
@@ -138,30 +133,26 @@ def load():
           continue
         exp_ct += 1
   pbar.finish()
-  elapsed = time.time() - start_time
-  print "%d rows processed. Elapsed time: %s" % (ct, secs2str(elapsed))
-  print "  %d proteins have expression(s)" % len(pmark.keys())
-  print "  Inserted %d new expression rows" % exp_ct
-  if dba_err_ct > 0:
-    print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
+  print "{} rows processed.".format(ct)
+  print "  Inserted {} new expression rows for {} proteins".format(exp_ct, len(pmark))
   if notfnd:
-    print "No target found for %d rows - keys saved to file: %s" % (len(notfnd.keys()), dbmfile)
-
+    print "No target found for {} stringids/symbols. See logfile {} for details.".format(len(notfnd), logfile)
+  if dba_err_ct > 0:
+    print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
+  
   # Experiment channel
-  start_time = time.time()
   fn = DOWNLOAD_DIR+FILE_E
-  line_ct = wcl(fn)
+  line_ct = slmf.wcl(fn)
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   if not args['--quiet']:
-    print "\nProcessing %d lines in input file %s" % (line_ct, fn)
+    print "\nProcessing {} lines in input file {}".format(line_ct, fn)
   with open(fn, 'rU') as tsv:
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
     tsvreader = csv.reader(tsv, delimiter='\t')
     ct = 0
     pmark = {}
     exp_ct = 0
-    dbmfile = LOGDIR + 'TISSUESe_not-found.db'
-    notfnd = shelve.open(dbmfile)
+    notfnd = set()
     skip_ct = 0
     dba_err_ct = 0
     for row in tsvreader:
@@ -184,7 +175,8 @@ def load():
       except ValueError:
         print "[ERROR] Row: %s; k: %s" % (str(row), k)
       if not pids:
-        notfnd[k] = True
+        notfnd.add(k)
+        logger.warn("No target found for {}".format(k))
         continue
       etype = 'JensenLab Experiment ' + row[4]
       for pid in pids:
@@ -196,31 +188,27 @@ def load():
           continue
         exp_ct += 1
   pbar.finish()
-  elapsed = time.time() - start_time
-  print "%d rows processed. Elapsed time: %s" % (ct, secs2str(elapsed))
-  print "  Skipped %d zero confidence rows" % skip_ct
-  print "  %d proteins have expression(s)" % len(pmark.keys())
-  print "  Inserted %d new expression rows" % exp_ct
-  if dba_err_ct > 0:
-    print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
+  print "{} rows processed.".format(ct)
+  print "  Inserted {} new expression rows for {} proteins".format(exp_ct, len(pmark))
+  print "  Skipped {} zero confidence rows".format(skip_ct)
   if notfnd:
-    print "No target found for %d rows. Saved to file: %s" % (len(notfnd.keys()), dbmfile)
+    print "No target found for {} stringids/symbols. See logfile {} for details.".format(len(notfnd), logfile)
+  if dba_err_ct > 0:
+    print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
 
   # Text Mining channel
-  start_time = time.time()
   fn = DOWNLOAD_DIR+FILE_T
-  line_ct = wcl(fn)
+  line_ct = slmf.wcl(fn)
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   if not args['--quiet']:
-    print "\nProcessing %d lines in input file %s" % (line_ct, fn)
+    print "\nProcessing {} lines in input file {}".format(line_ct, fn)
   with open(fn, 'rU') as tsv:
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
     tsvreader = csv.reader(tsv, delimiter='\t')
     ct = 0
     pmark = {}
     exp_ct = 0
-    dbmfile = LOGDIR + 'TISSUEStm_not-found.db'
-    notfnd = shelve.open(dbmfile)
+    notfnd = set()
     dba_err_ct = 0
     for row in tsvreader:
       ct += 1
@@ -230,7 +218,8 @@ def load():
         continue
       pids = find_pids(dba, k, pmap)
       if not pids:
-        notfnd[k] = True
+        notfnd.add(k)
+        logger.warn("No target found for {}".format(k))
         continue
       etype = 'JensenLab Text Mining'
       for pid in pids:
@@ -243,15 +232,12 @@ def load():
           continue
         exp_ct += 1
   pbar.finish()
-  elapsed = time.time() - start_time
-  print "%d rows processed. Elapsed time: %s" % (ct, secs2str(elapsed))
-  print "  %d proteins have expression(s)" % len(pmark.keys())
-  print "  Inserted %d new expression rows" % exp_ct
-  if dba_err_ct > 0:
-    print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
+  print "{} rows processed.".format(ct)
+  print "  Inserted {} new expression rows for {} proteins".format(exp_ct, len(pmark))
   if notfnd:
-    print "No target found for %d rows. Saved to file: %s" % (len(notfnd.keys()), dbmfile)
-
+    print "No target found for {} stringids/symbols. See logfile {} for details.".format(len(notfnd), logfile)
+  if dba_err_ct > 0:
+    print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
 
 def find_pids(dba, k, k2pids):
   # k is 'ENSP|sym'
@@ -282,17 +268,13 @@ def find_pids(dba, k, k2pids):
         k2pids[k] = pids
   return pids
 
-def wcl(fname):
-  with open(fname) as f:
-    for i, l in enumerate(f):
-      pass
-  return i + 1
-
-def secs2str(t):
-  return "%d:%02d:%02d.%03d" % reduce(lambda ll,b : divmod(ll[0],b) + ll[1:], [(t*1000,),1000,60,60])
-
 if __name__ == '__main__':
-  print "\n%s (v%s) [%s]:\n" % (PROGRAM, __version__, time.strftime("%c"))
-  download()
-  load()
-  print "\n%s: Done.\n" % PROGRAM
+  print "\n{} (v{}) [{}]:\n".format(PROGRAM, __version__, time.strftime("%c"))
+  args = docopt(__doc__, version=__version__)
+  if args['--debug']:
+    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
+  start_time = time.time()
+  download(args)
+  load(args)
+  elapsed = time.time() - start_time
+  print "\n{}: Done. Elapsed time: {}\n".format(PROGRAM, slmf.secs2str(elapsed))

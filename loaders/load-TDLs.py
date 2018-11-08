@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-02-06 15:19:47 smathias>
+# Time-stamp: <2018-10-25 11:20:24 smathias>
 """Calculate and load target TDL assignments.
 
 Usage:
@@ -116,8 +116,8 @@ def get_tdl(target):
     else:
       # Non-MoA drug activities qualify a target as Tchem
       tdl = 'Tchem'
-  elif 'chembl_activities' in target:
-    # ChEMBL activities qualify a target as Tchem
+  elif 'cmpd_activities' in target:
+    # cmpd activities qualify a target as Tchem
     tdl = 'Tchem'
   else:
     # Collect info needed to decide between Tbio and Tdark

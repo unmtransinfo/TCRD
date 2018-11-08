@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-11-30 14:35:28 smathias>
+# Time-stamp: <2018-05-17 11:08:48 smathias>
 """Load ortholog data into TCRD via HGNC web API.
 
 Usage:
-    load-Orthologs.py [--debug=<int> | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
+    load-Orthologs.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
     load-Orthologs.py -h | --help
 
 Options:
@@ -18,15 +18,15 @@ Options:
                          10: DEBUG
                           0: NOTSET
   -q --quiet           : set output verbosity to minimal level
-  -d --debug DEBUGL    : set debugging output level (0-3) [default: 0]
+  -d --debug           : turn on debugging output
   -? --help            : print this message and exit 
 """
 __author__ = "Steve Mathias"
 __email__ = "smathias@salud.unm.edu"
 __org__ = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2017, Steve Mathias"
+__copyright__ = "Copyright 2017-2018, Steve Mathias"
 __license__ = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 
 import os,sys,time
 from docopt import docopt
@@ -37,9 +37,11 @@ import gzip
 import csv
 import pandas as pd
 from progressbar import *
+import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGFILE = "%s.log" % PROGRAM
+LOGDIR = 'tcrd5logs/'
+LOGFILE = LOGDIR + '%s.log'%PROGRAM
 DOWNLOAD_DIR = '../data/HGNC/'
 BASE_URL = 'ftp://ftp.ebi.ac.uk/pub/databases/genenames/hcop/'
 FILENAME = 'human_all_hcop_sixteen_column.txt.gz'
@@ -63,7 +65,6 @@ TAXID2SP = {'9598': 'Chimp',
 
 
 def download(args):
-  start_time = time.time()
   gzfn = DOWNLOAD_DIR + FILENAME
   if os.path.exists(gzfn):
     os.remove(gzfn)
@@ -81,16 +82,15 @@ def download(args):
   ofh.write( ifh.read() )
   ifh.close()
   ofh.close()
-  elapsed = time.time() - start_time
   if not args['--quiet']:
-    print "Done. Elapsed time: %s" % secs2str(elapsed)
+    print "Done."
 
 def parse_hcop16(filepath, args):
   orthos = list()
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
-  line_ct = wcl(filepath)
+  line_ct = slmf.wcl(filepath)
   if not args['--quiet']:
-    print "\nProcessing %d input lines from file %s" % (line_ct, filepath)
+    print "\nProcessing {} lines in input file {}".format(line_ct, filepath)
   with open(filepath, 'rU') as tsv:
     tsvreader = csv.DictReader(tsv, delimiter='\t')
     for d in tsvreader:
@@ -124,40 +124,48 @@ def parse_hcop16(filepath, args):
       if src_ct >= 2: # Only take rows with at least 2 out of three
         d['sources'] = ', '.join(srcs)
         orthos.append(d)
-  ortho_df = pd.DataFrame(orthos)
   if not args['--quiet']:
-    print "  Generated ortholog dataframe with %d entries" % len(orthos)
+    print "  Generated ortholog dataframe with {} entries".format(len(orthos))
+  ortho_df = pd.DataFrame(orthos)
   return ortho_df
 
-def load(ortho_df, args, logger):
-  # DBAdaptor uses same logger as main()
+def load(ortho_df, args):
+  loglevel = int(args['--loglevel'])
+  if args['--logfile']:
+    logfile = args['--logfile']
+  else:
+    logfile = LOGFILE
+  logger = logging.getLogger(__name__)
+  logger.setLevel(loglevel)
+  if not args['--debug']:
+    logger.propagate = False # turns off console logging
+  fh = logging.FileHandler(logfile)
+  fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+  fh.setFormatter(fmtr)
+  logger.addHandler(fh)
+  
   dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
   dba = DBAdaptor(dba_params)
   dbi = dba.get_dbinfo()
-  logger.info("Connected to TCRD database %s (schema ver %s; data ver %s)", args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
   if not args['--quiet']:
-    print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+    print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
   # Dataset
   dataset_id = dba.ins_dataset( {'name': 'Orthologs', 'source': 'File %s'%BASE_URL+FILENAME, 'app': PROGRAM, 'app_version': __version__, 'url': 'https://www.genenames.org/cgi-bin/hcop'} )
-  if not dataset_id:
-    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
-    sys.exit(1)
+  assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
   # Provenance
   provs = [ {'dataset_id': dataset_id, 'table_name': 'ortholog', 'comment': "Orthologs are majority vote from the OMA, EggNOG and InParanoid resources as per HGNC."} ]
   for prov in provs:
     rv = dba.ins_provenance(prov)
-    if not rv:
-      print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
-      sys.exit(1)
+    assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
 
-  start_time = time.time()
-  
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
+
   tct = dba.get_target_count()
   if not args['--quiet']:
-    print "\nLoading ortholog data for %d TCRD targets" % tct
-  logger.info("Loading ortholog data for %d TCRD targets" % tct)
+    print "\nLoading ortholog data for {} TCRD targets".format(tct)
+  logger.info("Loading ortholog data for {} TCRD targets".format(tct))
   pbar = ProgressBar(widgets=pbar_widgets, maxval=tct).start()  
   ct = 0
   ortho_ct = 0
@@ -214,51 +222,26 @@ def load(ortho_df, args, logger):
         dba_err_ct += 1
     pbar.update(ct)
   pbar.finish()
-  elapsed = time.time() - start_time
-  print "Processed %d targets. Elapsed time: %s" % (ct, secs2str(elapsed))
-  print "Loaded %d new ortholog rows" % ortho_ct
-  print "  Skipped %d empty ortholog entries" % skip_ct
-  print "  Skipped %d targets with no sym/geneid" % tskip_ct
+  print "Processed {} targets.".format(ct)
+  print "Loaded {} new ortholog rows".format(ortho_ct)
+  print "  Skipped {} empty ortholog entries".format(skip_ct)
+  print "  Skipped {} targets with no sym/geneid".format(tskip_ct)
   if len(notfnd) > 0:
-    print "  No orthologs found for %d targets." % len(notfnd)
+    print "  No orthologs found for {} targets.".format(len(notfnd))
   if dba_err_ct > 0:
-    print "WARNNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
+    print "WARNNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
 
-def wcl(fname):
-  with open(fname) as f:
-    for i, l in enumerate(f):
-      pass
-  return i + 1
-
-def secs2str(t):
-  return "%d:%02d:%02d.%03d" % reduce(lambda ll,b : divmod(ll[0],b) + ll[1:], [(t*1000,),1000,60,60])
 
 if __name__ == '__main__':
+  print "\n{} (v{}) [{}]:".format(PROGRAM, __version__, time.strftime("%c"))
   args = docopt(__doc__, version=__version__)
-  if not args['--quiet']:
-    print "\n%s (v%s) [%s]:" % (PROGRAM, __version__, time.strftime("%c"))
-  debug = int(args['--debug'])
-  if debug:
+  if args['--debug']:
     print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
-  
-  loglevel = int(args['--loglevel'])
-  if args['--logfile']:
-    logfile = args['--logfile']
-  else:
-    logfile = "%s.log" % PROGRAM
-  logger = logging.getLogger(__name__)
-  logger.setLevel(loglevel)
-  if not debug:
-    logger.propagate = False # turns off console logging when debug is 0
-  fh = logging.FileHandler(logfile)
-  fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-  fh.setFormatter(fmtr)
-  logger.addHandler(fh)
-  
+  start_time = time.time()
   #download(args)
   fn = DOWNLOAD_DIR + FILENAME
   fn = fn.replace('.gz', '')
   ortho_df = parse_hcop16(fn, args)
-  load(ortho_df, args, logger)
-  
-  print "\n%s: Done.\n" % PROGRAM
+  load(ortho_df, args)
+  elapsed = time.time() - start_time
+  print "\n{}: Done. Elapsed time: {}\n".format(PROGRAM, slmf.secs2str(elapsed))

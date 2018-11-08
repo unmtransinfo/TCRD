@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-01-31 11:01:29 smathias>
+# Time-stamp: <2018-05-23 10:14:30 smathias>
 """Load JensenLab STRING IDs (ENSPs) into TCRD protein.ensp.
 
 Usage:
@@ -69,13 +69,10 @@ def load(args):
 
   # Dataset
   dataset_id = dba.ins_dataset( {'name': 'JensenLab STRING IDs', 'source': 'Files %s and %s from from http://string-db.org/'%(os.path.basename(INFILE1), os.path.basename(INFILE2)), 'app': PROGRAM, 'app_version': __version__, 'url': 'http://string-db.org/'} )
-  if not dataset_id:
-    print "WARNING: Error inserting dataset See logfile {} for details.".format(logfile)
+  assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
   # Provenance
   rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'protein', 'column_name': 'stringid'})
-  if not rv:
-    print "WARNING: Error inserting provenance. See logfile {} for details.".format(logfile)
-    sys.exit(1)
+  assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
 
   aliasmap = {}
   

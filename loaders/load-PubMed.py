@@ -2,7 +2,7 @@
 """Load PubMed data into TCRD via EUtils.
 
 Usage:
-    load-PubMed.py [--debug=<int> | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>] [--pastid=<int>]
+    load-PubMed.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>] [--pastid=<int>]
     load-PubMed.py -h | --help
 
 Options:
@@ -18,15 +18,15 @@ Options:
                           0: NOTSET
   -p --pastid PASTID   : TCRD target id to start at (for restarting frozen run)
   -q --quiet           : set output verbosity to minimal level
-  -d --debug DEBUGL    : set debugging output level (0-3) [default: 0]
+  -d --debug           : turn on debugging output
   -? --help            : print this message and exit 
 """
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2015-2016, Steve Mathias"
+__copyright__ = "Copyright 2015-2018, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.0.0"
+__version__   = "2.1.0"
 
 import os,sys,time,urllib,re
 from docopt import docopt
@@ -38,55 +38,47 @@ from bs4 import BeautifulSoup
 import shelve
 from collections import defaultdict
 import calendar
+import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
+LOGDIR = "./tcrd5logs"
+LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 EMAIL = 'smathias@salud.unm.edu'
 EFETCHURL = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?&db=pubmed&retmode=xml&email=%s&tool=%s&id=" % (urllib.quote(EMAIL), urllib.quote(PROGRAM))
-SHELF_FILE = '/home/app/TCRD/scripts/tcrd3logs/load-PubMed.db'
+SHELF_FILE = "%s/load-PubMed.db" % LOGDIR
 
-def main():
-  args = docopt(__doc__, version=__version__)
-  debug = int(args['--debug'])
-  if debug:
-    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
-  
+def load(args):
   loglevel = int(args['--loglevel'])
   if args['--logfile']:
     logfile = args['--logfile']
   else:
-    logfile = "%s.log" % PROGRAM
+    logfile = LOGFILE
   logger = logging.getLogger(__name__)
   logger.setLevel(loglevel)
-  if not debug:
-    logger.propagate = False # turns off console logging when debug is 0
+  if not args['--debug']:
+    logger.propagate = False # turns off console logging
   fh = logging.FileHandler(logfile)
   fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
   fh.setFormatter(fmtr)
   logger.addHandler(fh)
 
-  # DBAdaptor uses same logger as main()
   dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
   dba = DBAdaptor(dba_params)
   dbi = dba.get_dbinfo()
-  logger.info("Connected to TCRD database %s (schema ver %s; data ver %s)", args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
   if not args['--quiet']:
-    print "\n%s (v%s) [%s]:" % (PROGRAM, __version__, time.strftime("%c"))
-    print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+    print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
   
   # Dataset
   dataset_id = dba.ins_dataset( {'name': 'PubMed', 'source': 'NCBI E-Utils', 'app': PROGRAM, 'app_version': __version__, 'url': 'https://www.ncbi.nlm.nih.gov/pubmed'} )
-  if not dataset_id:
-    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
-    sys.exit(1)
+  assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
   # Provenance
   rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'pubmed'})
   if not rv:
     print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
     sys.exit(1)
   rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'protein2pubmed'})
-  if not rv:
-    print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
-    sys.exit(1)
+  assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
     
   s = shelve.open(SHELF_FILE, writeback=True)
   s['loaded'] = [] # list of target IDs that have been successfully processed
@@ -94,15 +86,14 @@ def main():
   s['p2p_ct'] = 0
   s['errors'] = defaultdict(list)
 
-  start_time = time.time()
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   if args['--pastid']:
     tct = dba.get_target_count(idg=False, past_id=args['--pastid'])
   else:
     tct = dba.get_target_count(idg=False)
   if not args['--quiet']:
-    print "\nLoading pubmeds for %d TCRD targets" % tct
-    logger.info("Loading pubmeds for %d TCRD targets" % tct)
+    print "\nLoading pubmeds for {} TCRD targets".format(tct)
+    logger.info("Loading pubmeds for {} TCRD targets".format(tct))
   pbar = ProgressBar(widgets=pbar_widgets, maxval=tct).start()  
   ct = 0
   dba_err_ct = 0
@@ -112,7 +103,7 @@ def main():
     past_id = 0
   for target in dba.get_targets(include_annotations=True, past_id=past_id):
     ct += 1
-    logger.info("Processing target %d: %s" % (target['id'], target['name']))
+    logger.info("Processing target {}: {}".format(target['id'], target['name']))
     p = target['components']['protein'][0]
     if 'PubMed' not in p['xrefs']: continue
     pmids = [d['value'] for d in p['xrefs']['PubMed']]
@@ -125,7 +116,7 @@ def main():
         # try again...
         r = get_pubmed(chunk)
         if not r or r.status_code != 200:
-          logger.error("Bad E-Utils response for target %s, chunk %d" % (target['id'], chunk_ct))
+          logger.error("Bad E-Utils response for target {}, chunk {}".format(target['id'], chunk_ct))
           s['errors'][target['id']].append(chunk_ct)
           err_ct += 1
           continue
@@ -152,21 +143,19 @@ def main():
       s['loaded'].append(target['id'])
     pbar.update(ct)
   pbar.finish()
-  elapsed = time.time() - start_time
-  print "Processed %d targets. Elapsed time: %s" % (ct, secs2str(elapsed))
-  print "  Successfully loaded all PubMeds for %d targets" % len(s['loaded'])
-  print "  Inserted %d new pubmed rows" % len(s['pmids'])
-  print "  Inserted %d new protein2pubmed rows" % s['p2p_ct']
+  print "Processed {} targets.".format(ct)
+  print "  Successfully loaded all PubMeds for {} targets".format(len(s['loaded']))
+  print "  Inserted {} new pubmed rows".format(len(s['pmids']))
+  print "  Inserted {} new protein2pubmed rows".format(s['p2p_ct'])
   if dba_err_ct > 0:
-    print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
+    print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
   if len(s['errors']) > 0:
-    print "WARNING: %d Network/E-Utils errors occurred. See logfile %s for details." % (len(s['errors']), logfile)
+    print "WARNING: {} Network/E-Utils errors occurred. See logfile {} for details.".format(len(s['errors']), logfile)
 
   loop = 1
   while len(s['errors']) > 0:
-    start_time = time.time()
-    print "\nRetry loop %d: Trying to load PubMeds for %d proteins" % (loop, len(s['errors']))
-    logger.info("Retry loop %d: Trying to load data for %d proteins" % (loop, len(s['errors'])))
+    print "\nRetry loop {}: Trying to load PubMeds for {} proteins".format(loop, len(s['errors']))
+    logger.info("Retry loop {}: Trying to load data for {} proteins".format(loop, len(s['errors'])))
     pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
     pbar = ProgressBar(widgets=pbar_widgets, maxval=len(s['errors'])).start()
     ct = 0
@@ -174,7 +163,7 @@ def main():
     for tid,chunk_cts in s['errors']:
       ct += 1
       target in dba.get_targets(tid, include_annotations=True)
-      logger.info("Processing target %d: %s" % (target['id'], target['name']))
+      logger.info("Processing target {}: {}".format(target['id'], target['name']))
       p = target['components']['protein'][0]
       chunk_ct = 0
       err_ct = 0
@@ -188,7 +177,7 @@ def main():
           # try again...
           r = get_pubmed(chunk)
           if not r or r.status_code != 200:
-            logger.error("Bad E-Utils response for target %s, chunk %d" % (target['id'], chunk_ct))
+            logger.error("Bad E-Utils response for target {}, chunk {}".format(target['id'], chunk_ct))
             err_ct += 1
             continue
         soup = BeautifulSoup(r.text, "xml")
@@ -219,65 +208,66 @@ def main():
         s['loaded'].append(target['id'])
       pbar.update(ct)
     pbar.finish()
-    elapsed = time.time() - start_time
-    print "Processed %d targets. Elapsed time: %s" % (ct, secs2str(elapsed))
-    print "  Successfully loaded all PubMeds for a total %d targets" % len(s['loaded'])
-    print "  Inserted %d new pubmed rows" % len(s['pmids'])
-    print "  Inserted %d new protein2pubmed rows" % s['p2p_ct']
+    print "Processed {} targets.".format(ct)
+    print "  Successfully loaded all PubMeds for a total {} targets".format(len(s['loaded']))
+    print "  Inserted {} new pubmed rows".format(len(s['pmids']))
+    print "  Inserted {} new protein2pubmed rows".format(s['p2p_ct'])
     if dba_err_ct > 0:
-      print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
+      print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
   if len(s['errors']) > 0:
-    print "  %d targets remaining for next retry loop." % len(s['errors'])
+    print "  {} targets remaining for next retry loop.".format(len(s['errors']))
+  s.close()
 
-  start_time = time.time()
+  # Find the set of TIN-X PubMed IDs not already stored in TCRD
   tinx_pmids = [str(pmid) for pmid in dba.get_tinx_pmids()]
   tinx_pmid_ct = len(tinx_pmids)
+  pmids =  [str(pmid) for pmid in dba.get_pmids()]
   if not args['--quiet']:
-    print "\nProcessing %d TIN-X PubMed IDs" % tinx_pmid_ct
-    logger.info("Processing %d TIN-X PubMed IDs" % tinx_pmid_ct)
+    print "\nChecking for {} TIN-X PubMed IDs in TCRD".format(tinx_pmid_ct)
+    logger.info("Checking for {} TIN-X PubMed IDs in TCRD".format(tinx_pmid_ct))
+  not_in_tcrd = list(set(tinx_pmids) - set(pmids))
+  # for pmid in tinx_pmids:
+  #   rv = dba.get_pubmed(pmid)
+  #   if not rv:
+  #     not_in_tcrd.add(pmid)
+  not_in_tcrd_ct = len(not_in_tcrd)
+  if not args['--quiet']:
+    print "\nProcessing {} TIN-X PubMed IDs not in TCRD".format(not_in_tcrd_ct)
+    logger.info("Processing {} TIN-X PubMed IDs".format(not_in_tcrd_ct))
   ct = 0
   pm_ct = 0
   net_err_ct = 0
   dba_err_ct = 0
   chunk_ct = 0
-  for chunk in chunker(tinx_pmids, 200):
+  for chunk in chunker(list(not_in_tcrd), 200):
     chunk_ct += 1
+    logger.info("Processing TIN-X PubMed IDs chunk {}".format(chunk_ct))
     r = get_pubmed(chunk)
     if not r or r.status_code != 200:
       # try again...
         r = get_pubmed(chunk)
         if not r or r.status_code != 200:
-          logger.error("Bad E-Utils response for chunk %d" % chunk_ct)
+          logger.error("Bad E-Utils response for chunk {}".format(chunk_ct))
           net_err_ct += 1
           continue
     soup = BeautifulSoup(r.text, "xml")
     pmas = soup.find('PubmedArticleSet')
     for pma in pmas.findAll('PubmedArticle'):
       ct += 1
-      pmid = pma.find('PMID').text
-      if pmid not in s['pmids']:
-        # only store each pubmed once
-        logger.debug("  parsing XML for PMID: %s" % pmid)
-        init = parse_pubmed_article(pma)
-        rv = dba.ins_pubmed(init)
-        if not rv:
-          dba_err_ct += 1
-          continue
-        pm_ct += 1
-        s['pmids'].append(pmid) # add pubmed id to list of saved ones
+      logger.debug("  parsing XML for PMID: {}".format(pmid))
+      init = parse_pubmed_article(pma)
+      rv = dba.ins_pubmed(init)
+      if not rv:
+        dba_err_ct += 1
+        continue
+      pm_ct += 1
     time.sleep(0.5)
-  elapsed = time.time() - start_time
-  print "Processed %d TIN-X PubMed IDs. Elapsed time: %s" % (ct, secs2str(elapsed))
-  print "  Inserted %d new pubmed rows" % pm_ct
+  print "Processed {} TIN-X PubMed IDs.".format(ct)
+  print "  Inserted {} new pubmed rows".format(pm_ct)
   if dba_err_ct > 0:
-    print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
+    print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
   if net_err_ct > 0:
-    print "WARNING: %d Network/E-Utils errors occurred. See logfile %s for details." % (net_err_ct, logfile)
-  
-  s.close()
-  
-  print "\n%s: Done." % PROGRAM
-  print
+    print "WARNING: {} Network/E-Utils errors occurred. See logfile {} for details.".format(net_err_ct, logfile)
 
 def chunker(l, size):
   return (l[pos:pos + size] for pos in xrange(0, len(l), size))
@@ -383,6 +373,18 @@ def parse_pubmed_article(pma):
     init['abstract'] = abstract.text
   return init
 
+
+if __name__ == '__main__':
+  print "\n{} (v{}) [{}]:".format(PROGRAM, __version__, time.strftime("%c"))
+  args = docopt(__doc__, version=__version__)
+  if args['--debug']:
+    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
+  start_time = time.time()
+  load(args)
+  elapsed = time.time() - start_time
+  print "\n{}: Done. Elapsed time: {}\n".format(PROGRAM, slmf.secs2str(elapsed))
+
+
 # Use this to manually insert errors
 # In [26]: t = dba.get_target(18821, include_annotations=True)
 # In [27]: p = target['components']['protein'][0]
@@ -420,8 +422,3 @@ def parse_pubmed_article(pma):
 #     ct += 1
 #   print "Inserted/Skipped %d pubmed rows" % ct
 
-def secs2str(t):
-  return "%d:%02d:%02d.%03d" % reduce(lambda ll,b : divmod(ll[0],b) + ll[1:], [(t*1000,),1000,60,60])
-
-if __name__ == '__main__':
-  main()

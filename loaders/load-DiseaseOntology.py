@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-26 09:08:03 smathias>
+# Time-stamp: <2018-05-17 11:04:59 smathias>
 """Load Disease Ontology into TCRD from OBO file.
 
 Usage:
-    load-DiseaseOntology.py [--debug=<int> | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
+    load-DiseaseOntology.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
     load-DiseaseOntology.py -h | --help
 
 Options:
@@ -18,15 +18,15 @@ Options:
                          10: DEBUG
                           0: NOTSET
   -q --quiet           : set output verbosity to minimal level
-  -d --debug DEBUGL    : set debugging output level (0-3) [default: 0]
+  -d --debug           : turn on debugging output
   -? --help            : print this message and exit 
 """
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2016-2017, Steve Mathias"
+__copyright__ = "Copyright 2016-2018, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.0.0"
+__version__   = "2.1.0"
 
 import os,sys,time,re
 from docopt import docopt
@@ -35,54 +35,48 @@ import logging
 import urllib
 import obo
 from progressbar import *
+import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGFILE = "%s.log" % PROGRAM
+LOGDIR = 'tcrd5logs/'
+LOGFILE = LOGDIR + '%s.log'%PROGRAM
 DOWNLOAD_DIR = '../data/DiseaseOntology/'
 BASE_URL = 'http://purl.obolibrary.org/obo/'
 FILENAME = 'doid.obo'
 # http://www.obofoundry.org/ontology/doid.html
 
-def download():
+def download(args):
   fn = DOWNLOAD_DIR + FILENAME
   if os.path.exists(fn):
     os.remove(fn)
-  start_time = time.time()
-  print "\nDownloading ", BASE_URL + FILENAME
-  print "         to ", fn
+  if not args['--quiet']:
+    print "\nDownloading ", BASE_URL + FILENAME
+    print "         to ", fn
   urllib.urlretrieve(BASE_URL + FILENAME, fn)
-  elapsed = time.time() - start_time
-  print "Done. Elapsed time: %s" % secs2str(elapsed)
+  if not args['--quiet']:
+    print "Done."
 
-def load():
-  args = docopt(__doc__, version=__version__)
-  dbhost = args['--dbhost']
-  dbname = args['--dbname']
+def load(args):
   loglevel = int(args['--loglevel'])
   if args['--logfile']:
-    logfile = LOGFILE
+    logfile = args['--logfile']
   else:
-    logfile = "%s.log" % PROGRAM
-  debug = int(args['--debug'])
-  quiet = args['--quiet']
-  if debug:
-    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
-    
+    logfile = LOGFILE
   logger = logging.getLogger(__name__)
   logger.setLevel(loglevel)
-  if not debug:
-    logger.propagate = False # turns off console logging when debug is 0
+  if not args['--debug']:
+    logger.propagate = False # turns off console logging
   fh = logging.FileHandler(logfile)
   fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
   fh.setFormatter(fmtr)
   logger.addHandler(fh)
 
-  dba_params = {'dbhost': dbhost, 'dbname': dbname, 'logger_name': __name__}
+  dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
   dba = DBAdaptor(dba_params)
   dbi = dba.get_dbinfo()
-  logger.info("Connected to TCRD database %s (schema ver %s; data ver %s)", args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
-  if not quiet:
-    print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
+  if not args['--quiet']:
+    print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
   # Dataset
   # data-version field in the header of the OBO file has a relase version:
@@ -94,33 +88,26 @@ def load():
       break
   f.close()
   dataset_id = dba.ins_dataset( {'name': 'Disease Ontology', 'source': 'File %s, version %s'%(BASE_URL+FILENAME, ver), 'app': PROGRAM, 'app_version': __version__, 'url': 'http://disease-ontology.org/'} )
-  if not dataset_id:
-    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
-    sys.exit(1)
+  assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
   # Provenance
   rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'do'})
-  if not rv:
-    print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
-    sys.exit(1)
+  assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
   rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'do_parent'})
-  if not rv:
-    print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
-    sys.exit(1)
+  assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
     
-  start_time = time.time()
-  
   # Parse the Disease Ontology OBO file
-  print "\nParsing Disease Ontology file %s" % DOWNLOAD_DIR + FILENAME
+  if not args['--quiet']:
+    print "\nParsing Disease Ontology file {}".format(DOWNLOAD_DIR + FILENAME)
   do_parser = obo.Parser(open(DOWNLOAD_DIR + FILENAME))
   do = {}
   for stanza in do_parser:
     do[stanza.tags['id'][0].value] = stanza.tags
-  print "Got %d Disease Ontology terms" % len(do.keys())
+  print "Got {} Disease Ontology terms".format(len(do))
   
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
-  if not quiet:
-    print "\nLoading %d Disease Ontology terms" % len(do.keys())
-  pbar = ProgressBar(widgets=pbar_widgets, maxval=len(do.keys())).start() 
+  if not args['--quiet']:
+    print "\nLoading {} Disease Ontology terms".format(len(do))
+  pbar = ProgressBar(widgets=pbar_widgets, maxval=len(do)).start()
   ct = 0
   do_ct = 0
   skip_ct = 0
@@ -148,19 +135,21 @@ def load():
       dba_err_ct += 1
     pbar.update(ct)
   pbar.finish()
-  print "%d terms processed." % ct
-  print "  Inserted %d new do rows" % do_ct
-  print "  Skipped %d non-DOID terms" % skip_ct
-  print "  Skipped %d obsolete terms" % obs_ct
+  print "{} terms processed.".format(ct)
+  print "  Inserted {} new do rows".format(do_ct)
+  print "  Skipped {} non-DOID terms".format(skip_ct)
+  print "  Skipped {} obsolete terms".format(obs_ct)
   if dba_err_ct > 0:
-    print "WARNNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
+    print "WARNNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
 
-
-def secs2str(t):
-  return "%d:%02d:%02d.%03d" % reduce(lambda ll,b : divmod(ll[0],b) + ll[1:], [(t*1000,),1000,60,60])
 
 if __name__ == '__main__':
-  print "\n%s (v%s) [%s]:" % (PROGRAM, __version__, time.strftime("%c"))
-  download()
-  load()
-  print "\n%s: Done.\n" % PROGRAM
+  print "\n{} (v{}) [{}]:".format(PROGRAM, __version__, time.strftime("%c"))
+  args = docopt(__doc__, version=__version__)
+  if args['--debug']:
+    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
+  start_time = time.time()
+  download(args)
+  load(args)
+  elapsed = time.time() - start_time
+  print "\n{}: Done. Elapsed time: {}\n".format(PROGRAM, slmf.secs2str(elapsed))

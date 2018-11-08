@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-12 08:57:51 smathias>
+# Time-stamp: <2018-05-31 10:52:23 smathias>
 """Load PathwayCommons pathway links into TCRD from TSV file.
 
 Usage:
-    load-PathwayCommons.py [--debug=<int> | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
+    load-PathwayCommons.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
     load-PathwayCommons.py -? | --help
 
 Options:
@@ -18,15 +18,15 @@ Options:
                          10: DEBUG
                           0: NOTSET
   -q --quiet           : set output verbosity to minimal level
-  -d --debug DEBUGL    : set debugging output level (0-3) [default: 0]
+  -d --debug           : turn on debugging output
   -? --help            : print this message and exit 
 """
 __author__ = "Steve Mathias"
 __email__ = "smathias@salud.unm.edu"
 __org__ = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2016-2017, Steve Mathias"
+__copyright__ = "Copyright 2016-2018, Steve Mathias"
 __license__ = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 
 import os,sys,time,re
 from docopt import docopt
@@ -36,45 +36,44 @@ import urllib
 import gzip
 import logging
 from progressbar import *
+import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGFILE = "%s.log" % PROGRAM
+LOGDIR = "./tcrd5logs"
+LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 DOWNLOAD_DIR = '../data/PathwayCommons/'
-BASE_URL = 'http://www.pathwaycommons.org/archives/PC2/current/'
-PATHWAYS_FILE = 'PathwayCommons.8.All.GSEA.uniprot.gmt.gz'
+BASE_URL = 'http://www.pathwaycommons.org/archives/PC2/v9/'
+PATHWAYS_FILE = 'PathwayCommons9.All.uniprot.gmt.gz'
 
-def download():
+def download(args):
   gzfn = DOWNLOAD_DIR + PATHWAYS_FILE
   if os.path.exists(gzfn):
     os.remove(gzfn)
   fn = gzfn.replace('.gz', '')
   if os.path.exists(fn):
     os.remove(fn)
-  print "Downloading ", BASE_URL + PATHWAYS_FILE
-  print "         to ", DOWNLOAD_DIR + PATHWAYS_FILE
+  if not args['--quiet']:
+    print "Downloading ", BASE_URL + PATHWAYS_FILE
+    print "         to ", DOWNLOAD_DIR + PATHWAYS_FILE
   urllib.urlretrieve(BASE_URL + PATHWAYS_FILE, DOWNLOAD_DIR + PATHWAYS_FILE)
-  print "Uncompressing", gzfn
+  if not args['--quiet']:
+    print "Uncompressing", gzfn
   ifh = gzip.open(gzfn, 'rb')
   ofh = open(fn, 'wb')
   ofh.write( ifh.read() )
   ifh.close()
   ofh.close()
   
-def load():
-  args = docopt(__doc__, version=__version__)
-  debug = int(args['--debug'])
-  if debug:
-    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
-  
+def load(args):
   loglevel = int(args['--loglevel'])
   if args['--logfile']:
     logfile = args['--logfile']
   else:
-    logfile = "%s.log" % PROGRAM
+    logfile = LOGFILE
   logger = logging.getLogger(__name__)
   logger.setLevel(loglevel)
-  if not debug:
-    logger.propagate = False # turns off console logging when debug is 0
+  if not args['--debug']:
+    logger.propagate = False # turns off console logging
   fh = logging.FileHandler(logfile)
   fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
   fh.setFormatter(fmtr)
@@ -83,27 +82,22 @@ def load():
   dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
   dba = DBAdaptor(dba_params)
   dbi = dba.get_dbinfo()
-  logger.info("Connected to TCRD database %s (schema ver %s; data ver %s)", args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
   if not args['--quiet']:
-    print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+    print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
   # Dataset
   dataset_id = dba.ins_dataset( {'name': 'Pathway Commons', 'source': 'File %s'%BASE_URL+PATHWAYS_FILE, 'app': PROGRAM, 'app_version': __version__, 'url': 'http://www.pathwaycommons.org/'} )
-  if not dataset_id:
-    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
-    sys.exit(1)
+  assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
   # Provenance
   rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'pathway', 'where_clause': "pwtype LIKE 'PathwayCommons %s'"})
-  if not rv:
-    print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
-    sys.exit(1)
+  assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
     
-  start_time = time.time()
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   infile = (DOWNLOAD_DIR + PATHWAYS_FILE).replace('.gz', '')
-  line_ct = wcl(infile)
+  line_ct = slmf.wcl(infile)
   if not args['--quiet']:
-    print "\nProcessing %d input lines from PathwayCommons file %s" % (line_ct, infile)
+    print "\nProcessing {} input lines from PathwayCommons file {}".format(line_ct, infile)
   with open(infile, 'rU') as tsv:
     tsvreader = csv.reader(tsv, delimiter='\t')
     # Example line:
@@ -112,13 +106,13 @@ def load():
     ct = 0
     skip_ct = 0
     up_mark = {}
-    notfnd = {}
+    notfnd = set()
     pw_ct = 0
     dba_err_ct = 0
     pwtypes = set()
     for row in tsvreader:
       ct += 1
-      src = re.search(r'^datasource: (\w+)', row[1]).groups()[0]
+      src = re.search(r'datasource: (\w+)', row[1]).groups()[0]
       if src in ['kegg', 'wikipathways', 'reactome']:
         skip_ct += 1
         continue
@@ -128,9 +122,12 @@ def load():
       ups = row[2:]
       for up in ups:
         up_mark[up] = True
+        if up in notfnd:
+          continue
         targets = dba.find_targets({'uniprot': up})
         if not targets:
-          notfnd[up] = True
+          notfnd.add(up)
+          logger.warn("No target found for UniProt: {}".format(up))
           continue
         for t in targets:
           pid = t['components']['protein'][0]['id']
@@ -142,27 +139,22 @@ def load():
       pbar.update(ct)
   pbar.finish()
   elapsed = time.time() - start_time
-  print "Processed %d Reactome Pathways. Elapsed time: %s" % (ct, secs2str(elapsed))
-  print "  Inserted %d pathway rows" % pw_ct
-  print "  Skipped %d rows from 'kegg', 'wikipathways', 'reactome'" % skip_ct
-  #print "PWTypes:\n%s\n" % "\n".join(pwtypes)
+  print "Processed {} Reactome Pathways.".format(ct)
+  print "  Inserted {} pathway rows".format(pw_ct)
+  print "  Skipped {} rows from 'kegg', 'wikipathways', 'reactome'".format(skip_ct)
   if notfnd:
-    print "WARNNING: %d (of %d) UniProt accession(s) did not find a TCRD target." % (len(notfnd), len(up_mark))
+    print "WARNNING: {} (of {}) UniProt accession(s) did not find a TCRD target.".format(len(notfnd), len(up_mark))
   if dba_err_ct > 0:
-    print "WARNNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
+    print "WARNNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
 
-
-def wcl(fname):
-  with open(fname) as f:
-    for i, l in enumerate(f):
-      pass
-  return i + 1
-
-def secs2str(t):
-  return "%d:%02d:%02d.%03d" % reduce(lambda ll,b : divmod(ll[0],b) + ll[1:], [(t*1000,),1000,60,60])
 
 if __name__ == '__main__':
-  print "\n%s (v%s) [%s]:\n" % (PROGRAM, __version__, time.strftime("%c"))
-  download()
-  load()
-  print "\n%s: Done.\n" % PROGRAM
+  print "\n{} (v{}) [{}]:".format(PROGRAM, __version__, time.strftime("%c"))
+  args = docopt(__doc__, version=__version__)
+  if args['--debug']:
+    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
+  start_time = time.time()
+  download(args)
+  load(args)
+  elapsed = time.time() - start_time
+  print "\n{}: Done. Elapsed time: {}\n".format(PROGRAM, slmf.secs2str(elapsed))

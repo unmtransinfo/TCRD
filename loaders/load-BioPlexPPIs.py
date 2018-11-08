@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-11-20 10:57:48 smathias>
+# Time-stamp: <2018-05-18 12:00:24 smathias>
 """ Load BioPlex ppis into TCRD from TSV file.
 
 Usage:
-    load-PPIsBioPlex.py [--debug=<int> | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
+    load-PPIsBioPlex.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
     load-PPIsBioPlex.py -h | --help
 
 Options:
@@ -18,15 +18,15 @@ Options:
                          10: DEBUG
                           0: NOTSET
   -q --quiet           : set output verbosity to minimal level
-  -d --debug DEBUGL    : set debugging output level (0-3) [default: 0]
+  -d --debug           : turn on debugging output
   -? --help            : print this message and exit 
 """
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2015-2017, Steve Mathias"
+__copyright__ = "Copyright 2015-2018, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.0.0"
+__version__   = "2.1.0"
 
 import os,sys,time
 from docopt import docopt
@@ -34,31 +34,33 @@ from TCRD import DBAdaptor
 import logging
 import csv
 from progressbar import *
+import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-
+LOGDIR = "./tcrd5logs"
+LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 # http://wren.hms.harvard.edu/bioplex/downloadInteractions.php
-BIOPLEX_FILE = '/home/app/TCRD/data/PPIs/BioPlex_interactionList_v4.tsv'
-PPI_FILES = ['../data/BioPlex/BioPlex_interactionList_v4.tsv',
+# http://bioplex.hms.harvard.edu/data/BioPlex_interactionList_v4a.tsv
+# http://bioplex.hms.harvard.edu/data/interactome_update_MonYYYY.tsv
+BIOPLEX_FILE = '../data/BioPlex/BioPlex_interactionList_v4a.tsv'
+UPD_FILES = ['../data/BioPlex/interactome_update_Dec2015.tsv',
+             '../data/BioPlex/interactome_update_May2016.tsv',
              '../data/BioPlex/interactome_update_Aug2016.tsv',
-             '../data/BioPlex/interactome_update_Dec2016.tsv']
-SRC_FILES = [os.path.basename(f) for f in PPI_FILES]
+             '../data/BioPlex/interactome_update_Dec2016.tsv',
+             '../data/BioPlex/interactome_update_April2017.tsv',
+             '../data/BioPlex/interactome_update_Nov2017.tsv']
+SRC_FILES = [os.path.basename(BIOPLEX_FILE)] + [os.path.basename(f) for f in UPD_FILES]
 
-def load():
-  args = docopt(__doc__, version=__version__)
-  debug = int(args['--debug'])
-  if debug:
-    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
-  
+def load(args):
   loglevel = int(args['--loglevel'])
   if args['--logfile']:
     logfile = args['--logfile']
   else:
-    logfile = "%s.log" % PROGRAM
+    logfile = LOGFILE
   logger = logging.getLogger(__name__)
   logger.setLevel(loglevel)
-  if not debug:
-    logger.propagate = False # turns off console logging when debug is 0
+  if not args['--debug']:
+    logger.propagate = False # turns off console logging
   fh = logging.FileHandler(logfile)
   fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
   fh.setFormatter(fmtr)
@@ -67,29 +69,23 @@ def load():
   dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
   dba = DBAdaptor(dba_params)
   dbi = dba.get_dbinfo()
-  logger.info("Connected to TCRD database %s (schema ver %s; data ver %s)", args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
   if not args['--quiet']:
-    print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+    print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
   # Dataset
   dataset_id = dba.ins_dataset( {'name': 'BioPlex Protein-Protein Interactions', 'source': "Files %s from http://wren.hms.harvard.edu/bioplex/downloadInteractions.php"%", ".join(SRC_FILES), 'app': PROGRAM, 'app_version': __version__, 'url': 'http://wren.hms.harvard.edu/bioplex/index.php'} )
-  if not dataset_id:
-    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
-    sys.exit(1)
+  assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
   # Provenance
   rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'ppi', 'where_clause': "ppitype = 'BioPlex'"})
-  if not rv:
-    print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
-    sys.exit(1)
+  assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
     
-  pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
-
-  start_time = time.time()
-  f = PPI_FILES[0]
-  line_ct = wcl(f)
+  f = BIOPLEX_FILE
+  line_ct = slmf.wcl(f)
   line_ct -= 1
   if not args['--quiet']:
-    print "\nProcessing %d lines from BioPlex PPI file %s" % (line_ct, f)
+    print "\nProcessing {} lines from BioPlex PPI file {}".format(line_ct, f)
+  pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
   with open(f, 'rU') as tsv:
     tsvreader = csv.reader(tsv, delimiter='\t')
@@ -98,7 +94,7 @@ def load():
     ct = 0
     ppi_ct = 0
     k2pid = {}
-    notfnd = {}
+    notfnd = set()
     dba_err_ct = 0
     for row in tsvreader:
       ct += 1
@@ -121,7 +117,8 @@ def load():
       else:
         t1 = find_target(dba, k1)
         if not t1:
-          notfnd[k1] = True
+          notfnd.add(k1)
+          logger.warn("No target found for: {}".format(k1))
           continue
         pid1 = t1['components']['protein'][0]['id']
       k2pid[k1] = pid1
@@ -134,7 +131,8 @@ def load():
       else:
         t2 = find_target(dba, k2)
         if not t2:
-          notfnd[k2] = True
+          notfnd.add(k2)
+          logger.warn("No target found for: {}".format(k2))
           continue
         pid2 = t2['components']['protein'][0]['id']
       k2pid[k2] = pid2
@@ -147,22 +145,19 @@ def load():
       else:
         dba_err_ct += 1
   pbar.finish()
-  elapsed = time.time() - start_time
-  print "%d BioPlex PPI rows processed." % ct
-  print "  Inserted %d new ppi rows" % ppi_ct
-  if len(notfnd) > 0:
-    print "  %d proteins NOT FOUND in TCRD:" % len(notfnd)
-    #for d in notfnd:
-    #  print d
+  print "{} BioPlex PPI rows processed.".format(ct)
+  print "  Inserted {} new ppi rows".format(ppi_ct)
+  if notfnd:
+    print "WARNNING: {} keys did not find a TCRD target. See logfile {} for details.".format(len(notfnd), logfile) 
   if dba_err_ct > 0:
-    print "WARNNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
+    print "WARNNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
 
-  for f in PPI_FILES[1:]:
+  for f in UPD_FILES[1:]:
     start_time = time.time()
-    line_ct = wcl(f)
+    line_ct = slmf.wcl(f)
     line_ct -= 1
     if not args['--quiet']:
-      print "\nProcessing %d lines from BioPlex PPI update file %s" % (line_ct, f)
+      print "\nProcessing {} lines from BioPlex PPI update file {}".format(line_ct, f)
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
     with open(f, 'rU') as tsv:
       tsvreader = csv.reader(tsv, delimiter='\t')
@@ -171,7 +166,7 @@ def load():
       ct = 0
       ppi_ct = 0
       k2pid = {}
-      notfnd = {}
+      notfnd = set()
       dba_err_ct = 0
       for row in tsvreader:
         ct += 1
@@ -192,7 +187,8 @@ def load():
         else:
           t1 = find_target(dba, k1)
           if not t1:
-            notfnd[k1] = True
+            notfnd.add(k1)
+            logger.warn("No target found for: {}".format(k1))
             continue
           pid1 = t1['components']['protein'][0]['id']
           k2pid[k1] = pid1
@@ -205,7 +201,8 @@ def load():
         else:
           t2 = find_target(dba, k2)
           if not t2:
-            notfnd[k2] = True
+            notfnd.add(k2)
+            logger.warn("No target found for: {}".format(k2))
             continue
           pid2 = t2['components']['protein'][0]['id']
           k2pid[k2] = pid2
@@ -218,14 +215,12 @@ def load():
         else:
           dba_err_ct += 1
     pbar.finish()
-    elapsed = time.time() - start_time
-    print "%d BioPlex PPI rows processed." % ct
-    print "  Inserted %d new ppi rows" % ppi_ct
-    if len(notfnd) > 0:
-      print "  %d proteins NOT FOUND in TCRD:" % len(notfnd)
+    print "{} BioPlex PPI rows processed.".format(ct)
+    print "  Inserted {} new ppi rows".format(ppi_ct)
+    if notfnd:
+      print "WARNNING: {} keys did not find a TCRD target. See logfile {} for details.".format(len(notfnd), logfile) 
     if dba_err_ct > 0:
-      print "WARNNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
-
+      print "WARNNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
 
 def find_target(dba, k):
   (up, sym, geneid) = k.split("|")
@@ -241,16 +236,12 @@ def find_target(dba, k):
   else:
     return None
 
-def wcl(fname):
-  with open(fname) as f:
-    for i, l in enumerate(f):
-      pass
-  return i + 1
-
-def secs2str(t):
-  return "%d:%02d:%02d.%03d" % reduce(lambda ll,b : divmod(ll[0],b) + ll[1:], [(t*1000,),1000,60,60])
-
 if __name__ == '__main__':
-  print "\n%s (v%s) [%s]:\n" % (PROGRAM, __version__, time.strftime("%c"))
-  load()
-  print "\n%s: Done.\n" % PROGRAM
+  print "\n{} (v{}) [{}]:".format(PROGRAM, __version__, time.strftime("%c"))
+  args = docopt(__doc__, version=__version__)
+  if args['--debug']:
+    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
+  start_time = time.time()
+  load(args)
+  elapsed = time.time() - start_time
+  print "\n{}: Done. Elapsed time: {}\n".format(PROGRAM, slmf.secs2str(elapsed))

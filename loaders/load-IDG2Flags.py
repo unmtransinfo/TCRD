@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-01-22 13:23:00 smathias>
+# Time-stamp: <2018-03-22 11:44:51 smathias>
 """Load IDG Phase 2 flags into TCRD.
 
 Usage:
@@ -102,7 +102,7 @@ def load(args):
   if notfnd:
     print "No target found for {} symbols: {}".format(len(notfnd), ", ".join(notfnd))
   if multfnd:
-    print "Multiple targets found for %d symbols: {}".format(len(multfnd), ", ".join(multfnd))
+    print "Multiple targets found for {} symbols: {}".format(len(multfnd), ", ".join(multfnd))
   if dba_err_ct > 0:
     print "WARNING: {} database errors occured. See logfile {} for details.".format(dba_err_ct, logfile)
   

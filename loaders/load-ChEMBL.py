@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-02-05 11:44:00 smathias>
-"""Load chembl_activity data in TCRD via ChEMBL MySQL database.
+# Time-stamp: <2018-10-25 12:00:31 smathias>
+"""Load cmpd_activity data in TCRD via ChEMBL MySQL database.
 
 Usage:
     load-ChEMBL.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
@@ -26,7 +26,7 @@ __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
 __copyright__ = "Copyright 2015-2018, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.2.0"
+__version__   = "3.0.0"
 
 import os,sys,time,re
 from docopt import docopt
@@ -131,7 +131,7 @@ def load(args):
     print "%d input lines processed." % ct
   #print "Saved %d keys in up2chembl dict" % len(up2chembl.keys())
 
-  upct = len(up2chembl.keys())
+  upct = len(up2chembl)
   if not args['--quiet']:
     print "\nProcessing %d UniProt to ChEMBL ID(s) mappings" % upct
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
@@ -162,9 +162,8 @@ def load(args):
     logger.info("Loading ChEMBL data for target %d - %s/%s"%(t['id'], t['components']['protein'][0]['sym'], up))
     chembl_acts = []
     for ctid in up2chembl[up]:
-      
       with closing(chembldb.cursor(mysql.cursors.DictCursor)) as curs:
-        # Query 11
+        # Query 1
         curs.execute(SQLq1, (ctid,))
         for d in curs:
           if d['year']:
@@ -177,8 +176,9 @@ def load(args):
       # Query 2
       with closing(chembldb.cursor(mysql.cursors.DictCursor)) as curs:
         curs.execute(SQLq2, (ctid,))
-        d['reference'] = None
-        chembl_acts.append(d)
+        for d in curs:
+          d['reference'] = None
+          chembl_acts.append(d)
 
     if t['fam'] == 'GPCR':
       cutoff =  7.0 # 100nM
@@ -213,11 +213,15 @@ def load(args):
     # Save chembl_activities
     # The best activity for a given target will be the one with MAX(chembl_activity.id)
     for a in sorted_by_stdval:
+      if 'pubmed_id' in a:
+        pmid = a['pubmed_id']
+      else:
+        pmid = None
       try:
-        rv = dba.ins_chembl_activity( {'target_id': tid, 'cmpd_chemblid': a['chembl_id'], 'cmpd_name_in_ref': a['compound_name'], 'smiles': a['canonical_smiles'], 'reference': a['reference'], 'act_value': a['pchembl_value'], 'act_type': a['standard_type'], 'pubmed_id': a['pubmed_id']} )
+        rv = dba.ins_cmpd_activity( {'target_id': tid, 'catype': 'ChEMBL', 'cmpd_id_in_src': a['chembl_id'], 'cmpd_name_in_src': a['compound_name'], 'smiles': a['canonical_smiles'], 'reference': a['reference'], 'act_value': a['pchembl_value'], 'act_type': a['standard_type'], 'pubmed_ids': pmid} )
       except:
         # some names have weird hex characters and cause errors...
-        rv = dba.ins_chembl_activity( {'target_id': tid, 'cmpd_chemblid': a['chembl_id'], 'cmpd_name_in_ref': '?', 'smiles': a['canonical_smiles'], 'reference': a['reference'], 'act_value': a['pchembl_value'], 'act_type': a['standard_type'], 'pubmed_id': a['pubmed_id']} )
+        rv = dba.ins_cmpd_activity( {'target_id': tid, 'catype': 'ChEMBL', 'cmpd_id_in_src': a['chembl_id'], 'cmpd_name_in_src': '?', 'smiles': a['canonical_smiles'], 'reference': a['reference'], 'act_value': a['pchembl_value'], 'act_type': a['standard_type'], 'pubmed_ids': pmid} )
       if rv:
         ca_ct += 1
       else:
@@ -248,7 +252,7 @@ def load(args):
   print "%d UniProt accessions processed." % ct
   print "  %d targets not found in ChEMBL" % nic_ct
   print "  %d targets have no good activities in ChEMBL" % nga_ct
-  print "Inserted %d new chembl_activity rows" % ca_ct
+  print "Inserted %d new cmpd_activity rows" % ca_ct
   print "Inserted %d new ChEMBL First Reference Year tdl_infos" % cyti_ct
   if err_ct > 0:
     print "%d ERRORS" % err_ct

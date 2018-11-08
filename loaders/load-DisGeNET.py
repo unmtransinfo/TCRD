@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-02-23 10:45:18 smathias>
+# Time-stamp: <2018-10-04 09:04:16 smathias>
 """
 Load disease associations into TCRD from DisGeNET TSV file.
 Usage:
-    load-DisGeNET.py [--debug=<int> | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
+    load-DisGeNET.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
     load-DisGeNET.py -? | --help
 
 Options:
@@ -18,88 +18,112 @@ Options:
                          10: DEBUG
                           0: NOTSET
   -q --quiet           : set output verbosity to minimal level
-  -d --debug DEBUGL    : set debugging output level (0-3) [default: 0]
+  -d --debug           : turn on debugging output
   -? --help            : print this message and exit 
 """
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2016, Steve Mathias"
+__copyright__ = "Copyright 2016-2018, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.0.0"
+__version__   = "2.1.0"
 
 import os,sys,time
 from docopt import docopt
 from TCRD import DBAdaptor
 import logging
+import urllib
+import gzip
 from progressbar import *
+import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-# From http://www.disgenet.org/web/DisGeNET/menu/downloads
-INPUT_FILE = '../data/DisGeNET/curated_gene_disease_associations.tsv'
+LOGDIR = "./tcrd5logs"
+LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
+DOWNLOAD_DIR = '../data/DisGeNET/'
+BASE_URL = 'http://www.disgenet.org/ds/DisGeNET/results/'
+INPUT_FILE = 'curated_gene_disease_associations.tsv.gz'
 
-def main():
-  args = docopt(__doc__, version=__version__)
-  debug = int(args['--debug'])
-  if debug:
-    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
-  
+def download(args):
+  gzfn = DOWNLOAD_DIR + INPUT_FILE
+  if os.path.exists(gzfn):
+    os.remove(gzfn)
+  fn = gzfn.replace('.gz', '')
+  if os.path.exists(fn):
+    os.remove(fn)
+  if not args['--quiet']:
+    print "\nDownloading", BASE_URL + INPUT_FILE
+    print "         to", DOWNLOAD_DIR + INPUT_FILE
+  urllib.urlretrieve(BASE_URL + INPUT_FILE, DOWNLOAD_DIR + INPUT_FILE)
+  if not args['--quiet']:
+    print "Uncompressing", gzfn
+  ifh = gzip.open(gzfn, 'rb')
+  ofh = open(fn, 'wb')
+  ofh.write( ifh.read() )
+  ifh.close()
+  ofh.close()
+
+def load(args):
   loglevel = int(args['--loglevel'])
   if args['--logfile']:
     logfile = args['--logfile']
   else:
-    logfile = "%s.log" % PROGRAM
+    logfile = LOGFILE
   logger = logging.getLogger(__name__)
   logger.setLevel(loglevel)
-  if not debug:
-    logger.propagate = False # turns off console logging when debug is 0
+  if not args['--debug']:
+    logger.propagate = False # turns off console logging
   fh = logging.FileHandler(logfile)
   fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
   fh.setFormatter(fmtr)
   logger.addHandler(fh)
 
-  # DBAdaptor uses same logger as main()
   dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
   dba = DBAdaptor(dba_params)
   dbi = dba.get_dbinfo()
-  logger.info("Connected to TCRD database %s (schema ver %s; data ver %s)", args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
   if not args['--quiet']:
-    print "\n%s (v%s) [%s]:" % (PROGRAM, __version__, time.strftime("%c"))
-    print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+    print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
     
   # Dataset
-  dataset_id = dba.ins_dataset( {'name': 'DisGeNET Disease Associations', 'source': 'File %s .'%os.path.basename(INPUT_FILE), 'app': PROGRAM, 'app_version': __version__, 'url': 'http://www.disgenet.org/web/DisGeNET/menu'} )
-  if not dataset_id:
-    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
+  dataset_id = dba.ins_dataset( {'name': 'DisGeNET Disease Associations', 'source': 'File %s from %s.'%(INPUT_FILE, BASE_URL), 'app': PROGRAM, 'app_version': __version__, 'url': 'http://www.disgenet.org/web/DisGeNET/menu'} )
+  assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
   # Provenance
   rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'disease', 'where_clause': "dtype = 'DisGeNET'"})
-  if not rv:
-    print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
-    sys.exit(1)
+  assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
 
-  start_time = time.time()
-  line_ct = wcl(INPUT_FILE)
+  infile = (DOWNLOAD_DIR + INPUT_FILE).replace('.gz', '')
+  line_ct = slmf.wcl(infile)
   if not args['--quiet']:
-     print "\nProcessing %d lines in file %s" % (line_ct, INPUT_FILE)
+     print "\nProcessing {} lines in file {}".format(line_ct, infile)
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
-  with open(INPUT_FILE, 'rU') as f:
+  with open(infile, 'rU') as f:
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start()
     ct = 0
     k2tid = {}
+    tmark = {}
     notfnd = set()
     dis_ct = 0
     dba_err_ct = 0
     for line in f:
+      # 0: geneId
+      # 1: geneSymbol
+      # 2: diseaseId
+      # 3: diseaseName
+      # 4: score
+      # 5: NofPmids
+      # 6: NofSnps
+      # 7: source
       ct += 1
       if line.startswith('#'):
         continue
-      if line.startswith('diseaseId'):
+      if line.startswith('geneId'):
+        # header row
         continue
-      # diseaseId       geneId  score   geneName        description     diseaseName     sourceId
       data = line.split('\t')
-      geneid = data[1]
-      sym = data[3]
-      k = "%s|%s"%(geneid,sym)
+      geneid = data[0]
+      sym = data[1]
+      k = "%s|%s"%(sym,geneid)
       if k in k2tid:
         # we've already found it
         tid = k2tid[k]
@@ -107,44 +131,47 @@ def main():
         # we've already not found it
           continue
       else:
-        targets = dba.find_targets({'geneid': geneid}, idg=False)
+        targets = dba.find_targets({'sym': sym})
         if not targets:
-          targets = dba.find_targets({'sym': sym}, idg = False)
+          targets = dba.find_targets({'geneid': geneid})
         if not targets:
-          notfnd.add(geneid)
+          notfnd.add(k)
+          logger.warn("No target found for {}".format(k))
           continue
         tid = targets[0]['id']
+        tmark[tid] = True
         k2tid[k] = tid # save this mapping so we only lookup each target once
-      rv = dba.ins_disease( {'target_id': tid, 'dtype': 'DisGeNET', 'name': data[5],
-                             'did': data[0], 'score': data[2], 'source': data[6]} )
+      if data[5] != 0:
+        if data[6] != 0:
+          ev = "%s PubMed IDs; %s SNPs"%(data[5], data[6])
+        else:
+          ev = "%s PubMed IDs"%data[5]
+      else:
+        ev = "%s SNPs"%data[6]
+      rv = dba.ins_disease( {'target_id': tid, 'dtype': 'DisGeNET', 'name': data[3],
+                             'did': data[2], 'score': data[4], 'source': data[7],
+                             'evidence': ev} )
       if not rv:
         dba_err_ct += 1
         continue
       dis_ct += 1
       pbar.update(ct)
   pbar.finish()
-  elapsed = time.time() - start_time
-  if not args['--quiet']:
-    print "%d lines processed. Elapsed time: %s" % (ct, secs2str(elapsed))
-    print "  %d targets have disease association(s)" % len(k2tid)
-    print "  Inserted %d new disease rows" % dis_ct
-    if dba_err_ct > 0:
-      print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
-    if notfnd:
-      print "No target found for %d disease association rows." % len(notfnd)
-  
-  if not args['--quiet']:
-    print "\n%s: Done.\n" % PROGRAM
+  print "{} lines processed.".format(ct)
+  print "Loaded {} new disease rows for {} targets.".format(dis_ct, len(tmark))
+  if notfnd:
+    print "No target found for {} symbols/geneids. See logfile {} for details.".format(len(notfnd), logfile)
+  if dba_err_ct > 0:
+    print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
 
-
-def wcl(fname):
-  with open(fname) as f:
-    for i, l in enumerate(f):
-      pass
-  return i + 1
-
-def secs2str(t):
-  return "%d:%02d:%02d.%03d" % reduce(lambda ll,b : divmod(ll[0],b) + ll[1:], [(t*1000,),1000,60,60])
-
+    
 if __name__ == '__main__':
-    main()
+  print "\n{} (v{}) [{}]:".format(PROGRAM, __version__, time.strftime("%c"))
+  args = docopt(__doc__, version=__version__)
+  if args['--debug']:
+    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
+  start_time = time.time()
+  download(args)
+  load(args)
+  elapsed = time.time() - start_time
+  print "\n{}: Done. Elapsed time: {}\n".format(PROGRAM, slmf.secs2str(elapsed))

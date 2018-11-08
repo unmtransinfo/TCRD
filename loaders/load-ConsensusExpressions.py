@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-07-20 10:43:38 smathias>
+# Time-stamp: <2018-04-09 12:35:41 smathias>
 """
 Calculate and load consensus expression values into TCRD.
 Usage:
-    load-ConsensusExpressions.py [--debug=<int> | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
+    load-ConsensusExpressions.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
     load-ConsensusExpressions.py -? | --help
 
 Options:
@@ -18,15 +18,15 @@ Options:
                          10: DEBUG
                           0: NOTSET
   -q --quiet           : set output verbosity to minimal level
-  -d --debug DEBUGL    : set debugging output level (0-3) [default: 0]
+  -d --debug           : turn on debugging output
   -? --help            : print this message and exit 
 """
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2016-2017, Steve Mathias"
+__copyright__ = "Copyright 2016-2018, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.0.0"
+__version__   = "2.1.0"
 
 import os,sys,time
 from docopt import docopt
@@ -36,25 +36,23 @@ import csv
 from collections import defaultdict
 import operator
 from progressbar import *
+import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
+LOGDIR = 'tcrd5logs/'
+LOGFILE = LOGDIR + '%s.log'%PROGRAM
 TISSUESTYPEDFILE = '../data/Tissues_Typed_v2.1.csv'
 
-def calc_and_load():
-  args = docopt(__doc__, version=__version__)
-  debug = int(args['--debug'])
-  if debug:
-    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
-  
+def calc_and_load(args):
   loglevel = int(args['--loglevel'])
   if args['--logfile']:
     logfile = args['--logfile']
   else:
-    logfile = "%s.log" % PROGRAM
+    logfile = LOGFILE
   logger = logging.getLogger(__name__)
   logger.setLevel(loglevel)
-  if not debug:
-    logger.propagate = False # turns off console logging when debug is 0
+  if not args['--debug']:
+    logger.propagate = False # turns off console logging
   fh = logging.FileHandler(logfile)
   fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
   fh.setFormatter(fmtr)
@@ -63,29 +61,22 @@ def calc_and_load():
   dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
   dba = DBAdaptor(dba_params)
   dbi = dba.get_dbinfo()
-  logger.info("Connected to TCRD database %s (schema ver %s; data ver %s)", args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
   if not args['--quiet']:
-    print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+    print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
   
-  start_time = time.time()
-  pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
-
   # Dataset
   dataset_id = dba.ins_dataset( {'name': 'Consensus Expression Values', 'source': 'IDG-KMC generated data by Steve Mathias at UNM.', 'app': PROGRAM, 'app_version': __version__, 'comments': 'Consensus of GTEx, HPM and HPA expression values are calculated by the loader app.'} )
-  if not dataset_id:
-    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
-    sys.exit(1)
+  assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
   # Provenance
   rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'expression', 'where_clause': "etype = 'Consensus'"})
-  if not rv:
-    print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
-    sys.exit(1)
-  
+  assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
+
   tmap = {} # tissue name to Tissue Type as per TIO
-  line_ct = wcl(TISSUESTYPEDFILE)
+  line_ct = slmf.wcl(TISSUESTYPEDFILE)
   line_ct -= 1
   if not args['--quiet']:
-    print '\nProcessiong %d tissue mapping lines from file: %s' % (line_ct, TISSUESTYPEDFILE)
+    print '\nProcessiong {} lines in tissue mapping file: {}'.format(line_ct, TISSUESTYPEDFILE)
   with open(TISSUESTYPEDFILE, 'rU') as csvfile:
     csvreader = csv.reader(csvfile)
     header = csvreader.next() # skip header line
@@ -95,11 +86,12 @@ def calc_and_load():
       tissue = row[0].lower()
       tmap[tissue] = row[2]
   if not args['--quiet']:
-    print '  Got %d tissue name mappings' % len(tmap.keys())
+    print '  Got {} tissue name mappings'.format(len(tmap))
 
+  pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   tct = dba.get_target_count()
   if not args['--quiet']:
-    print "\nCalculating/Loading Consensus expressions for %d TCRD targets" % tct
+    print "\nCalculating/Loading Consensus expressions for {} TCRD targets".format(tct)
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   pbar = ProgressBar(widgets=pbar_widgets, maxval=tct).start() 
   ct = 0
@@ -108,25 +100,25 @@ def calc_and_load():
   for t in dba.get_targets(include_annotations=True):
     ct += 1
     p = t['components']['protein'][0]
-    if 'expressions' in p:
-      want = ['GTEx', 'HPA Protein', 'HPA RNA', 'HPM Gene', 'HPM Protein']
-      aggexps = aggregate_exps(p['expressions'], tmap, want)
-      for tissue, vals in aggexps.items():
-        (cons, conf) = calculate_consensus(vals)
-        rv = dba.ins_expression( {'protein_id': p['id'], 'etype': 'Consensus', 
-                                  'tissue': tissue, 'qual_value': cons, 'confidence': conf} )
-        if rv:
-          exp_ct += 1
-        else:
-          dba_err_ct += 1
+    if not 'expressions' in p:
+      continue
+    want = ['GTEx', 'HPA Protein', 'HPA RNA', 'HPM Gene', 'HPM Protein']
+    aggexps = aggregate_exps(p['expressions'], tmap, want)
+    for tissue, vals in aggexps.items():
+      (cons, conf) = calculate_consensus(vals)
+      rv = dba.ins_expression( {'protein_id': p['id'], 'etype': 'Consensus', 
+                                'tissue': tissue, 'qual_value': cons, 'confidence': conf} )
+      if rv:
+        exp_ct += 1
+      else:
+        dba_err_ct += 1
     pbar.update(ct)
   pbar.finish()
   if not args['--quiet']:
-    print "Processed %d targets." % ct
-    print "  Inserted %d new Consensus expression rows." % exp_ct
+    print "Processed {} targets.".format(ct)
+    print "  Inserted {} new Consensus expression rows.".format(exp_ct)
   if dba_err_ct > 0:
-    print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
-
+    print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
 
 def default_factory():
   return {0: 0, 1: 0, 2: 0, 3: 0}
@@ -137,6 +129,8 @@ def aggregate_exps(exps, tmap, want):
   fvalmap = {'Not Detected': 0, 'Low': 1, 'Medium': 2, 'High': 3}
   for e in exps:
     tissue = e['tissue'].lower()
+    if e['tissue'] not in tmap:
+      continue
     k1 = tmap[tissue]
     if e['qual_value'] in fvalmap:
       k2 = fvalmap[e['qual_value']]
@@ -290,19 +284,13 @@ def calculate_consensus(vals):
   return(cons, conf)
 
 
-def wcl(fname):
-  with open(fname) as f:
-    for i, l in enumerate(f):
-      pass
-  return i + 1
-
-def secs2str(t):
-  return "%d:%02d:%02d.%03d" % reduce(lambda ll,b : divmod(ll[0],b) + ll[1:], [(t*1000,),1000,60,60])
-
 if __name__ == '__main__':
-  print "\n%s (v%s) [%s]:" % (PROGRAM, __version__, time.strftime("%c"))
+  print "\n{} (v{}) [{}]:".format(PROGRAM, __version__, time.strftime("%c"))
+  args = docopt(__doc__, version=__version__)
+  if args['--debug']:
+    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
   start_time = time.time()
-  calc_and_load()
+  calc_and_load(args)
   elapsed = time.time() - start_time
-  print "\n%s: Done. Elapsed time: %s\n" % (PROGRAM, secs2str(elapsed))
+  print "\n{}: Done. Elapsed time: {}\n".format(PROGRAM, slmf.secs2str(elapsed))
 

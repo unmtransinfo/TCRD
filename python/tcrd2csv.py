@@ -1,5 +1,5 @@
 #!/usr/local/bin/python
-# Time-stamp: <2017-02-23 13:48:40 smathias>
+# Time-stamp: <2018-06-21 10:06:50 smathias>
 '''
 tcrd2csv.py - Export TCRD target data to a CSV file
 '''
@@ -43,7 +43,7 @@ def main():
 
   header = ['TCRD ID', 'DTO ID', 'DTO Family', 'DTO Family Ext.', 'TDL', 'Name', 'Description', 'HGNC Sym', 'NCBI Gene ID', 'UniProt', 'STRING ID', 'IDG Phase 2']
   if args.expand:
-    header = header + ['Chr', 'UniProt Family', 'PANTHER Class(es)', 'DTO Classification', 'GeneRIF Count', 'NCBI Gene PubMed Count', 'JensenLab PubMed Score', 'PubTator Score', 'Ab Count', 'Monoclonal Ab Count', 'TIN-X Novelty Score', 'L1000 ID', 'ChEMBL Activity Count', 'ChEMBL Selective Compound', 'ChEMBL First Reference Year', 'DrugCentral Activity Count', 'PDB Count', 'PDBs', 'GO Annotation Count', 'Experimental MF/BP Leaf Term GOA(s)', 'OMIM Confirmed Phenotype(s)','GWAS Phenotype Count', 'GWAS Phenotype(s)', 'IMPC Phenotype Count', 'IMPC Phenotype(s)', 'JAX/MGI Human Ortholog Phenotype Count', 'JAX/MGI Human Ortholog Phenotype(s)', 'Pathway Count', 'Pathways', 'Disease Count', 'Top 5 Diseases', '2000-2015 NIH Grant Count', '2000-2015 NIH Grant Dollars', '2000-2015 R01 Count', '2000-2015 R01 Dollars', '2011-2015 Grant Count', '2011-2015 Grant Dollars', '2011-2015 RO1 Count', '2011-2015 RO1 Dollars', 'EBI Patent Count', 'MLP Assay Count', 'MLP Assay(s)', 'Is Transcription Factor', 'TMHMM Prediction', 'Drugable Epigenome Class(es)', 'GTEx Tissue Specificity Index', 'HPA Protein Tissue Specificity Index', 'HPA RNA Tissue Specificity Index', 'HPM Gene Tissue Specificity Index', 'HPM Protein Tissue Specificity Index']
+    header = header + ['Chr', 'UniProt Family', 'PANTHER Class(es)', 'DTO Classification', 'GeneRIF Count', 'NCBI Gene PubMed Count', 'JensenLab PubMed Score', 'PubTator Score', 'Ab Count', 'Monoclonal Ab Count', 'TIN-X Novelty Score', 'L1000 ID', 'ChEMBL Activity Count', 'ChEMBL Selective Compound', 'ChEMBL First Reference Year', 'DrugCentral Activity Count', 'PDB Count', 'PDBs', 'GO Annotation Count', 'Experimental MF/BP Leaf Term GOA(s)', 'OMIM Confirmed Phenotype(s)','GWAS Phenotype Count', 'GWAS Phenotype(s)', 'IMPC Phenotype Count', 'IMPC Phenotype(s)', 'JAX/MGI Human Ortholog Phenotype Count', 'JAX/MGI Human Ortholog Phenotype(s)', 'Pathway Count', 'Pathways', 'Disease Count', 'Top 5 Diseases', 'EBI Patent Count', 'Is Transcription Factor', 'TMHMM Prediction', 'Drugable Epigenome Class(es)', 'GTEx Tissue Specificity Index', 'HPA Protein Tissue Specificity Index', 'HPA RNA Tissue Specificity Index', 'HPM Gene Tissue Specificity Index', 'HPM Protein Tissue Specificity Index']
 
   if args.idg:
     if args.family:
@@ -252,37 +252,37 @@ def target2csv_exp(t):
   else:
     csv.append('')
     csv.append('')
-  # Grant Info
-  if 'grants' in t:
-    csv.append( len(t['grants']) )
-    csv.append( "%.2f"%sum([float(d['cost']) for d in t['grants']]) )
-    csv.append( len([d for d in t['grants'] if d['activity'] == 'R01']) )
-    csv.append( "%.2f"%sum([float(d['cost']) for d in t['grants'] if d['activity'] == 'R01']) )
-    csv.append( len([d for d in t['grants'] if int(d['year']) > 2010]) )
-    csv.append( "%.2f"%sum([float(d['cost']) for d in t['grants'] if int(d['year']) > 2010]) )
-    csv.append( len([d for d in t['grants'] if (d['activity'] == 'R01' and int(d['year']) > 2010)]) )
-    csv.append( "%.2f"%sum([float(d['cost']) for d in t['grants'] if (d['activity'] == 'R01' and int(d['year']) > 2010)]) )
-  else:
-    csv.append('')
-    csv.append('')
-    csv.append('')
-    csv.append('')
-    csv.append('')
-    csv.append('')
-    csv.append('')
-    csv.append('')
+  # # Grant Info
+  # if 'grants' in t:
+  #   csv.append( len(t['grants']) )
+  #   csv.append( "%.2f"%sum([float(d['cost']) for d in t['grants']]) )
+  #   csv.append( len([d for d in t['grants'] if d['activity'] == 'R01']) )
+  #   csv.append( "%.2f"%sum([float(d['cost']) for d in t['grants'] if d['activity'] == 'R01']) )
+  #   csv.append( len([d for d in t['grants'] if int(d['year']) > 2010]) )
+  #   csv.append( "%.2f"%sum([float(d['cost']) for d in t['grants'] if int(d['year']) > 2010]) )
+  #   csv.append( len([d for d in t['grants'] if (d['activity'] == 'R01' and int(d['year']) > 2010)]) )
+  #   csv.append( "%.2f"%sum([float(d['cost']) for d in t['grants'] if (d['activity'] == 'R01' and int(d['year']) > 2010)]) )
+  # else:
+  #   csv.append('')
+  #   csv.append('')
+  #   csv.append('')
+  #   csv.append('')
+  #   csv.append('')
+  #   csv.append('')
+  #   csv.append('')
+  #   csv.append('')
   # Patent Count
   if 'EBI Total Patent Count' in ptdls:
     csv.append( ptdls['EBI Total Patent Count']['value'] )
   else:
     csv.append(0)
-  # MLP Assay Info
-  if 'mlp_assay_infos' in p:
-    csv.append( len(p['mlp_assay_infos']) )
-    csv.append( "|".join([d['assay_name'] for d in p['mlp_assay_infos']]) )
-  else:
-    csv.append(0)
-    csv.append('')
+  # # MLP Assay Info
+  # if 'mlp_assay_infos' in p:
+  #   csv.append( len(p['mlp_assay_infos']) )
+  #   csv.append( "|".join([d['assay_name'] for d in p['mlp_assay_infos']]) )
+  # else:
+  #   csv.append(0)
+  #   csv.append('')
   # Is TF
   if 'Is Transcription Factor' in ptdls:
     csv.append(1)

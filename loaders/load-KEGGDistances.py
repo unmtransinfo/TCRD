@@ -2,7 +2,7 @@
 """Load all shortest path distances from KEGG Pathways into TCRD.
 
 Usage:
-    load-KEGGDistances.py [--debug=<int> | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
+    load-KEGGDistances.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
     load-KEGGDistances.py -? | --help
 
 Options:
@@ -17,15 +17,15 @@ Options:
                          10: DEBUG
                           0: NOTSET
   -q --quiet           : set output verbosity to minimal level
-  -d --debug DEBUGL    : set debugging output level (0-3) [default: 0]
+  -d --debug           : turn on debugging output
   -? --help            : print this message and exit
 """
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2016-2017, Steve Mathias"
+__copyright__ = "Copyright 2016-2018, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.0.0"
+__version__   = "2.1.0"
 
 import os,sys,time,re
 from docopt import docopt
@@ -36,56 +36,47 @@ import logging
 import csv
 from collections import defaultdict
 from progressbar import *
+import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
+LOGDIR = "./tcrd5logs"
+LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 KGML_DIR = '../data/KEGG/pathways'
 
-def calc_and_load():
-  args = docopt(__doc__, version=__version__)
-  dbhost = args['--dbhost']
-  dbname = args['--dbname']
+def calc_and_load(args):
   loglevel = int(args['--loglevel'])
   if args['--logfile']:
     logfile = args['--logfile']
   else:
-    logfile = "%s.log" % PROGRAM
-  debug = int(args['--debug'])
-  quiet = args['--quiet']
-  if debug:
-    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
-    
+    logfile = LOGFILE
   logger = logging.getLogger(__name__)
   logger.setLevel(loglevel)
-  if not debug:
-    logger.propagate = False # turns off console logging when debug is 0
+  if not args['--debug']:
+    logger.propagate = False # turns off console logging
   fh = logging.FileHandler(logfile)
   fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
   fh.setFormatter(fmtr)
   logger.addHandler(fh)
 
-  dba_params = {'dbhost': dbhost, 'dbname': dbname, 'logger_name': __name__}
+  dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
   dba = DBAdaptor(dba_params)
   dbi = dba.get_dbinfo()
-  logger.info("Connected to TCRD database %s (schema ver %s; data ver %s)", args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
-  if not quiet:
-    print "Connected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
+  if not args['--quiet']:
+    print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
   # Dataset
   dataset_id = dba.ins_dataset( {'name': 'KEGG Distances', 'source': 'IDG-KMC generated data by Steve Mathias at UNM.', 'app': PROGRAM, 'app_version': __version__, 'comments': 'Directed graphs are produced from KEGG pathway KGML files and all shortest path lengths are then calculated and stored.'} )
-  if not dataset_id:
-    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
-    sys.exit(1)
+  assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
   # Provenance
   rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'kegg_distance'})
-  if not rv:
-    print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
-    sys.exit(1)
+  assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
 
   kgmls = get_kgmls(KGML_DIR)
 
   if not args['--quiet']:
-    print "\nProcessing %d KGML files in %s" % (len(kgmls), KGML_DIR)
-    logger.info("Processing %d KGML files in %s" % (len(kgmls), KGML_DIR))
+    print "\nProcessing {} KGML files in {}".format(len(kgmls), KGML_DIR)
+    logger.info("Processing {} KGML files in {}".format(len(kgmls), KGML_DIR))
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   pbar = ProgressBar(widgets=pbar_widgets, maxval=len(kgmls)).start()
   # All pathways shortest path lengths
@@ -94,13 +85,13 @@ def calc_and_load():
   ct = 0
   err_ct = 0
   for kgml in kgmls:
-    logger.info("  Working on %s" % kgml)
+    logger.info("  Working on {}".format(kgml))
     ct += 1
     try:
       dig = kg.kgml_file_to_digraph(kgml)
     except:
       err_ct += 1
-      logger.error("Error parsing file: %s" % kgml)
+      logger.error("Error parsing file: {}".format(kgml))
       continue
     aspls = nx.all_pairs_shortest_path_length(dig)
     dct = 0
@@ -115,18 +106,18 @@ def calc_and_load():
         else:
           all_pws_spls[st] = aspls[source][target]
           dct += 1
-    logger.info("  %s has %d non-zero shortest path lengths" % (kgml, dct))
+    logger.info("  {} has {} non-zero shortest path lengths".format(kgml, dct))
     pbar.update(ct)
   pbar.finish()
-  logger.info("Got %d total unique non-zero shortest path lengths" % len(all_pws_spls))
+  logger.info("Got {} total unique non-zero shortest path lengths".format(len(all_pws_spls)))
   if not args['--quiet']:
-    print "  Got %d total unique non-zero shortest path lengths" % len(all_pws_spls)
+    print "  Got {} total unique non-zero shortest path lengths".format(len(all_pws_spls))
   if err_ct > 0:
-    print "WARNNING: %d parsing errors occurred. See logfile %s for details." % (err_ct, logfile)
+    print "WARNNING: {} parsing errors occurred. See logfile {} for details.".format(err_ct, logfile)
 
-  logger.info("Processing %d KEGG Distances" % len(all_pws_spls))
+  logger.info("Processing {} KEGG Distances".format(len(all_pws_spls)))
   if not args['--quiet']:
-    print "\nProcessing %d KEGG Distances" % len(all_pws_spls)
+    print "\nProcessing {} KEGG Distances".format(len(all_pws_spls))
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   pbar = ProgressBar(widgets=pbar_widgets, maxval=len(all_pws_spls)).start()
   gid2pids = defaultdict(list) # So we only find each target once,
@@ -150,7 +141,7 @@ def calc_and_load():
       if not targets:
         skip_ct += 1
         notfnd.add(geneid1) # add to notfnd so we don't try looking it up again
-        logger.warn("No target found for KEGG Gene ID %s" % geneid1)
+        logger.warn("No target found for KEGG Gene ID {}".format(geneid1))
         continue
       pids1 = []
       for t in targets:
@@ -167,7 +158,7 @@ def calc_and_load():
       if not targets:
         skip_ct += 1
         notfnd.add(geneid2) # add to notfnd so we don't try looking it up again
-        logger.warn("No target found for KEGG Gene ID %s" % geneid2)
+        logger.warn("No target found for KEGG Gene ID {}".format(geneid2))
         continue
       pids2 = []
       for t in targets:
@@ -183,25 +174,24 @@ def calc_and_load():
           dba_err_ct += 1
     pbar.update(ct)
   pbar.finish()
-  print "%d KEGG Distances processed." % ct
-  print "  Inserted %d new kegg_distance rows" % kd_ct
+  print "{} KEGG Distances processed.".format(ct)
+  print "  Inserted {} new kegg_distance rows".format(kd_ct)
   if skip_ct > 0:
-    print "  %d KEGG IDs not found in TCRD - Skipped %d rows. See logfile %s for details." % (len(notfnd), skip_ct, logfile)
+    print "  {} KEGG IDs not found in TCRD - Skipped {} rows. See logfile {} for details.".format(len(notfnd), skip_ct, logfile)
   if dba_err_ct > 0:
-    print "WARNNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
-
+    print "WARNNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
 
 def get_kgmls( path_to_dir ):
   filenames = os.listdir(path_to_dir)
   return [ "%s/%s"%(path_to_dir,filename) for filename in filenames if filename.endswith('kgml') ]
 
-def secs2str(t):
-  return "%d:%02d:%02d.%03d" % reduce(lambda ll,b : divmod(ll[0],b) + ll[1:], [(t*1000,),1000,60,60])
 
 if __name__ == '__main__':
-  print "\n%s (v%s) [%s]:\n" % (PROGRAM, __version__, time.strftime("%c"))
+  print "\n{} (v{}) [{}]:".format(PROGRAM, __version__, time.strftime("%c"))
+  args = docopt(__doc__, version=__version__)
+  if args['--debug']:
+    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
   start_time = time.time()
-  calc_and_load()
+  calc_and_load(args)
   elapsed = time.time() - start_time
-  print "\n%s: Done. Elapsed time: %s\n" % (PROGRAM, secs2str(elapsed))
-
+  print "\n{}: Done. Elapsed time: {}\n".format(PROGRAM, slmf.secs2str(elapsed))

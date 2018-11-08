@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-02-06 11:18:45 smathias>
+# Time-stamp: <2018-05-31 10:52:03 smathias>
 """Load phenotypes into TCRD from OMIM genemap.txt file.
 
 Usage:
@@ -77,14 +77,10 @@ def load(args):
 
   # Dataset
   dataset_id = dba.ins_dataset( {'name': 'OMIM Confirmed Phenotypes', 'source': 'File %s from ftp.omim.org'%FILENAME, 'app': PROGRAM, 'app_version': __version__, 'url': 'http://omim.org/'} )
-  if not dataset_id:
-    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
-    sys.exit(1)
+  assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
   # Provenance
   rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'phenotype', 'where_clause': "ptype = 'OMIM'"})
-  if not rv:
-    print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
-    sys.exit(1)
+  assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
 
   fname = DOWNLOAD_DIR + FILENAME
   line_ct = slmf.wcl(fname)
@@ -157,7 +153,7 @@ def load(args):
     # for s in notfnd.keys():
     #   print "    %s" % s
   if dba_err_ct > 0:
-    print "WARNING: %d DB errors occurred. See logfile %s for details.".format(dba_err_ct, logfile)
+    print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
 
 
 if __name__ == '__main__':

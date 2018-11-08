@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-05 16:35:36 smathias>
+# Time-stamp: <2018-05-23 11:34:20 smathias>
 """Load Drugable Epigenome TDL Infos into TCRD from CSV files.
 
 Usage:
-    load-DrugableEpigenomeTDLs.py [--debug=<int> | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
+    load-DrugableEpigenomeTDLs.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
     load-DrugableEpigenomeTDLs.py -? | --help
 
 Options:
@@ -18,15 +18,15 @@ Options:
                          10: DEBUG
                           0: NOTSET
   -q --quiet           : set output verbosity to minimal level
-  -d --debug DEBUGL    : set debugging output level (0-3) [default: 0]
+  -d --debug           : turn on debugging output
   -? --help            : print this message and exit 
 """
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2014-2016, Steve Mathias"
+__copyright__ = "Copyright 2014-2018, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.0.0"
+__version__   = "2.1.0"
 
 import os,sys,time
 from docopt import docopt
@@ -34,8 +34,11 @@ from TCRD import DBAdaptor
 import csv
 import logging
 from progressbar import *
+import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
+LOGDIR = 'tcrd5logs/'
+LOGFILE = LOGDIR + '%s.log'%PROGRAM
 INPUT_DIR = '/home/smathias/TCRD/data/Epigenetic-RWE/'
 FILE_LIST = { 'Writer': {'Histone acetyltransferase': 'nrd3674-s3.csv',
                          'Protein methyltransferase': 'nrd3674-s8.csv'},
@@ -60,21 +63,16 @@ RESULTS = { 'Writers': {'Histone acetyltransferases': {'Tdark': 0, 'Tgray': 0, '
                         'Tudor domains': {'Tdark': 0, 'Tgray': 0, 'Tmacro': 0, 'Tchem': 0, 'Tclin': 0, 'Tclin+': 0}} }
 TDLS = {'Tdark': 0, 'Tgray': 0, 'Tmacro': 0, 'Tchem': 0, 'Tclin': 0, 'Tclin+': 0}
 
-def main():
-  args = docopt(__doc__, version=__version__)
-  debug = int(args['--debug'])
-  if debug:
-    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
-  
+def load(args):
   loglevel = int(args['--loglevel'])
   if args['--logfile']:
     logfile = args['--logfile']
   else:
-    logfile = "%s.log" % PROGRAM
+    logfile = LOGFILE
   logger = logging.getLogger(__name__)
   logger.setLevel(loglevel)
-  if not debug:
-    logger.propagate = False # turns off console logging when debug is 0
+  if not args['--debug']:
+    logger.propagate = False # turns off console logging
   fh = logging.FileHandler(logfile)
   fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
   fh.setFormatter(fmtr)
@@ -84,30 +82,27 @@ def main():
   dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
   dba = DBAdaptor(dba_params)
   dbi = dba.get_dbinfo()
-  logger.info("Connected to TCRD database %s (schema ver %s; data ver %s)", args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
   if not args['--quiet']:
-    print "\n%s (v%s) [%s]:" % (PROGRAM, __version__, time.strftime("%c"))
-    print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
-
+    print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+  
   # Dataset
   dataset_id = dba.ins_dataset( {'name': 'Drugable Epigenome Domains', 'source': 'Files from http://www.nature.com/nrd/journal/v11/n5/suppinfo/nrd3674.html', 'app': PROGRAM, 'app_version': __version__, 'url': 'http://www.nature.com/nrd/journal/v11/n5/suppinfo/nrd3674.html'} )
-  if not dataset_id:
-    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
+  assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
   # Provenance
   rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': "itype = 'Drugable Epigenome Class'"})
-  if not rv:
-    print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
-    sys.exit(1)
+  assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
 
   total_ti_ct = 0
+  notfnd = set()
   for k,d in FILE_LIST.items():
     if not args['--quiet']:
-      print "\nProcessing Epigenetic %ss" % k
+      print "\nProcessing Epigenetic {}s".format(k)
     for dom,f in d.items():
       f = INPUT_DIR + f
-      line_ct = wcl(f)
+      line_ct = slmf.wcl(f)
       if not args['--quiet']:
-        print 'Processing %d lines from %s input file %s' % (line_ct, dom, f)
+        print 'Processing {} lines from {} input file {}'.format(line_ct, dom, f)
       with open(f, 'rU') as csvfile:
         csvreader = csv.reader(csvfile)
         header = csvreader.next() # skip header lines
@@ -124,7 +119,9 @@ def main():
           if not targets:
             targets = dba.find_targets({'uniprot': row[2]})
           if not targets:
-            not_fnd_ct += 1
+            k = "%s|%s|%s"%(row[0],row[3],row[2])
+            notfnd.add(k)
+            logger.warn("No target found for: {}".format(k))
             continue
           tct += 1
           t = targets[0]
@@ -139,25 +136,26 @@ def main():
             continue
           ti_ct += 1
         if not args['--quiet']:
-          print "  %d lines processed. Found %d, skipped %d" % (ct, tct, not_fnd_ct)
-          print "  Inserted %d new tdl_info rows" % ti_ct
+          print "  {} lines processed. Found {}, skipped {}".format(ct, tct, not_fnd_ct)
+          print "  Inserted {} new tdl_info rows".format(ti_ct)
         if dba_err_ct > 0:
-          print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
+          print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
         total_ti_ct += ti_ct
-
   if not args['--quiet']:
-    print "\nInserted a total of %d new Drugable Epigenome Class tdl_infos" %  total_ti_ct
-  print "\n%s: Done.\n" % PROGRAM
+    print "\nInserted a total of {} new Drugable Epigenome Class tdl_infos".format(total_ti_ct)
+    if len(notfnd) > 0:
+      print "  No target found for {} sym/geneid/uniprots. See logfile {} for details.".format(len(notfnd), logfile)
 
-
-def wcl(fname):
-  with open(fname) as f:
-    for i, l in enumerate(f):
-      pass
-  return i + 1
 
 if __name__ == '__main__':
-  main()
+  print "\n{} (v{}) [{}]:".format(PROGRAM, __version__, time.strftime("%c"))
+  args = docopt(__doc__, version=__version__)
+  if args['--debug']:
+    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
+  start_time = time.time()
+  load(args)
+  elapsed = time.time() - start_time
+  print "\n{}: Done. Elapsed time: {}\n".format(PROGRAM, slmf.secs2str(elapsed))
 
 
 

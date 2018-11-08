@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-11-16 10:04:38 smathias>
+# Time-stamp: <2018-10-26 12:29:36 smathias>
 """Load PubChem CIDs into TCRD from TSV file.
 
 Usage:
-    load-PubChemCIDs.py [--debug=<int> | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
+    load-PubChemCIDs.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
     load-PubChemCIDs.py -? | --help
 
 Options:
@@ -18,15 +18,15 @@ Options:
                          10: DEBUG
                           0: NOTSET
   -q --quiet           : set output verbosity to minimal level
-  -d --debug DEBUGL    : set debugging output level (0-3) [default: 0]
+  -d --debug           : turn on debugging output
   -? --help            : print this message and exit 
 """
 __author__ = "Steve Mathias"
 __email__ = "smathias@salud.unm.edu"
 __org__ = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2017, Steve Mathias"
+__copyright__ = "Copyright 2017-2018, Steve Mathias"
 __license__ = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__ = "1.0.1"
+__version__ = "1.1.0"
 
 import os,sys,time
 from docopt import docopt
@@ -35,11 +35,14 @@ import gzip
 import urllib
 import logging
 from progressbar import *
+import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
+LOGDIR = "./tcrd5logs"
+LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 DOWNLOAD_DIR = '../data/ChEMBL/UniChem/'
 BASE_URL = 'ftp://ftp.ebi.ac.uk/pub/databases/chembl/UniChem/data/wholeSourceMapping/src_id1/'
-# For src onfo, see https://www.ebi.ac.uk/unichem/ucquery/listSources
+# For src info, see https://www.ebi.ac.uk/unichem/ucquery/listSources
 FILENAME = 'src1src22.txt.gz'
 
 def download(args):
@@ -63,34 +66,29 @@ def download(args):
   ofh.close()
   elapsed = time.time() - start_time
   if not args['--quiet']:
-    print "Done. Elapsed time: %s" % secs2str(elapsed)
+    print "Done. Elapsed time: %s" % slmf.secs2str(elapsed)
 
 def load(infile, args, logger):
-  # DBAdaptor uses same logger as main()
   dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
   dba = DBAdaptor(dba_params)
   dbi = dba.get_dbinfo()
-  logger.info("Connected to TCRD database %s (schema ver %s; data ver %s)", args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
   if not args['--quiet']:
-    print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+    print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
   # Dataset
   dataset_id = dba.ins_dataset( {'name': 'PubChem CIDs', 'source': 'File %s'%BASE_URL+FILENAME, 'app': PROGRAM, 'app_version': __version__} )
-  if not dataset_id:
-    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
-    sys.exit(1)
+  assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
   # Provenance
-  provs = [ {'dataset_id': dataset_id, 'table_name': 'chembl_activity', 'column_name': 'pubchem_cid', 'comment': "Loaded from UniChem file mapping ChEMBL IDs to PubChem CIDs."},
+  provs = [ {'dataset_id': dataset_id, 'table_name': 'cmpd_activity', 'column_name': 'pubchem_cid', 'comment': "Loaded from UniChem file mapping ChEMBL IDs to PubChem CIDs."},
             {'dataset_id': dataset_id, 'table_name': 'drug_activity', 'column_name': 'pubchem_cid', 'comment': "Loaded from UniChem file mapping ChEMBL IDs to PubChem CIDs."} ]
   for prov in provs:
     rv = dba.ins_provenance(prov)
-    if not rv:
-      print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
-      sys.exit(1)
+    assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
 
-  line_ct = wcl(infile)
+  line_ct = slmf.wcl(infile)
   if not args['--quiet']:
-    print "\nProcessing %d lines in file %s" % (line_ct, infile)
+    print "\nProcessing {} lines in file {}".format(line_ct, infile)
   chembl2pc = {}
   with open(infile, 'rU') as tsv:
     ct = 0
@@ -99,15 +97,14 @@ def load(infile, args, logger):
       data = line.split('\t')
       chembl2pc[data[0]] = int(data[1])
   if not args['--quiet']:
-    print "Got %d ChEMBL to PubChem mappings" % len(chembl2pc)
+    print "Got {} ChEMBL to PubChem mappings".format(len(chembl2pc))
   
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
 
-  start_time = time.time()
-  chembl_activities = dba.get_chembl_activities()
+  chembl_activities = dba.get_cmpd_activities(catype = 'ChEMBL')
   if not args['--quiet']:
-    print "\nLoading PubChem CIDs for %d ChEMBL activities" % len(chembl_activities)
-  logger.info("Loading PubChem CIDs for %d ChEMBL activities" % len(chembl_activities))
+    print "\nLoading PubChem CIDs for {} ChEMBL activities".format(len(chembl_activities))
+  logger.info("Loading PubChem CIDs for {} ChEMBL activities".format(len(chembl_activities)))
   pbar = ProgressBar(widgets=pbar_widgets, maxval=len(chembl_activities)).start()
   ct = 0
   pcid_ct = 0
@@ -115,11 +112,12 @@ def load(infile, args, logger):
   dba_err_ct = 0
   for ca in chembl_activities:
     ct += 1
-    if ca['cmpd_chemblid'] not in chembl2pc:
-      notfnd.add(ca['cmpd_chemblid'])
+    if ca['cmpd_id_in_src'] not in chembl2pc:
+      notfnd.add(ca['cmpd_id_in_src'])
+      logger.warn("{} not found".format(ca['cmpd_id_in_src']))
       continue
-    pccid = chembl2pc[ca['cmpd_chemblid']]
-    rv = dba.do_update({'table': 'chembl_activity', 'id': ca['id'],
+    pccid = chembl2pc[ca['cmpd_id_in_src']]
+    rv = dba.do_update({'table': 'cmpd_activity', 'id': ca['id'],
                         'col': 'cmpd_pubchem_cid', 'val': pccid})
     if rv:
       pcid_ct += 1
@@ -127,20 +125,17 @@ def load(infile, args, logger):
       dba_err_ct += 1
     pbar.update(ct)
   pbar.finish()
-  elapsed = time.time() - start_time
-  if not args['--quiet']:
-    print "%d ChEMBL activities processed. Elapsed time: %s" % (ct, secs2str(elapsed))
-  print "  Inserted %d new PubChem CIDs" % pcid_ct
+  print "{} ChEMBL activities processed.".format(ct)
+  print "  Inserted {} new PubChem CIDs".format(pcid_ct)
   if len(notfnd) > 0:
-    print "  [WARNING] %d ChEMBL IDs not found" % len(notfnd)
+    print "  {} ChEMBL IDs not found. See logfile {} for details.".format(len(notfnd), logfile)
   if dba_err_ct > 0:
     print "WARNNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
     
-  start_time = time.time()
   drug_activities = dba.get_drug_activities()
   if not args['--quiet']:
-    print "\nLoading PubChem CIDs for %d drug activities" % len(drug_activities)
-  logger.info("Loading PubChem CIDs for %d drug activities" % len(drug_activities))
+    print "\nLoading PubChem CIDs for {} drug activities".format(len(drug_activities))
+  logger.info("Loading PubChem CIDs for {} drug activities".format(len(drug_activities)))
   pbar = ProgressBar(widgets=pbar_widgets, maxval=len(drug_activities)).start()
   ct = 0
   pcid_ct = 0
@@ -154,6 +149,7 @@ def load(infile, args, logger):
       continue
     if da['cmpd_chemblid'] not in chembl2pc:
       notfnd.add(da['cmpd_chemblid'])
+      logger.warn("{} not found".format(da['cmpd_chemblid']))
       continue
     pccid = chembl2pc[da['cmpd_chemblid']]
     rv = dba.do_update({'table': 'drug_activity', 'id': da['id'],
@@ -164,24 +160,14 @@ def load(infile, args, logger):
       dba_err_ct += 1
     pbar.update(ct)
   pbar.finish()
-  elapsed = time.time() - start_time
-  if not args['--quiet']:
-    print "%d drug activities processed. Elapsed time: %s" % (ct, secs2str(elapsed))
-  print "  Inserted %d new PubChem CIDs" % pcid_ct
-  print "  Skipped %d drug activities with no ChEMBL ID" % skip_ct
+  print "{} drug activities processed.".format(ct)
+  print "  Inserted {} new PubChem CIDs".format(pcid_ct)
+  print "  Skipped {} drug activities with no ChEMBL ID".format(skip_ct)
   if len(notfnd) > 0:
-    print "  [WARNING] %d ChEMBL IDs not found" % len(notfnd)
+    print "  {} ChEMBL IDs not found. See logfile {} for details.".format(len(notfnd), logfile)
   if dba_err_ct > 0:
-    print "WARNNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
+    print "WARNNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
 
-def wcl(fname):
-  with open(fname) as f:
-    for i, l in enumerate(f):
-      pass
-  return i + 1
-
-def secs2str(t):
-  return "%d:%02d:%02d.%03d" % reduce(lambda ll,b : divmod(ll[0],b) + ll[1:], [(t*1000,),1000,60,60])
 
 if __name__ == '__main__':
   args = docopt(__doc__, version=__version__)
@@ -195,7 +181,7 @@ if __name__ == '__main__':
   if args['--logfile']:
     logfile = args['--logfile']
   else:
-    logfile = "%s.log" % PROGRAM
+    logfile = LOGFILE
   logger = logging.getLogger(__name__)
   logger.setLevel(loglevel)
   if not debug:
@@ -205,9 +191,12 @@ if __name__ == '__main__':
   fh.setFormatter(fmtr)
   logger.addHandler(fh)
   
-  #download(args)
+  download(args)
+  
   infile = DOWNLOAD_DIR + FILENAME
   infile = infile.replace('.gz', '')
+  start_time = time.time()
   load(infile, args, logger)
-  
-  print "\n%s: Done.\n" % PROGRAM
+  elapsed = time.time() - start_time
+  print "\n{}: Done. Elapsed time: {}\n".format(PROGRAM, slmf.secs2str(elapsed))
+

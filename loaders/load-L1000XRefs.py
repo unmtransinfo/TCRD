@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-01-25 17:10:55 smathias>
+# Time-stamp: <2018-05-24 10:45:53 smathias>
 """Load CMap Landmark Gene ID xrefs into TCRD from CSV file.
 
 Usage:
-    load-L1000XRefs.py [--debug=<int> | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
+    load-L1000XRefs.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
     load-L1000XRefs.py -? | --help
 
 Options:
@@ -18,18 +18,15 @@ Options:
                          10: DEBUG
                           0: NOTSET
   -q --quiet           : set output verbosity to minimal level
-  -d --debug DEBUGL    : set debugging output level (0-3) [default: 0]
+  -d --debug           : turn on debugging output
   -? --help            : print this message and exit 
 """
-'''
-load-L1000XRefs.py - 
-'''
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2015-2016, Steve Mathias"
+__copyright__ = "Copyright 2015-2018, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.0.0"
+__version__   = "2.1.0"
 
 import os,sys,time
 from docopt import docopt
@@ -37,56 +34,47 @@ from TCRD import DBAdaptor
 import logging
 import csv
 from progressbar import *
+import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGFILE = './%s.log'%PROGRAM
+LOGDIR = "./tcrd5logs"
+LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 L1000_FILE = '../data/CMap_LandmarkGenes_n978.csv'
 
-def main():
-  args = docopt(__doc__, version=__version__)
-  debug = int(args['--debug'])
-  if debug:
-    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
-  
+def load(args):
   loglevel = int(args['--loglevel'])
   if args['--logfile']:
     logfile = args['--logfile']
   else:
-    logfile = "%s.log" % PROGRAM
+    logfile = LOGFILE
   logger = logging.getLogger(__name__)
   logger.setLevel(loglevel)
-  if not debug:
-    logger.propagate = False # turns off console logging when debug is 0
+  if not args['--debug']:
+    logger.propagate = False # turns off console logging
   fh = logging.FileHandler(logfile)
   fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
   fh.setFormatter(fmtr)
   logger.addHandler(fh)
 
-# DBAdaptor uses same logger as main()
   dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
   dba = DBAdaptor(dba_params)
   dbi = dba.get_dbinfo()
-  logger.info("Connected to TCRD database %s (schema ver %s; data ver %s)", args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
   if not args['--quiet']:
-    print "\n%s (v%s) [%s]:" % (PROGRAM, __version__, time.strftime("%c"))
-    print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+    print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
   # Dataset
   dataset_id = dba.ins_dataset( {'name': 'LINCS L1000 XRefs', 'source': 'File %s'%os.path.basename(L1000_FILE), 'app': PROGRAM, 'app_version': __version__, 'url': 'http://support.lincscloud.org/hc/en-us/articles/202092616-The-Landmark-Genes'} )
-  if not dataset_id:
-    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
-    sys.exit(1)
+  assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
   # Provenance
   rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'xref', 'where_clause': "dataset_id = %d"%dataset_id})
-  if not rv:
-    print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
-    sys.exit(1)
+  assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
   
-  start_time = time.time()
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
-  line_ct = wcl(L1000_FILE)
+
+  line_ct = slmf.wcl(L1000_FILE)
   if not args['--quiet']:
-    print "\nProcessing %d rows in file %s" % (line_ct, L1000_FILE)
+    print "\nProcessing {} rows in file {}".format(line_ct, L1000_FILE)
   with open(L1000_FILE, 'rU') as csvfile:
     csvreader = csv.reader(csvfile)
     ct = 0
@@ -94,7 +82,7 @@ def main():
     ct = 0
     tmark = {}
     xref_ct = 0
-    notfnd = []
+    notfnd = set()
     dba_err_ct = 0
     for row in csvreader:
       ct += 1
@@ -106,40 +94,33 @@ def main():
       if not targets:
         targets = dba.find_targets({'geneid': geneid})
         if not targets:
-          notfnd.append("%s|%s"%(sym,geneid))
+          notfnd.add("%s|%s"%(sym,geneid))
           continue
       target = targets[0]
       tmark[target['id']] = True
       pid = target['components']['protein'][0]['id']
-      rv = dba.ins_xref({'protein_id': pid, 'xtype': 'L1000 ID', 'dataset_id': dataset_id, 'value': l1000})
+      rv = dba.ins_xref({'protein_id': pid, 'xtype': 'L1000 ID',
+                         'dataset_id': dataset_id, 'value': l1000})
       if rv:
         xref_ct += 1
       else:
         dba_err_ct += 1
   pbar.finish()
-
-  elapsed = time.time() - start_time
   if not args['--quiet']:
-    print "\n%d rows processed. Elapsed time: %s" % (ct, secs2str(elapsed))
-  print "%d targets annotated with L1000 xref(s)" % len(tmark.keys())
-  print "  Inserted %d new L1000 ID xref rows" % xref_ct
+    print "\n{} rows processed.".format(ct)
+  print "  Inserted {} new L1000 ID xref rows for {} targets".format(xref_ct, len(tmark))
   if len(notfnd) > 0:
-    print "WARNNING: %d symbols NOT FOUND in TCRD:" % len(notfnd)
-    for sg in notfnd:
-      print sg
+    print "No target found for {} symbols/geneids. See logfile {} for details.".format(len(notfnd), logfile)
   if dba_err_ct > 0:
-    print "WARNNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
-  if not args['--quiet']:
-    print "\n%s: Done.\n" % PROGRAM
+    print "WARNNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
 
-def wcl(fname):
-  with open(fname) as f:
-    for i, l in enumerate(f):
-      pass
-  return i + 1
-
-def secs2str(t):
-  return "%d:%02d:%02d.%03d" % reduce(lambda ll,b : divmod(ll[0],b) + ll[1:], [(t*1000,),1000,60,60])
 
 if __name__ == '__main__':
-    main()
+  print "\n{} (v{}) [{}]:".format(PROGRAM, __version__, time.strftime("%c"))
+  args = docopt(__doc__, version=__version__)
+  if args['--debug']:
+    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
+  start_time = time.time()
+  load(args)
+  elapsed = time.time() - start_time
+  print "\n{}: Done. Elapsed time: {}\n".format(PROGRAM, slmf.secs2str(elapsed))

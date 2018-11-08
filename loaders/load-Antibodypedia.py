@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-02-05 10:53:18 smathias>
+# Time-stamp: <2018-05-31 10:45:44 smathias>
 """Load antibody count and URL tdl_infos into TCRD via Antibodtpedia.com API.
 
 Usage:
@@ -104,7 +104,7 @@ def load(args):
     attempts = 1
     while attempts <= 5:
       try:
-        logger.info("Getting %s [Target %d, attempt %d]".format(url, tid, attempts))
+        logger.info("Getting {} [Target {}, attempt {}]".format(url, tid, attempts))
         r = requests.get(url)
         break
       except:

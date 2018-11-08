@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# Time-stamp: <2017-01-12 11:19:10 smathias>
+# Time-stamp: <2018-05-18 11:12:15 smathias>
 """Load Is Transcription Factor tdl_infos into TCRD from AnimalTFDB TSV file.
 
 Usage:
-    load-AnimalTFDB.py [--debug=<int> | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>] [--pastid=<int>]
+    load-AnimalTFDB.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>] [--pastid=<int>]
     load-AnimalTFDB.py -h | --help
 
 Options:
@@ -19,15 +19,15 @@ Options:
                           0: NOTSET
   -p --pastid PASTID   : TCRD target id to start at (for restarting frozen run)
   -q --quiet           : set output verbosity to minimal level
-  -d --debug DEBUGL    : set debugging output level (0-3) [default: 0]
+  -d --debug           : turn on debugging output
   -? --help            : print this message and exit 
 """
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2014-2017, Steve Mathias"
+__copyright__ = "Copyright 2014-2018, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.0.0"
+__version__   = "2.1.0"
 
 import os,sys,time
 from docopt import docopt
@@ -35,26 +35,25 @@ from TCRD import DBAdaptor
 import csv
 import logging
 from progressbar import *
+import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
+LOGDIR = 'tcrd5logs/'
+LOGFILE = LOGDIR + '%s.log'%PROGRAM
 # http://www.bioguo.org/AnimalTFDB/BrowseAllTF.php?spe=Homo_sapiens
+# No longer available...?
 INFILE = '../data/AnimalTFDB/HsTFList.txt'
 
-def load():
-  args = docopt(__doc__, version=__version__)
-  debug = int(args['--debug'])
-  if debug:
-    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
-  
+def load(args):
   loglevel = int(args['--loglevel'])
   if args['--logfile']:
     logfile = args['--logfile']
   else:
-    logfile = "%s.log" % PROGRAM
+    logfile = LOGFILE
   logger = logging.getLogger(__name__)
   logger.setLevel(loglevel)
   if not debug:
-    logger.propagate = False # turns off console logging when debug is 0
+    logger.propagate = False # turns off console logging
   fh = logging.FileHandler(logfile)
   fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
   fh.setFormatter(fmtr)
@@ -63,28 +62,23 @@ def load():
   dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
   dba = DBAdaptor(dba_params)
   dbi = dba.get_dbinfo()
-  logger.info("Connected to TCRD database %s (schema ver %s; data ver %s)", args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
   if not args['--quiet']:
-    print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+    print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
   
   # Dataset
   dataset_id = dba.ins_dataset( {'name': 'AnimalTFDB', 'source': 'http://www.bioguo.org/AnimalTFDB/BrowseAllTF.php?spe=Homo_sapiens', 'app': PROGRAM, 'app_version': __version__, 'url': 'http://www.bioguo.org/AnimalTFDB/'} )
-  if not dataset_id:
-    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
-    sys.exit(1)
+  assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
   # Provenance
-  rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'tdl_infp', 'where_clause': "itype = 'Is Transcription Factor'"})
-  if not rv:
-    print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
-    sys.exit(1)
+  rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': "itype = 'Is Transcription Factor'"})
+  assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
 
-  start_time = time.time()
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   TDLs = {'Tdark': 0, 'Tbio': 0, 'Tchem': 0, 'Tclin': 0}
   
-  line_ct = wcl(INFILE)
+  line_ct = slmf.wcl(INFILE)
   if not args['--quiet']:
-    print "\nProcessing %d lines in input file %s\n" % (line_ct, INFILE)
+    print "\nProcessing {} lines in input file {}\n".format(line_ct, INFILE)
   with open(INFILE, 'rU') as tsv:
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
     tsvreader = csv.reader(tsv, delimiter='\t')
@@ -116,30 +110,22 @@ def load():
         dba_err_ct += 1
       pbar.update(ct)
   pbar.finish()
-
-  elapsed = time.time() - start_time
-  print "\n%d input lines processed. Elapsed time: %s" % (ct, secs2str(elapsed))
-  print "  Inserted %d new Is Transcription Factor tdl_infos" % ti_ct
+  print "\n{} lines processed.".format(ct)
+  print "  Inserted {} new Is Transcription Factor tdl_infos".format(ti_ct)
   if notfnd:
-    print "No target found for %d rows:" % len(notfnd)
-    #for row in notfnd:
-    #  print row
+    print "No target found for {} rows:".format(len(notfnd))
   if dba_err_ct > 0:
     print "WARNING: %d DB errors occurred. See logfile %s for details." % (dba_err_ct, logfile)
   for tdl in ['Tclin', 'Tchem', 'Tbio', 'Tdark']:
-    print "%s: %d" % (tdl, TDLs[tdl])
+    print "{}: {}".format(tdl, TDLs[tdl])
 
-
-def wcl(fname):
-  with open(fname) as f:
-    for i, l in enumerate(f):
-      pass
-  return i + 1
-
-def secs2str(t):
-  return "%d:%02d:%02d.%03d" % reduce(lambda ll,b : divmod(ll[0],b) + ll[1:], [(t*1000,),1000,60,60])
 
 if __name__ == '__main__':
-  print "\n%s (v%s) [%s]:\n" % (PROGRAM, __version__, time.strftime("%c"))
-  load()
-  print "\n%s: Done.\n" % PROGRAM
+  print "\n{} (v{}) [{}]:".format(PROGRAM, __version__, time.strftime("%c"))
+  args = docopt(__doc__, version=__version__)
+  if args['--debug']:
+    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
+  start_time = time.time()
+  load(args)
+  elapsed = time.time() - start_time
+  print "\n{}: Done. Elapsed time: {}\n".format(PROGRAM, slmf.secs2str(elapsed))
