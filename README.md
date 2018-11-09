@@ -34,15 +34,16 @@ This file has information for each dataset on the steps required and
 also an estimate of the time required. Some loaders run in a few
 minutes, others require days.
 
-### doc/README_v4.txt
-This file contains all command lines, and most of their output, run to
-build TCRD v4. There are notes in this file that should help with the
-pre- and post- processing required for some of the datasets.
+### doc/README_v*.txt
+These files contains all command lines, and most of their output, run to
+build the corresponding version TCRD. There are notes in this file that
+should help with the pre- and post- processing required for some of the
+datasets.
 
 ### Loading Order
 Some of the loaders need to be run before others. Generally, the steps
 1-13 (UniProt through TDLs) should be run in the order they are listed
-in doc/TCRD_Build_Notes.html. After that, loaders can be run in whatever
+in doc/TCRD_Build_Notes.txt. After that, loaders can be run in whatever
 order you like.
 
 ## System Requirements
