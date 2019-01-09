@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2019-01-04 10:11:05 smathias>
+# Time-stamp: <2019-01-09 11:27:01 smathias>
 """Load protein data from UniProt.org into TCRD via the web.
 
 Usage:
@@ -26,7 +26,7 @@ __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
 __copyright__ = "Copyright 2014-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "3.0.0"
+__version__   = "3.1.0"
 
 import os,sys,time,re
 from docopt import docopt
@@ -43,7 +43,7 @@ PROGRAM = os.path.basename(sys.argv[0])
 LOGDIR = "./tcrd6logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 
-# Download XML files for:
+# Download and uncompress XML files for:
 # https://www.uniprot.org/uniprot/?query=reviewed:yes AND organism:"Homo sapiens (Human) [9606]"
 # https://www.uniprot.org/uniprot/?query=organism:"Mus musculus (Mouse) [10090]"
 # https://www.uniprot.org/uniprot/?query=organism:"Rattus norvegicus (Rat) [10116]"
@@ -72,9 +72,9 @@ def load(args):
   dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
   dba = DBAdaptor(dba_params)
   dbi = dba.get_dbinfo()
-  logger.info("Connected to TCRD database %s (schema ver %s; data ver %s)", args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
   if not args['--quiet']:
-    print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+    print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
   # Human loaded into target, protein, etc.
   # Datasets and Provenances
@@ -104,8 +104,6 @@ def load(args):
   # ECO IDs to GO evidence codes
   eco_map = mk_eco_map()
     
-  xtypes = dba.get_xref_types()
-  
   print "\nParsing file {}".format(UP_HUMAN_FILE)
   root = objectify.parse(UP_HUMAN_FILE).getroot()
   up_ct = len(root.entry)
@@ -121,7 +119,7 @@ def load(args):
     ct += 1
     entry = root.entry[i]
     logger.info("Processing entry {}".format(entry.accession))
-    target = entry2target(entry, dataset_id, xtypes, eco_map)
+    target = entry2target(entry, dataset_id, eco_map)
     if not target:
       xml_err_ct += 1
       logger.error("XML Error for %s" % entry.accession)
@@ -223,7 +221,7 @@ def mk_eco_map():
           eco_map[e] = m.group(1)
   return eco_map
 
-def entry2target(entry, dataset_id, xtypes, e2e):
+def entry2target(entry, dataset_id, e2e):
   """
   Convert an entry element of type lxml.objectify.ObjectifiedElement parsed from a UniProt XML entry and return a target dictionary suitable for passing to TCRD.DBAdaptor.ins_target().
   """
@@ -290,16 +288,14 @@ def entry2target(entry, dataset_id, xtypes, e2e):
   for dbr in entry.dbReference:
     if dbr.attrib['type'] == 'GeneID':
       # Some UniProt records have multiple Gene IDs
-      # In most(?) cases, the first one is the right one
-      # So, only take the first one
+      # So, only take the first one and fix manually after loading
       if 'geneid' not in protein:
         protein['geneid'] = dbr.attrib['id']
     elif dbr.attrib['type'] in ['InterPro', 'Pfam', 'PROSITE', 'SMART']:
       xtra = None
-      if dbr.attrib['type'] in ['InterPro', 'Pfam', 'PROSITE', 'SMART']:
-        for el in dbr.findall(NS+'property'):
-          if el.attrib['type'] == 'entry name':
-            xtra = el.attrib['value']
+      for el in dbr.findall(NS+'property'):
+        if el.attrib['type'] == 'entry name':
+          xtra = el.attrib['value']
         xrefs.append( {'xtype': dbr.attrib['type'], 'dataset_id': dataset_id,
                        'value': dbr.attrib['id'], 'xtra': xtra} )
     elif dbr.attrib['type'] == 'GO':
@@ -331,8 +327,7 @@ def entry2target(entry, dataset_id, xtypes, e2e):
           xtra = el.attrib['value']
       xrefs.append( {'xtype': 'DrugBank', 'dataset_id': dataset_id, 'value': dbr.attrib['id'],
                      'xtra': xtra} )
-    else:
-      if dbr.attrib['type'] in xtypes:
+    elif dbr.attrib['type'] in ['BRENDA', 'ChEMBL', 'MIM', 'PANTHER', 'PDB', 'UniGene']:
         xrefs.append( {'xtype': dbr.attrib['type'], 'dataset_id': dataset_id,
                        'value': dbr.attrib['id']} )
   protein['goas'] = goas
