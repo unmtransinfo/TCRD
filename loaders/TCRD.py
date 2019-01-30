@@ -4,7 +4,7 @@
 
   Steve Mathias
   smathias@salud.unm.edu
-  Time-stamp: <2018-10-25 11:08:06 smathias>
+  Time-stamp: <2018-11-30 09:56:32 smathias>
 '''
 from __future__ import print_function
 import sys
@@ -302,7 +302,7 @@ class DBAdaptor:
       return False
     cols = ['name', 'description', 'uniprot']
     vals = ['%s','%s', '%s']
-    for optcol in ['up_version', 'geneid', 'sym', 'family', 'chr', 'seq', 'dtoid']:
+    for optcol in ['up_version', 'geneid', 'sym', 'family', 'chr', 'seq', 'dtoid', 'stringid']:
       if optcol in init:
         cols.append(optcol)
         vals.append('%s')
@@ -2052,6 +2052,12 @@ class DBAdaptor:
         ## DTO classification
         #if p['dtoid']:
         #  p['dto_classification'] = "::".join(self.get_protein_dto(p['dtoid']))
+        # patent_counts
+        p['patent_counts'] = []
+        curs.execute("SELECT * FROM patent_count WHERE protein_id = %s", (id,))
+        for pc in curs:
+          p['patent_counts'].append(pc)
+        if not p['patent_counts']: del(p['patent_counts'])
         # TIN-X Novelty and Importance
         curs.execute("SELECT * FROM tinx_novelty WHERE protein_id = %s", (id,))
         row = curs.fetchone()

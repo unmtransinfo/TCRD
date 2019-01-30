@@ -4,7 +4,7 @@
 
   Steve Mathias
   smathias@salud.unm.edu
-  Time-stamp: <2018-12-13 16:04:19 smathias>
+  Time-stamp: <2019-01-28 11:54:07 smathias>
 '''
 from __future__ import print_function
 import sys
@@ -499,7 +499,7 @@ class DBAdaptor:
     elif 'nhprotein_id' in init:
       cols = ['nhprotein_id', 'xtype', 'dataset_id', 'value']
       vals = ['%s','%s','%s','%s']
-      params.insert(0, init['target_id'])
+      params.insert(0, init['nhprotein_id'])
     else:
       self.warning("Invalid parameters sent to ins_xref(): ", init)
       return False
@@ -1233,7 +1233,6 @@ class DBAdaptor:
         return False
     return True
 
-  # Dev
   def ins_ptscore(self, init, commit=True):
     if 'protein_id' in init and 'year' in init and 'score' in init:
       params = [init['protein_id'], init['year'], init['score']]
@@ -1661,6 +1660,68 @@ class DBAdaptor:
         self._logger.error("MySQL commit error in ins_ortholog(): %s"%str(e))
         return False
     
+    return True
+
+  def ins_omim(self, init, commit=True):
+    if 'mim' in init and 'title' in init:
+      cols = ['mim', 'title']
+      vals = ['%s','%s']
+      params = [init['mim'], init['title']]
+    else:
+      self.warning("Invalid parameters sent to ins_omim(): ", init)
+      return False
+    sql = "INSERT INTO omim (%s) VALUES (%s)" % (','.join(cols), ','.join(vals))
+    self._logger.debug("SQLpat: %s"%sql)
+    self._logger.debug("SQLparams: %s"%(", ".join([str(p) for p in params])))
+    with closing(self._conn.cursor()) as curs:
+      try:
+        curs.execute(sql, params)
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL Error in ins_omim(): %s"%str(e))
+        self._logger.error("SQLpat: %s"%sql)
+        self._logger.error("SQLparams: %s"%','.join([str(p) for p in params]))
+        return False
+    if commit:
+      try:
+        self._conn.commit()
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL commit error in ins_omim(): %s"%str(e))
+        return False
+    return True
+
+  def ins_omim_ps(self, init, commit=True):
+    if 'omim_ps_id' in init and 'title' in init:
+      cols = ['omim_ps_id', 'title']
+      vals = ['%s','%s']
+      params = [init['omim_ps_id'], init['title']]
+    else:
+      self.warning("Invalid parameters sent to ins_omim_ps(): ", init)
+      return False
+    if 'mim' in init:
+        cols.append('mim')
+        vals.append('%s')
+        params.append(init['mim'])
+    sql = "INSERT INTO omim_ps (%s) VALUES (%s)" % (','.join(cols), ','.join(vals))
+    self._logger.debug("SQLpat: %s"%sql)
+    self._logger.debug("SQLparams: %s"%(", ".join([str(p) for p in params])))
+    with closing(self._conn.cursor()) as curs:
+      try:
+        curs.execute(sql, params)
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL Error in ins_omim_ps(): %s"%str(e))
+        self._logger.error("SQLpat: %s"%sql)
+        self._logger.error("SQLparams: %s"%','.join([str(p) for p in params]))
+        return False
+    if commit:
+      try:
+        self._conn.commit()
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL commit error in ins_omim_ps(): %s"%str(e))
+        return False
     return True
 
   #
@@ -2410,7 +2471,7 @@ class DBAdaptor:
                 do something with nhp
     Scope     : Public
     '''
-    with closing(self._conn.cursor()) as curs:
+    with closing(self._conn.cursor(mysql.cursors.DictCursor)) as curs:
       if species:
         sql = "SELECT * FROM nhprotein WHERE species = %s"
         curs.execute(sql, (species,))

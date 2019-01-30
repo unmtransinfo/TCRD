@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2019-01-18 11:30:04 smathias>
+# Time-stamp: <2019-01-18 11:43:18 smathias>
 """Load antibody count and URL tdl_infos into TCRD via Antibodtpedia.com API.
 
 Usage:
@@ -24,9 +24,9 @@ Options:
 __author__ = "Steve Mathias"
 __email__ = "smathias@salud.unm.edu"
 __org__ = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2016-2019, Steve Mathias"
+__copyright__ = "Copyright 2019, Steve Mathias"
 __license__ = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__ = "2.2.0"
+__version__ = "1.0.0"
 
 import os,sys,time
 from docopt import docopt
@@ -41,6 +41,7 @@ PROGRAM = os.path.basename(sys.argv[0])
 LOGDIR = "./tcrd6logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 ABPC_API_URL = 'http://www.antibodypedia.com/tools/antibodies.php?uniprot='
+INFILE = 'tcrd6logs/Abp-Missing.txt'
 
 def load(args):
   loglevel = int(args['--loglevel'])
@@ -65,26 +66,20 @@ def load(args):
   if not args['--quiet']:
     print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
-  # Dataset
-  dataset_id = dba.ins_dataset( {'name': 'Aintibodypedia.com', 'source': 'Web API at %s'%ABPC_API_URL, 'app': PROGRAM, 'app_version': __version__, 'url': 'http://www.antibodypedia.com'} )
-  if not dataset_id:
-    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
-    sys.exit(1)
-  # Provenance
-  provs = [ {'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': 'itype == "Ab Count"'},
-            {'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': 'itype == "MAb Count"'},
-            {'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': 'itype == "Antibodypedia.com URL"'} ]
-  for prov in provs:
-    rv = dba.ins_provenance(prov)
-    if not rv:
-      print "WARNING: Error inserting provenance. See logfile {} for details.".format(logfile)
-      sys.exit(1)
+  t2up = {}
+  with open(INFILE) as ifh:
+    for line in ifh:
+      line = line.rstrip()
+      [up, tid] = line.split(" ")
+      t2up[tid] = up
+  tct = len(t2up)
+  if not args['--quiet']:
+    print "\nGot {} UniProt accessions from file {}".format(tct, INFILE)
 
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
-  tct = dba.get_target_count()
   if not args['--quiet']:
-    print "\nLoading Antibodypedia annotations for {} TCRD targets".format(tct)
-  logger.info("Loading Antibodypedia annotations for {} TCRD targets".format(tct))
+    print "\nLoading Antibodypedia annotations for {} targets".format(tct)
+  logger.info("Loading Antibodypedia annotations for {} targets".format(tct))
   pbar = ProgressBar(widgets=pbar_widgets, maxval=tct).start()
   ct = 0
   tiab_ct = 0
@@ -92,13 +87,11 @@ def load(args):
   tiurl_ct = 0
   dba_err_ct = 0
   net_err_ct = 0
-  for target in dba.get_targets():
+  for tid,up in t2up.items():
     ct += 1
+    pid = int(tid)
     pbar.update(ct)
-    tid = target['id']
-    p = target['components']['protein'][0]
-    pid = p['id']
-    url = ABPC_API_URL + p['uniprot']
+    url = ABPC_API_URL + up
     r = None
     attempts = 1
     while attempts <= 5:

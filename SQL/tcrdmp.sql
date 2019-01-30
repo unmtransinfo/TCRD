@@ -28,3 +28,18 @@ ALTER TABLE xref ADD CONSTRAINT `fk_xref_nhprotein` FOREIGN KEY (`nhprotein_id`)
 
 INSERT INTO xref_type (name, description) VALUES ('ENSG', 'Ensembl Gene ID');
 
+CREATE TABLE `omim` (
+  `mim` int(11) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  PRIMARY KEY (`mim`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+CREATE TABLE `omim_ps` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `omim_ps_id` char(8) NOT NULL,
+  `mim` int(11) NULL,
+  `title` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_omim_ps__omim` FOREIGN KEY (`mim`) REFERENCES `omim` (`mim`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+

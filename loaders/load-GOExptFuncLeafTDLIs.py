@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-02-05 12:17:20 smathias>
+# Time-stamp: <2019-01-18 14:25:42 smathias>
 """Load Experimental MF/BP Leaf Term GOA tdl_infos into TCRD.
 
 Usage:
@@ -24,13 +24,13 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2015-2018, Steve Mathias"
+__copyright__ = "Copyright 2015-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.1.0"
+__version__   = "2.2.0"
 
 import os,sys,time,re
 from docopt import docopt
-from TCRD import DBAdaptor
+from TCRDMP import DBAdaptor
 from goatools.obo_parser import GODag
 import logging
 import urllib
@@ -38,7 +38,7 @@ from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd5logs"
+LOGDIR = "./tcrd6logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 # GO OBO file: http://www.geneontology.org/ontology/go.obo
 DOWNLOAD_DIR = '../data/GO/'

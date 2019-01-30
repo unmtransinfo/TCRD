@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-10-25 12:00:31 smathias>
+# Time-stamp: <2019-01-18 11:56:20 smathias>
 """Load cmpd_activity data in TCRD via ChEMBL MySQL database.
 
 Usage:
@@ -24,13 +24,13 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2015-2018, Steve Mathias"
+__copyright__ = "Copyright 2015-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "3.0.0"
+__version__   = "3.1.0"
 
 import os,sys,time,re
 from docopt import docopt
-from TCRD import DBAdaptor
+from TCRDMP import DBAdaptor
 import MySQLdb as mysql
 from contextlib import closing
 import csv
@@ -43,9 +43,9 @@ from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd5logs"
+LOGDIR = "./tcrd6logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
-CHEMBL_DB = 'chembl_23'
+CHEMBL_DB = 'chembl_24'
 DOWNLOAD_DIR = '../data/ChEMBL/'
 BASE_URL = 'ftp://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/'
 UNIPROT2CHEMBL_FILE = 'chembl_uniprot_mapping.txt'
@@ -250,8 +250,9 @@ def load(args):
         c2acts[smi] = [ac]
   pbar.finish()
   print "%d UniProt accessions processed." % ct
-  print "  %d targets not found in ChEMBL" % nic_ct
-  print "  %d targets have no good activities in ChEMBL" % nga_ct
+  if nic_ct > 0:
+    print "  %d targets not found in ChEMBL" % nic_ct
+  print "  %d targets have no qualifying TCRD activities in ChEMBL" % nga_ct
   print "Inserted %d new cmpd_activity rows" % ca_ct
   print "Inserted %d new ChEMBL First Reference Year tdl_infos" % cyti_ct
   if err_ct > 0:

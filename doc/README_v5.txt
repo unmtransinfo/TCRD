@@ -104,7 +104,7 @@ Downloading  ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowled
          to  ../data/UniProt/HUMAN_9606_idmapping_selected.tab.gz
 Uncompressing ../data/UniProt/HUMAN_9606_idmapping_selected.tab.gz
 Done. Elapsed time: 0:02:40.960
-
+      
 Connected to TCRD database tcrd5 (schema ver 5.0.0; data ver 5.0.0)
 
 Processing 161521 rows in file ../data/UniProt/HUMAN_9606_idmapping_selected.tab
@@ -260,7 +260,7 @@ load-JensenLabPubMedScores.py: Done. Elapsed time: 0:05:00.345
 
 [smathias@juniper SQL]$ mysql tcrd5
 mysql> select id from protein where id not in (select distinct protein_id from tdl_info where itype = 'JensenLab PubMed Score') INTO OUTFILE '/tmp/nojlpms.csv' FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n';
-Edit that to create InsMissingJLPMSs_TCRDv4.sql:
+Edit that to create InsMissingJLPMSs_TCRDv5.sql:
 [smathias@juniper SQL]$ perl -ne '/^(\d+)/ && print "INSERT INTO tdl_info (protein_id, itype, number_value) VALUES ($1, 'JLPMS', 0);\n"' /tmp/nojlpms.csv > InsZeroJLPMSs_TCRDv5.sql
 Edit InsZeroJLPMSs_TCRDv5.sql: s/JLPMS/'JensenLab PubMed Score'/
 mysql> \. InsZeroJLPMSs_TCRDv5.sql
@@ -2549,52 +2549,61 @@ mysql> UPDATE dbinfo SET data_ver = '5.4.0';
 [smathias@juniper SQL]$ mysqldump tcrd5 > dumps5/tcrd_v5.4.0.sql
 
 
+# Fix issues with PathwayCommons
+# urls were in name column
+# urls are not valid
+# E.g
+URL from this line:
+http://pathwaycommons.org/pc2/Pathway_0136871cbdf9a3ecc09529f1878171df  name: VEGFR1 specific signals; datasource: pid; organism: 9606; idtype: uniprot    O14786  O15530  O60462  P05771  P07900  P15692  P16333  P17252  P17612  P17948  P19174  P20936     P22681  P27361  P27986  P28482  P29474  P31749  P42336  P49763  P49765  P62158  P98077  Q03135  Q06124  Q16665  Q9Y5K6
+gives 404. Needs to be converted to:
+http://apps.pathwaycommons.org/pathways?uri=http%3A%2F%2Fpathwaycommons.org%2Fpc2%2FPathway_0136871cbdf9a3ecc09529f1878171df
 
+delete from pathway where pwtype like 'PathwayCommons:%';
+delete from provenance where dataset_id = 27;
+delete from dataset where id = 27;
 
-mysql> select tcrd5.dataset.name from tcrd5.dataset where tcrd5.dataset.name not in (select tcrd410.dataset.name from tcrd410.dataset);
-+---------------------------------------+
-| name                                  |
-+---------------------------------------+
-| Monarch Disease Associations          |
-| CTD Disease Associations              |
-| Cell Surface Protein Atlas            |
-| Human Cell Atlas Expression           |
-| Human Cell Atlas Compartments         |
-| NIH Grant Textmining Info             |
-| Orthologs                             |
-| Monarch Ortholog Disease Associations |
-| Transcription Factor Flags            |
-| IMPC Mouse Clones                     |
-| LocSigDB                              |
-| PANTHER protein classes               |
-| PubChem CIDs                          |
-| GeneRIF Years                         |
-+---------------------------------------+
+[smathias@juniper loaders]$ ./load-PathwayCommons.py --dbname tcrd5
 
+load-PathwayCommons.py (v2.1.1) [Thu Nov 15 10:46:34 2018]:
 
-mysql> select protein_id, name, count(*) from pathway where pwtype = 'Reactome' group by protein_id, name limit 10;
-+------------+-----------------------------------------------------+----------+
-| protein_id | name                                                | count(*) |
-+------------+-----------------------------------------------------+----------+
-|          1 | Activation of BAD and translocation to mitochondria |        1 |
-|          1 | Activation of BH3-only proteins                     |        1 |
-|          1 | Anchoring of the basal body to the plasma membrane  |        1 |
-|          1 | Apoptosis                                           |        1 |
-|          1 | AURKA Activation by TPX2                            |        1 |
-|          1 | Cell Cycle                                          |        1 |
-|          1 | Cell Cycle Checkpoints                              |        1 |
-|          1 | Cell Cycle, Mitotic                                 |        1 |
-|          1 | Cell death signalling via NRAGE, NRIF and NADE      |        1 |
-|          1 | Cellular response to heat stress                    |        1 |
-+------------+-----------------------------------------------------+----------+
-10 rows in set (0.94 sec)
+Downloading  http://www.pathwaycommons.org/archives/PC2/v10/PathwayCommons10.All.uniprot.gmt.gz
+         to  ../data/PathwayCommons/PathwayCommons10.All.uniprot.gmt.gz
+Uncompressing ../data/PathwayCommons/PathwayCommons10.All.uniprot.gmt.gz
 
-mysql> select protein_id, name, count(*) c from pathway where pwtype = 'Reactome' group by protein_id, name having c > 1;
-Empty set (0.74 sec)
+Connected to TCRD database tcrd5 (schema ver 5.1.0; data ver 5.4.0)
 
-mysql> select count(distinct protein_id, name) from pathway where pwtype = 'Reactome';
-+----------------------------------+
-| count(distinct protein_id, name) |
-+----------------------------------+
-|                           104072 |
-+----------------------------------+
+Processing 51530 records from PathwayCommons file ../data/PathwayCommons/PathwayCommons10.All.uniprot.gmt
+Progress: 100% [########################################################################] Time: 0:45:31
+Processed 51530 Pathway Commons records.
+  Inserted 324727 new pathway rows
+  Skipped 1772 records from 'kegg', 'wikipathways', 'reactome'
+WARNNING: 28 (of 5282) UniProt accession did not find a TCRD target. See logfile ./tcrd5logs/load-PathwayCommons.py.log for details.
+
+load-PathwayCommons.py: Done. Elapsed time: 0:45:32.813
+
+mysql> UPDATE dbinfo SET data_ver = '5.4.1';
+[smathias@juniper SQL]$ mysqldump tcrd5 > dumps5/tcrd_v5.4.1.sql
+
+#
+# eRAM disease associations
+#
+INSERT INTO disease_type (name, description) VALUES ('eRAM', '"Currated gene" disease associations from eRAM');
+
+[smathias@juniper loaders]$ ./load-eRAM.py --dbname tcrd5
+
+load-eRAM.py (v1.0.0) [Tue Dec  4 10:06:25 2018]:
+
+Connected to TCRD database tcrd5 (schema ver 5.1.0; data ver 5.4.1)
+
+Processing 15942 disease names in shelf file ../data/eRAM/eRAM.db
+Progress: 100% [########################################################################] Time: 1:02:34
+15942 lines processed.
+Inserted 14643 new disease rows for 5686 targets
+Skipped 332 diseases with no currated genes. See logfile ./tcrd5logs/load-eRAM.py.log for details.
+55 disease names cannot be decoded to strs. See logfile ./tcrd5logs/load-eRAM.py.log for details.
+No target found for 390 stringids/symbols. See logfile ./tcrd5logs/load-eRAM.py.log for details.
+
+load-eRAM.py: Done. Elapsed time: 1:02:34.764
+
+mysql> UPDATE dbinfo SET data_ver = '5.4.2';
+[smathias@juniper SQL]$ mysqldump tcrd5 > dumps5/tcrd_v5.4.2.sql

@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-05-18 12:03:58 smathias>
-"""Load IDG Phase 2 flags into TCRD.
+# Time-stamp: <2019-01-25 10:18:18 smathias>
+"""Load IDG Phase 2 flags and families into TCRD from CSV file.
 
 Usage:
-    load-IDG2.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
-    load-IDG2.py | --help
+    load-IDG2List.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
+    load-IDG2List.py | --help
 
 Options:
   -h --dbhost DBHOST   : MySQL database host name [default: localhost]
@@ -24,29 +24,29 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2018, Steve Mathias"
+__copyright__ = "Copyright 2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.1.0"
+__version__   = "1.0.0"
 
-import sys
+import os,sys,time
 from docopt import docopt
-from TCRD import DBAdaptor
-import csv
+from TCRDMP import DBAdaptor
 import logging
+import csv
 from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = 'tcrd5logs/'
-LOGFILE = LOGDIR + '%s.log'%PROGRAM
-INFILE = '../data/DRGC_RevisedTargetLists.csv'
+LOGDIR = "./tcrd6logs"
+LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
+IDG_LIST_FILE = '../data/IDG_TargetList_20190124.csv'
 
 def load(args):
   loglevel = int(args['--loglevel'])
   if args['--logfile']:
     logfile = args['--logfile']
   else:
-    logfile = LOGFILE
+    logfile = "%s.log" % PROGRAM
   logger = logging.getLogger(__name__)
   logger.setLevel(loglevel)
   if not args['--debug']:
@@ -64,71 +64,60 @@ def load(args):
     print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
   
   # Dataset
-  dataset_id = dba.ins_dataset( {'name': 'IDG Phase 2 Flags', 'source': 'IDG generated data.', 'app': PROGRAM, 'app_version': __version__, 'comments': 'Flags set from lists of targets from the DRGCs.'} )
-  if not dataset_id:
-    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
-    sys.exit(1)
+  dataset_id = dba.ins_dataset( {'name': 'IDG Phase 2 List', 'source': 'IDG generated data in file %s.'%IDG_LIST_FILE, 'app': PROGRAM, 'app_version': __version__, 'comments': 'IDG2 Flags and Families set from list of targets on GitHub.', 'url': 'https://github.com/druggablegenome/IDGTargets'} )
+  assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
   # Provenance
-  rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'target', 'column_name': 'idg2'})
-  if not rv:
-    print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
-    sys.exit(1)
+  provs = [ {'dataset_id': dataset_id, 'table_name': 'target', 'where_clause': 'column_name == "idg2"'},
+            {'dataset_id': dataset_id, 'table_name': 'target', 'where_clause': 'column_name == "fam"', 'where_clause': 'idg2 == 1'} ]
+  for prov in provs:
+    rv = dba.ins_provenance(prov)
+    assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
 
-  line_ct = slmf.wcl(INFILE)
-  if not args['--quiet']:
-    print "\nProcessing {} lines in input file {}".format(line_ct, INFILE)
   pbar_widgets = ['Progress: ', Percentage(), ' ', Bar(marker='#',left='[',right=']'), ' ', ETA()]
-  with open(INFILE, 'rU') as ifh:
-    pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
-    tsvreader = csv.reader(ifh)
-    ct = 0
-    notfnd = set()
-    multfnd = set()
-    upd_ct = 0
-    skip_ct = 0
-    dba_err_ct = 0
-    tmark = {}
-    dups = set()
-    for row in tsvreader:
+  line_ct = slmf.wcl(IDG_LIST_FILE)
+  print '\nProcessing {} lines in list file {}'.format(line_ct, IDG_LIST_FILE)
+  pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start()
+  notfnd = []
+  multfnd = []
+  ct = 0
+  idg_ct = 0
+  fam_ct = 0
+  dba_err_ct = 0
+  with open(IDG_LIST_FILE, 'rU') as ifh:
+    csvreader = csv.reader(ifh)
+    header = csvreader.next() # skip header line
+    ct += 1
+    for row in csvreader:
       ct += 1
       sym = row[0]
-      if sym in tmark:
-        #print "Skipping dup sym {}".format(sym)
-        dups.add(sym)
-        continue
-      flag = row[1].lower().strip()
-      if flag == 'removed':
-        skip_ct += 1
-        continue
-      elif flag == 'deprioritized':
-        flag = 2
-      else:
-        # Add and yes
-        flag = 1
+      fam = row[2]
+      # HGNC Symbol,UniProt,IDG Family,Notes
       targets = dba.find_targets({'sym': sym}, idg=False, include_annotations=False)
       if not targets:
-        notfnd.add(sym)
+        notfnd.append(sym)
         continue
       if len(targets) > 1:
-        multfnd.add(sym)
+        multfnd.append(sym)
       for t in targets:
-        tmark[sym] = True
-        rv = dba.upd_target(t['id'], 'idg2', flag)
+        rv = dba.upd_target(t['id'], 'idg2', 1)
         if rv:
-          upd_ct += 1
+          idg_ct += 1
+        else:
+          dba_err_ct += 1
+        rv = dba.upd_target(t['id'], 'fam', fam)
+        if rv:
+          fam_ct += 1
         else:
           dba_err_ct += 1
       pbar.update(ct)
   pbar.finish()
   print "{} lines processed".format(ct)
-  print "{} targets updated with IDG2 flags".format(upd_ct)
-  print "Skipped {} 'removed' lines".format(skip_ct)
+  print "{} targets updated with IDG2 flags".format(idg_ct)
+  print "{} targets updated with fams".format(fam_ct)
   if notfnd:
     print "No target found for {} symbols: {}".format(len(notfnd), ", ".join(notfnd))
   if multfnd:
     print "Multiple targets found for {} symbols: {}".format(len(multfnd), ", ".join(multfnd))
-  if dups:
-    print "Encountered {} duplicate symbols: {}".format(len(dups), ", ".join(dups))
   if dba_err_ct > 0:
     print "WARNING: {} database errors occured. See logfile {} for details.".format(dba_err_ct, logfile)
   

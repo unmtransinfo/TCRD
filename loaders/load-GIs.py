@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-01-25 16:52:08 smathias>
+# Time-stamp: <2019-01-04 12:26:38 smathias>
 """Load NCBI gi xrefs into TCRD from UniProt ID Mapping file.
 
 Usage:
@@ -24,9 +24,9 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2016-2018, Steve Mathias"
+__copyright__ = "Copyright 2016-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.1.0"
+__version__   = "2.2.0"
 
 import os,sys,time
 from docopt import docopt
@@ -44,7 +44,8 @@ from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGFILE = './%s.log'%PROGRAM
+LOGDIR = "./tcrd6logs"
+LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 DOWNLOAD_DIR = '../data/UniProt/'
 BASE_URL = 'ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/idmapping/by_organism/'
 FILENAME = 'HUMAN_9606_idmapping_selected.tab.gz'
@@ -69,14 +70,14 @@ def download(args):
   ofh.close()
   if not args['--quiet']:
     elapsed = time.time() - start_time
-    print "Done. Elapsed time: %s" % slmf.secs2str(elapsed)
+    print "Done. Elapsed time: {}".format(slmf.secs2str(elapsed))
 
 def load(args):
   loglevel = int(args['--loglevel'])
   if args['--logfile']:
     logfile = args['--logfile']
   else:
-    logfile = "%s.log" % PROGRAM
+    logfile = LOGFILE
   logger = logging.getLogger(__name__)
   logger.setLevel(loglevel)
   if not args['--debug']:
@@ -86,13 +87,12 @@ def load(args):
   fh.setFormatter(fmtr)
   logger.addHandler(fh)
 
-  # DBAdaptor uses same logger as load()
   dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
   dba = DBAdaptor(dba_params)
   dbi = dba.get_dbinfo()
-  logger.info("Connected to TCRD database %s (schema ver %s; data ver %s)", args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
   if not args['--quiet']:
-    print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+    print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
   # Dataset
   dataset_id = dba.ins_dataset( {'name': 'NCBI GI Numbers', 'source': 'UniProt ID Mapping file %s'%(BASE_URL+FILENAME), 'app': PROGRAM, 'app_version': __version__, 'url': 'http://www.uniprot.org/'} )
@@ -132,7 +132,7 @@ def load(args):
   # 21. Ensembl_PRO
   # 22. Additional PubMed
   if not args['--quiet']:
-    print "\nProcessing %d rows in file %s" % (line_ct, infile)
+    print "\nProcessing {} rows in file {}".format(line_ct, infile)
   with open(infile, 'rU') as tsv:
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start()
     ct = 0
@@ -144,7 +144,7 @@ def load(args):
       data = line.split('\t')
       ct += 1
       up = data[0]
-      if not data[4]:
+      if not data[4]: # no gi
         skip_ct += 1
         continue
       targets = dba.find_targets({'uniprot': up})
@@ -162,13 +162,9 @@ def load(args):
           dba_err_ct += 1
       pbar.update(ct)
   pbar.finish()
-
-  elapsed = time.time() - start_time
-  if not args['--quiet']:
-    print "\n{} rows processed".format(ct)
-  print "{} targets annotated with GI xref(s)".format(len(tmark))
-  print "  Skipped {} rows".format(skip_ct)
-  print "  Inserted {} new GI xref rows".format(xref_ct)
+  print "\n{} rows processed".format(ct)
+  print "  Inserted {} new GI xref rows for {} targets".format(xref_ct, len(tmark))
+  print "  Skipped {} rows with no GI".format(skip_ct)
   if dba_err_ct > 0:
     print "WARNING: {} database errors occured. See logfile {} for details.".format(dba_err_ct, logfile)
 

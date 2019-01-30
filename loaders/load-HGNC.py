@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-01-25 16:55:14 smathias>
-"""Load HGNC annotations for TCRD targets via web API.
+# Time-stamp: <2019-01-08 15:36:31 smathias>
+"""Load HGNC annotations for TCRD targets from downloaded TSV file.
 
 Usage:
     load-HGNC.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
@@ -24,25 +24,22 @@ Options:
 __author__ = "Steve Mathias"
 __email__ = "smathias@salud.unm.edu"
 __org__ = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2014-2018, Steve Mathias"
+__copyright__ = "Copyright 2014-2019, Steve Mathias"
 __license__ = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__ = "2.1.0"
+__version__ = "3.0.0"
 
 import os,sys,time
 from docopt import docopt
-from TCRD import DBAdaptor
+from TCRDMP import DBAdaptor
 import logging
-import requests
-from bs4 import BeautifulSoup
-from collections import defaultdict
-import shelve
+import csv
 from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd5logs"
+LOGDIR = "./tcrd6logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
-HGNC_URL = 'http://rest.genenames.org/fetch'
+HGNC_TSV_FILE = '../data/HGNC/HGNC_20190104.tsv'
 SHELF_FILE = '%s/load-HGNC.db' % LOGDIR
 
 def load(args):
@@ -60,213 +57,129 @@ def load(args):
   fh.setFormatter(fmtr)
   logger.addHandler(fh)
 
-  # DBAdaptor uses same logger as main()
   dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
   dba = DBAdaptor(dba_params)
   dbi = dba.get_dbinfo()
-  logger.info("Connected to TCRD database %s (schema ver %s; data ver %s)", args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
   if not args['--quiet']:
-    print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+    print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
   # Dataset
-  dataset_id = dba.ins_dataset( {'name': 'HGNC', 'source': 'Web API at %s'%HGNC_URL, 'app': PROGRAM, 'app_version': __version__, 'url': 'http://www.genenames.org/'} )
+  dataset_id = dba.ins_dataset( {'name': 'HGNC', 'source': 'Custom download file from https://www.genenames.org/download/custom/', 'app': PROGRAM, 'app_version': __version__, 'url': 'http://www.genenames.org/', 'comments': 'File downloaded with the following column data: HGNC ID Approved symbol Approved name   Status  UniProt ID NCBI Gene ID    Mouse genome database ID'} )
   if not dataset_id:
-    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
+    print "WARNING: Error inserting dataset See logfile {} for details.".format(logfile)
     sys.exit(1)
   # Provenance
-  provs = [ {'dataset_id': dataset_id, 'table_name': 'protein', 'column_name': 'sym', 'comment': "This is only updated with HGNC data if data from UniProt is absent or discrepant."},
-            {'dataset_id': dataset_id, 'table_name': 'protein', 'column_name': 'geneid', 'comment': "This is only updated with HGNC data if data from UniProt is absent or discrepant."},
-            {'dataset_id': dataset_id, 'table_name': 'protein', 'column_name': 'chr'},
+  provs = [ {'dataset_id': dataset_id, 'table_name': 'protein', 'column_name': 'sym', 'comment': "This is only updated with HGNC data if data from UniProt is absent."},
+            {'dataset_id': dataset_id, 'table_name': 'protein', 'column_name': 'geneid', 'comment': "This is only updated with HGNC data if data from UniProt is absent."},
             {'dataset_id': dataset_id, 'table_name': 'xref', 'where_clause': "dataset_id = %d"%dataset_id} ]
   for prov in provs:
     rv = dba.ins_provenance(prov)
     if not rv:
-      print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
+      print "WARNING: Error inserting provenance. See logfile {} for details.".format(logfile)
       sys.exit(1)
 
-  s = shelve.open(SHELF_FILE, writeback=True)
-  s['loaded'] = []
-  s['retries'] = {}
-  s['notfound'] = []
-  s['counts'] = defaultdict(int)
-  
-  pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
-  tct = dba.get_target_count(idg=False)
+  line_ct = slmf.wcl(HGNC_TSV_FILE)
   if not args['--quiet']:
-    print "\nLoading HGNC annotations for %d TCRD targets" % tct
-  logger.info("Loading HGNC annotations for %d TCRD targets" % tct)
-  pbar = ProgressBar(widgets=pbar_widgets, maxval=tct).start()  
+    print "\nProcessing {} lines in file {}".format(line_ct, HGNC_TSV_FILE)
+  pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
+  pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start()
   ct = 0
-  for target in dba.get_targets():
+  tmark = {}
+  hgnc_ct = 0
+  mgi_ct = 0
+  sym_ct = 0
+  symdiscr_ct = 0
+  geneid_ct = 0
+  geneiddiscr_ct = 0
+  nf_ct = 0
+  db_err_ct = 0
+  with open(HGNC_TSV_FILE, 'rU') as ifh:
+    tsvreader = csv.reader(ifh, delimiter='\t')
+    header = tsvreader.next() # skip header line
     ct += 1
-    pbar.update(ct)
-    logger.info("Processing target %d" % target['id'])
-    p = target['components']['protein'][0]
-    if p['geneid']: # try first by NCBI geneid
-      (status, headers, xml) = get_hgnc(geneid=p['geneid'])
-      if not status or status != 200:
-        logger.error("Bad API response for %s" % p['geneid'])
-        s['retries'][target['id']] = True
-        continue
-    else: # then try by uniprot
-      (status, headers, xml) = get_hgnc(uniprot=p['uniprot'])
-      if not status or status != 200:
-        logger.error("Bad API response for %s" % p['uniprot'])
-        s['retries'][target['id']] = True
-        continue
-    hgnc_annotations = parse_hgnc_xml(xml)
-    if not hgnc_annotations:
-      s['notfound'].append(target['id'])
-      continue
-    load_annotations(dba, target, dataset_id, hgnc_annotations, s)
-    pbar.update(ct)
-  pbar.finish()
-  print "Processed %d targets." % ct
-  print "Loaded HGNC annotations for %d targets" % len(s['loaded'])
-  if len(s['retries']) > 0:
-    print "Total targets remaining for retries: %d " % len(s['retries'])
-
-  loop = 1
-  while len(s['retries']) > 0:
-    if not args['--quiet']:
-      print "\nRetry loop %d: Loading HGNC annotations for %d TCRD targets" % (loop, len(s['retries']))
-    logger.info("Retry loop %d: Loading HGNC annotations for %d TCRD targets" % (loop, len(s['retries'])))
-    pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
-    pbar = ProgressBar(widgets=pbar_widgets, maxval=len(s['retries'])).start()
-    ct = 0
-    act = 0
-    for tid,_ in s['retries'].items():
+    for row in tsvreader:
+      # 0: HGNC ID
+      # 1: Approved symbol
+      # 2: Approved name
+      # 3: Status
+      # 4: UniProt ID
+      # 5: NCBI Gene ID
+      # 6: Mouse genome database ID
       ct += 1
-      target = dba.get_target(tid)
-      logger.info("Processing target %d" % tid)
-      p = target['components']['protein'][0]
-      if p['geneid']: # try first by NCBI geneid
-        (status, headers, xml) = get_hgnc(geneid=p['geneid'])
-        if not status or status != 200:
-          logger.error("Bad API response for %s" % p['geneid'])
-          continue
-      else: # then try by uniprot
-        (status, headers, xml) = get_hgnc(uniprot=p['uniprot'])
-        if not status or status != 200:
-          logger.error("Bad API response for %s" % p['uniprot'])
-          continue
-      hgnc_annotations = parse_hgnc_xml(xml)
-      if not hgnc_annotations:
-        s['notfound'].append(target['id'])
-        continue
-      load_annotations(dba, target, dataset_id, hgnc_annotations, s)
-      act += 1
-      del(s['retries'][tid])
       pbar.update(ct)
-    loop += 1
-    pbar.finish()
-    print "Processed %d targets." % ct
-    print "  Annotated %d additional targets" % act
-    print "  Total annotated targets: %d" % len(s['loaded'])
-    if len(s['retries']) > 0:
-      print "Total targets remaining for retries: %d " % len(s['retries'])
-  
-  print "\nUpdated/Inserted %d HGNC ID xrefs" % s['counts']['hgncid']
-  print "Inserted %d new protein.sym values" % s['counts']['sym']
-  print "Updated %d discrepant protein.sym values" % s['counts']['symdiscr']
-  print "Updated/Inserted %d protein.chr values" % s['counts']['chr']
-  print "Updated/Inserted %d protein.geneid values" % s['counts']['geneid']
-  print "Updated/Inserted %d MGI ID xrefs" % s['counts']['mgi']
-  if len(s['notfound']) > 0:
-    print "WARNNING: %d targets did not find an HGNC record." % len(s['notfound'])
-  if s['counts']['dba_err'] > 0:
-    print "WARNNING: %d DB errors occurred. See logfile %s for details." % (len(shelf['counts']['dba_err']), logfile)
-
-def get_hgnc(sym=None, hgnc_id=None, geneid=None, uniprot=None):
-  if sym:
-    url = "%s/symbol/%s" % (HGNC_URL, sym)
-  elif hgnc_id:
-    url = "%s/hgnc_id/%s" % (HGNC_URL, hgnc_id)
-  elif geneid:
-    url = "%s/entrez_id/%s" % (HGNC_URL, geneid)
-  elif uniprot:
-    url = "%s/uniprot_ids/%s" % (HGNC_URL, uniprot)
-  else:
-    print "No query parameter sent to get_hgnc()"
-    return False
-  r = None
-  attempts = 0
-  while attempts <= 5:
-    try:
-      r = requests.get(url)
-      break
-    except:
-      attempts += 1
-      time.sleep(2)
-  if r:
-    return (r.status_code, r.headers, r.text)
-  else:
-    return (False, False, False)
-
-def parse_hgnc_xml(xml):
-  annotations = {}
-  soup = BeautifulSoup(xml, "xml")
-  d = soup.find('doc')
-  if not d:
-    return False
-  for s in d.findAll('str'):
-    if s.attrs and 'name' in s.attrs:
-      t = s.attrs['name']
-      if t == 'hgnc_id':
-        annotations['hgnc_id'] = s.text
-      elif t == 'symbol':
-        annotations['sym'] = s.text
-      elif t == 'location':
-        annotations['chr'] = s.text
-      elif t == 'entrez_id':
-        annotations['geneid'] = int(s.text)
-    elif s.text.startswith('MGI'):
-      annotations['mgi'] = s.text
-  return annotations
-
-def load_annotations(dba, t, dataset_id, hgnc_annotations, shelf):
-  p = t['components']['protein'][0]
-  pid = p['id']
-  if 'hgnc_id' in hgnc_annotations:
-    rv = dba.ins_xref({'protein_id': pid, 'xtype': 'HGNC', 'dataset_id': dataset_id, 'value': hgnc_annotations['hgnc_id']})
-    if rv:
-      shelf['counts']['hgncid'] += 1
-    else:
-      shelf['counts']['dba_err'] += 1
-  if 'sym' in hgnc_annotations:
-    if p['sym'] == None:
-      rv = dba.upd_protein(pid, 'sym', hgnc_annotations['sym'])
-      if rv:
-        shelf['counts']['sym'] += 1
-      else:
-        shelf['counts']['dba_err'] += 1
-    if p['sym'] != hgnc_annotations['sym']:
-      rv = dba.upd_protein(pid, 'sym', hgnc_annotations['sym'])
-      if rv:
-        shelf['counts']['symdiscr'] += 1
-      else:
-        shelf['counts']['dba_err'] += 1
-  if 'chr' in hgnc_annotations:
-    if p['chr'] == None or p['chr'] != hgnc_annotations['chr']:
-      rv = dba.upd_protein(pid, 'chr', hgnc_annotations['chr'])
-      if rv:
-        shelf['counts']['chr'] += 1
-      else:
-        shelf['counts']['dba_err'] += 1
-  if 'geneid' in hgnc_annotations:
-    if p['geneid'] == None or p['geneid'] != hgnc_annotations['geneid']:
-      rv = dba.upd_protein(pid, 'geneid', hgnc_annotations['geneid'])
-      if rv:
-        shelf['counts']['geneid'] += 1
-      else:
-        shelf['counts']['dba_err'] += 1
-  if 'mgi' in hgnc_annotations:
-    rv = dba.ins_xref({'protein_id': pid, 'xtype': 'MGI ID', 'dataset_id': dataset_id, 'value': hgnc_annotations['mgi']})
-    if rv:
-      shelf['counts']['mgi'] += 1
-    else:
-      shelf['counts']['dba_err'] += 1
-  shelf['loaded'].append(t['id'])
+      sym = row[1]
+      geneid = row[5]
+      up = row[4]
+      targets = dba.find_targets({'sym': sym})
+      if not targets:
+        targets = dba.find_targets({'geneid': geneid})
+      if not targets:
+        targets = dba.find_targets({'uniprot': up})
+      if not targets:
+        nf_ct += 1
+        #logger.warn("No target found for {}|{}|{}".format(sym, geneid, up))
+        continue
+      for t in targets:
+        p = t['components']['protein'][0]
+        pid = p['id']
+        tmark[pid] = True
+        # HGNC xref
+        rv = dba.ins_xref({'protein_id': pid, 'xtype': 'HGNC',
+                           'dataset_id': dataset_id, 'value': row[0]})
+        if rv:
+          hgnc_ct += 1
+        else:
+          db_err_ct += 1
+        # MGI xref
+        rv = dba.ins_xref({'protein_id': pid, 'xtype': 'MGI ID',
+                           'dataset_id': dataset_id, 'value': row[6]})
+        if rv:
+          mgi_ct += 1
+        else:
+          db_err_ct += 1
+        # Add missing syms
+        if p['sym'] == None:
+          rv = dba.upd_protein(pid, 'sym', sym)
+          if rv:
+            logger.info("Inserted new sym {} for protein {}, {}".format(sym, pid, p['uniprot']))
+            sym_ct += 1
+          else:
+            db_err_ct += 1
+        else:
+          # Check for symbol discrepancies
+          if p['sym'] != sym:
+            logger.warn("Symbol discrepancy: UniProt=%s, HGNC=%s" % (p['sym'], sym))
+            symdiscr_ct += 1
+        if geneid:
+          # Add missing geneids
+          if p['geneid'] == None:
+            rv = dba.upd_protein(pid, 'geneid', geneid)
+            if rv:
+              logger.info("Inserted new geneid {} for protein {}, {}".format(geneid, pid, p['uniprot']))
+              geneid_ct += 1
+            else:
+              db_err_ct += 1
+          else:
+            # Check for geneid discrepancies
+            if p['geneid'] != int(geneid):
+              logger.warn("GeneID discrepancy: UniProt={}, HGNC={}".format(p['geneid'], geneid))
+              geneiddiscr_ct += 1
+  pbar.finish()
+  print "Processed {} lines - {} targets annotated.".format(ct, len(tmark))
+  print "No target found for {} lines.".format(nf_ct)
+  print "  Inserted {} HGNC ID xrefs".format(hgnc_ct)
+  print "  Inserted {} MGI ID xrefs".format(mgi_ct)
+  if sym_ct > 0:
+    print "  Added {} new HGNC symbols".format(sym_ct)
+  if symdiscr_ct > 0:
+    print "WARNING: {} discrepant HGNC symbols. See logfile {} for details".format(symdiscr_ct, logfile)
+  if geneid_ct > 0:
+    print "  Added {} new NCBI Gene IDs".format(geneid_ct)
+  if geneiddiscr_ct > 0:
+    print "WARNING: {} discrepant NCBI Gene IDs. See logfile {} for details".format(geneiddiscr_ct, logfile)
+  if db_err_ct > 0:
+    print "WARNNING: {} DB errors occurred. See logfile {} for details.".format(db_err_ct, logfile)
 
 
 if __name__ == '__main__':
