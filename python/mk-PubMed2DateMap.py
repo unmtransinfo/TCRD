@@ -23,13 +23,13 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2017-2018, Steve Mathias"
+__copyright__ = "Copyright 2017-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "1.1.0"
+__version__   = "2.0.0"
 
 import os,sys,time,re
 from docopt import docopt
-from TCRD import DBAdaptor
+from TCRDMP import DBAdaptor
 import logging
 from progressbar import *
 import urllib
@@ -40,11 +40,11 @@ import cPickle as pickle
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd5logs"
+LOGDIR = "../loaders/tcrd6logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 EMAIL = 'smathias@salud.unm.edu'
 EFETCHURL = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?&db=pubmed&retmode=xml&email=%s&tool=%s&id=" % (urllib.quote(EMAIL), urllib.quote(PROGRAM))
-PICKLE_FILE = '../data/TCRDv5_PubMed2Date.p'
+PICKLE_FILE = '../data/TCRDv6_PubMed2Date.p'
 
 def main(args):
   loglevel = int(args['--loglevel'])
