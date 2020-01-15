@@ -1,0 +1,80 @@
+# v1
+mysql> SELECT p.id, p.name, p.description, p.uniprot, p.sym, p.geneid, t.tdl, t.idgfam FROM protein p, target t WHERE t.id = p.id AND t.idgfam IS NOT NULL INTO OUTFILE '/tmp/TCRDv1.5.6_IDG.csv' FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n';
+
+# v2
+mysql> SELECT p.id, p.name, p.description, p.uniprot, p.sym, p.geneid, t.tdl, t.idgfam FROM protein p, target t WHERE t.id = p.id AND t.idgfam IS NOT NULL INTO OUTFILE '/tmp/TCRDv2.4.2_IDG.csv' FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n';
+
+# v3
+mysql> SELECT p.id, p.name, p.description, p.uniprot, p.sym, p.geneid, t.tdl, t.idgfam FROM protein p, target t WHERE t.id = p.id AND t.idg2 = 1 INTO OUTFILE '/tmp/TCRDv3.1.5_IDG.csv' FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n';
+
+# v4
+mysql> SELECT p.id, p.name, p.description, p.uniprot, p.sym, p.geneid, t.tdl, t.idgfam FROM protein p, target t WHERE t.id = p.id AND t.idg2 INTO OUTFILE '/tmp/TCRDv4.1.0_IDG.csv' FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n';
+
+# v5
+mysql> SELECT p.id, p.name, p.description, p.uniprot, p.sym, p.geneid, t.tdl, t.fam FROM protein p, target t WHERE t.id = p.id AND t.idg2 INTO OUTFILE '/tmp/TCRDv5.4.4_IDG.csv' FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n';
+
+# v6
+mysql> SELECT p.id, p.name, p.description, p.uniprot, p.sym, p.geneid, t.tdl, t.fam FROM protein p, target t WHERE t.id = p.id AND t.idg INTO OUTFILE '/tmp/TCRDv6.3.0_IDG.csv' FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n';
+
+
+CREATE TABLE `idg_evol` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `tcrd_ver` tinyint(1) NOT NULL,
+  `tcrd_dbid` int(11) NOT NULL,
+  `name` varchar(255)NOT NULL,
+  `description` text NOT NULL,
+  `uniprot` varchar(20) NOT NULL,
+  `sym` varchar(20) DEFAULT NULL,
+  `geneid` int(11) DEFAULT NULL,
+  `tdl` varchar(6) NOT NULL,
+  `fam` varchar(20) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idg_evol_idx1` (`uniprot`),
+  KEY `idg_evol_idx2` (`sym`),
+  KEY `idg_evol_idx3` (`geneid`),
+  KEY `idg_evol_idx4` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+
+[smathias@juniper loaders]$ ./load-IDGevol.py --dbname tcrd6
+
+load-IDGevol.py (v1.0.0) [Fri Jan 10 13:30:03 2020]:
+
+Connected to TCRD database tcrd6 (schema ver 6.2.0; data ver 6.3.0)
+
+Processing 1789 lines in file ../data/IDGevol/TCRDv1.5.6_IDG.csv
+Progress: 100% [#######################################################################] Time: 0:00:00
+1789 lines processed.
+  Inserted 1789 new idg_evol rows
+
+Processing 1795 lines in file ../data/IDGevol/TCRDv2.4.2_IDG.csv
+Progress: 100% [#######################################################################] Time: 0:00:00
+1795 lines processed.
+  Inserted 1795 new idg_evol rows
+
+Processing 395 lines in file ../data/IDGevol/TCRDv3.1.5_IDG.csv
+Progress: 100% [#######################################################################] Time: 0:00:00
+395 lines processed.
+  Inserted 395 new idg_evol rows
+
+Processing 396 lines in file ../data/IDGevol/TCRDv4.1.0_IDG.csv
+Progress: 100% [#######################################################################] Time: 0:00:00
+396 lines processed.
+  Inserted 396 new idg_evol rows
+
+Processing 414 lines in file ../data/IDGevol/TCRDv5.4.4_IDG.csv
+Progress: 100% [#######################################################################] Time: 0:00:00
+414 lines processed.
+  Inserted 414 new idg_evol rows
+
+Processing 329 lines in file ../data/IDGevol/TCRDv6.3.0_IDG.csv
+Progress: 100% [#######################################################################] Time: 0:00:00
+329 lines processed.
+  Inserted 329 new idg_evol rows
+
+load-IDGevol.py: Done.
+
+
+mysql> update dbinfo set schema_ver = '6.3.0', data_ver = '6.3.1';
+
+[smathias@juniper SQL]$ mysqldump tcrd6 > dumps6/TCRDv6.3.1.sql
