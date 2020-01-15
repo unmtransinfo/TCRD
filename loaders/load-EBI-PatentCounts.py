@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-05-23 12:21:48 smathias>
+# Time-stamp: <2019-08-26 14:18:22 smathias>
 """Load patent counts into TCRD from CSV file.
 
 Usage:
@@ -24,13 +24,13 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2015-2018, Steve Mathias"
+__copyright__ = "Copyright 2015-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.2.0"
+__version__   = "3.0.0"
 
 import os,sys,time
 from docopt import docopt
-from TCRD import DBAdaptor
+from TCRDMP import DBAdaptor
 import csv
 import urllib
 import logging
@@ -38,7 +38,7 @@ from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd5logs"
+LOGDIR = "./tcrd6logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 BASE_URL = 'ftp://ftp.ebi.ac.uk/pub/databases/chembl/IDG/patent_counts/'
 DOWNLOAD_DIR = '../data/EBI/patent_counts/'
@@ -110,7 +110,6 @@ def load(args):
         targets = dba.find_targets_by_alias({'type': 'UniProt', 'value': up})
         if not targets:
           notfnd.add(up)
-          logger.warn("No target found for {}".format(up))
           continue
       pid = targets[0]['components']['protein'][0]['id']
       rv = dba.ins_patent_count({'protein_id': pid, 'year': row[2], 'count': row[3]} )
@@ -124,8 +123,10 @@ def load(args):
         patent_cts[pid] = int(row[3])
       pbar.update(ct)
   pbar.finish()
+  for up in notfnd:
+    logger.warn("No target found for {}".format(up))
   print "{} lines processed.".format(ct)
-  print "Inserted {} new patent_count rows for {} targets".format(pc_ct, len(patent_cts))
+  print "Inserted {} new patent_count rows for {} proteins".format(pc_ct, len(patent_cts))
   if notfnd:
     print "No target found for {} UniProts. See logfile {} for details.".format(len(notfnd), logfile)
   if dba_err_ct > 0:

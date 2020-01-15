@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-05-01 12:09:30 smathias>
+# Time-stamp: <2019-08-21 09:30:16 smathias>
 """Load compartment data into TCRD from JensenLab COMPARTMENTS TSV files.
 
 Usage:
@@ -24,13 +24,13 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2016-2018, Steve Mathias"
+__copyright__ = "Copyright 2016-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.1.0"
+__version__   = "3.0.0"
 
 import os,sys,time
 from docopt import docopt
-from TCRD import DBAdaptor
+from TCRDMP import DBAdaptor
 import logging
 import csv
 import urllib
@@ -38,7 +38,7 @@ from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = 'tcrd5logs/'
+LOGDIR = 'tcrd6logs/'
 LOGFILE = LOGDIR + '%s.log'%PROGRAM
 DOWNLOAD_DIR = '../data/JensenLab/'
 BASE_URL = 'http://download.jensenlab.org/'
@@ -119,13 +119,18 @@ def load(args):
       ensp = row[0]
       sym = row[1]
       k = "%s|%s"%(ensp,sym)
-      if k in notfnd:
+      if k in pmap:
+        # we've already found it
+        pids = pmap[k]
+      elif k in notfnd:
+        # we've already not found it
         continue
-      pids = find_pids(dba, ensp, sym, pmap)
-      if not pids:
-        notfnd.add(k)
-        logger.warn("No target found for {}".format(k))
-        continue
+      else:
+        # look it up
+        pids = find_pids(dba, ensp, sym, pmap)
+        if not pids:
+          notfnd.add(k)
+          continue
       for pid in pids:
         pmark[pid] = True
         rv = dba.ins_compartment( {'protein_id': pid, 'ctype': 'JensenLab Knowledge',
@@ -137,11 +142,13 @@ def load(args):
           continue
         comp_ct += 1
   pbar.finish()
+  for k in notfnd:
+    logger.warn("No target found for {}".format(k))
   print "{} lines processed.".format(ct)
   print "  Inserted {} new compartment rows for {} proteins".format(comp_ct, len(pmark))
   print "  Skipped {} lines with conf < 3".format(skip_ct)
   if notfnd:
-    print "No target found for {} stringids/symbols. See logfile {} for details.".format(len(notfnd), logfile)
+    print "No target found for {} ENSPs/symbols. See logfile {} for details.".format(len(notfnd), logfile)
   if dba_err_ct > 0:
     print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
   
@@ -168,15 +175,19 @@ def load(args):
       ensp = row[0]
       sym = row[1]
       k = "%s|%s"%(ensp,sym)
-      if k in notfnd:
+      if k in pmap:
+        # we've already found it
+        pids = pmap[k]
+      elif k in notfnd:
+        # we've already not found it
         continue
-      pids = find_pids(dba, ensp, sym, pmap)
-      if not pids:
-        notfnd.add(k)
-        logger.warn("No target found for {}".format(k))
-        continue
+      else:
+        # look it up
+        pids = find_pids(dba, ensp, sym, pmap)
+        if not pids:
+          notfnd.add(k)
+          continue
       for pid in pids:
-        pmark[pid] = True
         rv = dba.ins_compartment( {'protein_id': pid, 'ctype': 'JensenLab Experiment',
                                    'go_id': row[2], 'go_term': row[3],
                                    'evidence': "%s %s"%(row[4], row[5]), 
@@ -185,12 +196,15 @@ def load(args):
           dba_err_ct += 1
           continue
         comp_ct += 1
+        pmark[pid] = True
   pbar.finish()
+  for k in notfnd:
+    logger.warn("No target found for {}".format(k))
   print "{} lines processed.".format(ct)
   print "  Inserted {} new compartment rows for {} proteins".format(comp_ct, len(pmark))
   print "  Skipped {} lines with conf < 3".format(skip_ct)
   if notfnd:
-    print "No target found for {} stringids/symbols. See logfile {} for details.".format(len(notfnd), logfile)
+    print "No target found for {} ENSPs/symbols. See logfile {} for details.".format(len(notfnd), logfile)
   if dba_err_ct > 0:
     print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
   
@@ -218,15 +232,19 @@ def load(args):
       ensp = row[0]
       sym = row[1]
       k = "%s|%s"%(ensp,sym)
-      if k in notfnd:
+      if k in pmap:
+        # we've already found it
+        pids = pmap[k]
+      elif k in notfnd:
+        # we've already not found it
         continue
-      pids = find_pids(dba, ensp, sym, pmap)
-      if not pids:
-        notfnd.add(k)
-        logger.warn("No target found for {}".format(k))
-        continue
+      else:
+        # look it up
+        pids = find_pids(dba, ensp, sym, pmap)
+        if not pids:
+          notfnd.add(k)
+          continue
       for pid in pids:
-        pmark[pid] = True
         rv = dba.ins_compartment( {'protein_id': pid, 'ctype': 'JensenLab Text Mining',
                                    'go_id': row[2], 'go_term': row[3],
                                    'zscore': row[4], 'conf': row[5], 
@@ -235,12 +253,15 @@ def load(args):
           dba_err_ct += 1
           continue
         comp_ct += 1
+        pmark[pid] = True
   pbar.finish()
+  for k in notfnd:
+    logger.warn("No target found for {}".format(k))
   print "{} lines processed.".format(ct)
   print "  Inserted {} new compartment rows for {} proteins".format(comp_ct, len(pmark))
   print "  Skipped {} lines with conf < 3".format(skip_ct)
   if notfnd:
-    print "No target found for {} stringids/symbols. See logfile {} for details.".format(len(notfnd), logfile)
+    print "No target found for {} ENSPs/symbols. See logfile {} for details.".format(len(notfnd), logfile)
   if dba_err_ct > 0:
     print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
 
@@ -268,15 +289,19 @@ def load(args):
       ensp = row[0]
       sym = row[1]
       k = "%s|%s"%(ensp,sym)
-      if k in notfnd:
+      if k in pmap:
+        # we've already found it
+        pids = pmap[k]
+      elif k in notfnd:
+        # we've already not found it
         continue
-      pids = find_pids(dba, ensp, sym, pmap)
-      if not pids:
-        notfnd.add(k)
-        logger.warn("No target found for {}".format(k))
-        continue
+      else:
+        # look it up
+        pids = find_pids(dba, ensp, sym, pmap)
+        if not pids:
+          notfnd.add(k)
+          continue
       for pid in pids:
-        pmark[pid] = True
         rv = dba.ins_compartment( {'protein_id': pid, 'ctype': 'JensenLab Prediction',
                                    'go_id': row[2], 'go_term': row[3],
                                    'evidence': "%s %s"%(row[4], row[5]), 
@@ -285,34 +310,32 @@ def load(args):
           dba_err_ct += 1
           continue
         comp_ct += 1
+        pmark[pid] = True
   pbar.finish()
+  for k in notfnd:
+    logger.warn("No target found for {}".format(k))
   print "{} lines processed.".format(ct)
   print "  Inserted {} new compartment rows for {} proteins".format(comp_ct, len(pmark))
   print "  Skipped {} lines with conf < 3".format(skip_ct)
   if notfnd:
-    print "No target found for {} stringids/symbols. See logfile {} for details.".format(len(notfnd), logfile)
+    print "No target found for {} ENSPs/symbols. See logfile {} for details.".format(len(notfnd), logfile)
   if dba_err_ct > 0:
     print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
 
 
-def find_pids(dba, ensp, sym, k2pid):
+def find_pids(dba, ensp, sym, k2pids):
   pids = []
-  if ensp in k2pid:
-    pids = k2pid[ensp]
-  elif sym in k2pid:
-    pids = k2pid[sym]
+  k = "%s|%s"%(ensp,sym)
+  if k in k2pids:
+    pids = k2pids[ensp]
   else:
     targets = dba.find_targets({'stringid': ensp})
+    if not targets:
+      targets = dba.find_targets({'sym': sym})
     if targets:
       for t in targets:
         pids.append(t['components']['protein'][0]['id'])
-      k2pid[sym] = pids
-    else:
-      targets = dba.find_targets({'sym': sym})
-      if targets:
-        for t in targets:
-          pids.append(t['components']['protein'][0]['id'])
-        k2pid[sym] = pids
+      k2pids[k] = pids # save mapping - k2pids is pmap in load()
   return pids
 
 

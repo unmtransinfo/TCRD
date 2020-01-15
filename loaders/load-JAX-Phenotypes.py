@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-03-21 15:10:44 smathias>
+# Time-stamp: <2019-04-17 12:33:53 smathias>
 """Load Jackson Labs phenotype data into TCRD from TSV files.
 
 Usage:
@@ -24,35 +24,54 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2015-2018, Steve Mathias"
+__copyright__ = "Copyright 2015-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.2.0"
+__version__   = "2.3.0"
 
 import os,sys,time,re
 from docopt import docopt
-from TCRD import DBAdaptor
+from TCRDMP import DBAdaptor
 import logging
 import csv
 import urllib
+import pronto
 from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd5logs"
+LOGDIR = "./tcrd6logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 DOWNLOAD_DIR = '../data/JAX/'
 BASE_URL = 'http://www.informatics.jax.org/downloads/reports/'
-MPO_FILE = 'VOC_MammalianPhenotype.rpt'
 PT_FILE = 'HMD_HumanPhenotype.rpt'
+MPO_OWL_FILE = '../data/MPO/mp.owl'
 
 def download(args):
-  for f in [MPO_FILE, PT_FILE]:
-    if os.path.exists(DOWNLOAD_DIR + f):
-      os.remove(DOWNLOAD_DIR + f)
-    if not args['--quiet']:
-      print "\nDownloading", BASE_URL + f
-      print "         to", DOWNLOAD_DIR + f
-    urllib.urlretrieve(BASE_URL + f, DOWNLOAD_DIR + f)
+  fn = DOWNLOAD_DIR + PT_FILE
+  if os.path.exists(fn):
+    os.remove(fn)
+  if not args['--quiet']:
+    print "\nDownloading ", BASE_URL + PT_FILE
+    print "         to ", fn
+  urllib.urlretrieve(BASE_URL + PT_FILE, fn)
+  if not args['--quiet']:
+    print "Done."
+
+def parse_mp_owl(f):
+  mpo = {}
+  mpont = pronto.Ontology(f)
+  for term in mpont:
+    if not term.id.startswith('MP:'):
+      continue
+    mpid = term.id
+    name = term.name
+    init = {'name': name}
+    if term.parents:
+      init['parent_id'] = term.parents[0].id
+    if term.desc:
+      init['def'] = term.desc
+    mpo[mpid] = init
+  return mpo
 
 def load(args):
   loglevel = int(args['--loglevel'])
@@ -80,24 +99,16 @@ def load(args):
   dataset_id = dba.ins_dataset( {'name': 'JAX/MGI Mouse/Human Orthology Phenotypes', 'source': 'File %s from ftp.informatics.jax.org'%PT_FILE, 'app': PROGRAM, 'app_version': __version__, 'url': 'http://www.informatics.jax.org/'} )
   assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
   # Provenance
-  provs = [ {'dataset_id': dataset_id, 'table_name': 'phenotype', 'where_clause': "ptype = 'JAX/MGI Human Ortholog Phenotyp'"},
-            {'dataset_id': dataset_id, 'table_name': 'xref', 'where_clause': "dataset_id = %d"%dataset_id} ]
+  provs = [ {'dataset_id': dataset_id, 'table_name': 'phenotype', 'where_clause': "ptype = 'JAX/MGI Human Ortholog Phenotyp'"} ]
   for prov in provs:
     rv = dba.ins_provenance(prov)
     assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
   
-  mpo = {}
-  fn = DOWNLOAD_DIR + MPO_FILE
-  line_ct = slmf.wcl(fn)
   if not args['--quiet']:
-    print "\nProcessing {} lines in MPO file {}".format(line_ct, fn)
-  with open(fn, 'rU') as tsv:
-    tsvreader = csv.reader(tsv, delimiter='\t')
-    tsvreader.next() # skip header line
-    for row in tsvreader:
-      mpo[row[0]] = {'name': row[1], 'description': row[2]}
+    print "\nParsing Mammalian Phenotype Ontology file {}".format(DOWNLOAD_DIR + MPO_OWL_FILE)
+  mpo = parse_mp_owl(MPO_OWL_FILE)
   if not args['--quiet']:
-    print "  Saved {} MPO entries".format(len(mpo.keys()))
+    print "Got {} MP terms".format(len(mpo))
 
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   fn = DOWNLOAD_DIR + PT_FILE
@@ -109,14 +120,14 @@ def load(args):
     tsvreader = csv.reader(tsv, delimiter='\t')
     ct = 0
     pt_ct = 0
-    mgixr_ct = 0
+    skip_ct = 0
     pmark = {}
     notfnd = set()
     dba_err_ct = 0
     for row in tsvreader:
       ct += 1
-      #print "[DEBUG] line %d: ``%s''" % (ct, row[5])
       if not row[6] or row[6] == '':
+        skip_ct += 1
         continue
       sym = row[0]
       geneid = row[1]
@@ -133,13 +144,8 @@ def load(args):
       for t in targets:
         pid = t['components']['protein'][0]['id']
         pmark[pid] = True
-        rv = dba.ins_xref({'protein_id': pid, 'xtype': 'MGI ID', 'dataset_id': dataset_id, 'value': row[4]})
-        if rv:
-          mgixr_ct += 1
-        else:
-          dba_err_ct += 1
         for mpid in row[6].split():
-          rv = dba.ins_phenotype({'protein_id': pid, 'ptype': 'JAX/MGI Human Ortholog Phenotype', 'term_id': mpid, 'term_name': mpo[mpid]['name'],' term_description': mpo[mpid]['description']})
+          rv = dba.ins_phenotype({'protein_id': pid, 'ptype': 'JAX/MGI Human Ortholog Phenotype', 'term_id': mpid, 'term_name': mpo[mpid]['name']})
           if rv:
             pt_ct += 1
           else:
@@ -147,8 +153,8 @@ def load(args):
       pbar.update(ct)
   pbar.finish()
   print "{} lines processed.".format(ct)
-  print "Loaded {} new phenotype rows for {} targets".format(pt_ct, len(pmark.keys()))
-  print "  Loaded/Skipped {} new MGI xrefs".format(mgixr_ct)
+  print "Loaded {} new phenotype rows for {} proteins".format(pt_ct, len(pmark.keys()))
+  print "  Skipped {} lines with no MP terms".format(skip_ct)
   if notfnd:
     print "No target found for {} gene symbols/ids. See logfile {} for details.".format(len(notfnd), logfile)
   if dba_err_ct > 0:

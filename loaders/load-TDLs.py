@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-10-25 11:20:24 smathias>
+# Time-stamp: <2019-01-24 09:42:04 smathias>
 """Calculate and load target TDL assignments.
 
 Usage:
@@ -24,19 +24,19 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2015-2018, Steve Mathias"
+__copyright__ = "Copyright 2015-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.1.0"
+__version__   = "3.0.0"
 
 import os,sys,time,re
 from docopt import docopt
-from TCRD import DBAdaptor
+from TCRDMP import DBAdaptor
 import logging
 from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd5logs"
+LOGDIR = "./tcrd6logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 
 def load(args):
@@ -135,10 +135,10 @@ def get_tdl(target):
     efl_goa = False
     if 'Experimental MF/BP Leaf Term GOA' in ptdlis:
       efl_goa = True
-    # Confirmed OMIM Phenotype
-    omim = False
-    if 'phenotypes' in p and len([d for d in p['phenotypes'] if d['ptype'] == 'OMIM']) > 0:
-      omim = True
+    # # OMIM Phenotype
+    # omim = False
+    # if 'phenotypes' in p and len([d for d in p['phenotypes'] if d['ptype'] == 'OMIM']) > 0:
+    #   omim = True
     # Decide between Tbio and Tdark
     dark_pts = 0    
     if pms < 5:     # PubMed Score < 5
@@ -150,8 +150,8 @@ def get_tdl(target):
     if dark_pts >= 2:
       # if at least 2 of the above, target is Tdark...
       tdl = 'Tdark'
-      if efl_goa or omim:
-        # ...unless one of these is true, then bump to Tbio
+      if efl_goa:
+        # ...unless Experimental MF/BP Leaf Term GOA, then bump to Tbio
         tdl = 'Tbio'
         bump_flag = True
     else:

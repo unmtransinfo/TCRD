@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-05-23 11:38:20 smathias>
+# Time-stamp: <2019-02-06 12:56:04 smathias>
 """Load disease associations into TCRD from JensenLab DISEASES TSV files..
 
 Usage:
@@ -24,13 +24,13 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2014-2018, Steve Mathias"
+__copyright__ = "Copyright 2014-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.1.0"
+__version__   = "2.2.0"
 
 import os,sys,time
 from docopt import docopt
-from TCRD import DBAdaptor
+from TCRDMP import DBAdaptor
 import logging
 import csv
 import urllib
@@ -38,7 +38,7 @@ from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd5logs"
+LOGDIR = "./tcrd6logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 DOWNLOAD_DIR = '../data/JensenLab/'
 BASE_URL = 'http://download.jensenlab.org/'
@@ -97,7 +97,7 @@ def load(args):
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
     tsvreader = csv.reader(tsv, delimiter='\t')
     ct = 0
-    tmark = {}
+    pmark = {}
     notfnd = set()
     dis_ct = 0
     dba_err_ct = 0
@@ -117,9 +117,12 @@ def load(args):
         continue
       dtype = 'JensenLab Knowledge ' + row[4]
       for t in targets:
-        tmark[t['id']] = True
-        rv = dba.ins_disease( {'target_id': t['id'], 'dtype': dtype, 'name': row[3],
-                               'did': row[2], 'evidence': row[5], 'conf': row[6]} )
+        p = t['components']['protein'][0]
+        pmark[p['id']] = True
+        init = {'protein_id': p['id'], 'dtype': dtype, 'name': row[3],
+                'did': row[2], 'evidence': row[5], 'conf': row[6]}
+
+        rv = dba.ins_disease(init)
         if not rv:
           dba_err_ct += 1
           continue
@@ -127,12 +130,12 @@ def load(args):
       pbar.update(ct)
   pbar.finish()
   print "{} lines processed.".format(ct)
-  print "Inserted {} new disease rows for {} targets".format(dis_ct, len(tmark))
+  print "Inserted {} new disease rows for {} proteins".format(dis_ct, len(pmark))
   if notfnd:
     print "No target found for {} stringids/symbols. See logfile {} for details.".format(len(notfnd), logfile)
   if dba_err_ct > 0:
     print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
-  
+    
   # Experiment channel
   fn = DOWNLOAD_DIR + FILE_E
   line_ct = slmf.wcl(fn)
@@ -143,7 +146,7 @@ def load(args):
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
     tsvreader = csv.reader(tsv, delimiter='\t')
     ct = 0
-    tmark = {}
+    pmark = {}
     notfnd = set()
     dis_ct = 0
     skip_ct = 0
@@ -168,8 +171,9 @@ def load(args):
         continue
       dtype = 'JensenLab Experiment ' + row[4]
       for t in targets:
-        tmark[t['id']] = True
-        rv = dba.ins_disease( {'target_id': t['id'], 'dtype': dtype, 'name': row[3],
+        p = t['components']['protein'][0]
+        pmark[p['id']] = True
+        rv = dba.ins_disease( {'protein_id': p['id'], 'dtype': dtype, 'name': row[3],
                                'did': row[2], 'evidence': row[5], 'conf': row[6]} )
         if not rv:
           dba_err_ct += 1
@@ -178,7 +182,7 @@ def load(args):
       pbar.update(ct)
   pbar.finish()
   print "{} lines processed.".format(ct)
-  print "Inserted {} new disease rows for {} targets".format(dis_ct, len(tmark))
+  print "Inserted {} new disease rows for {} proteins".format(dis_ct, len(pmark))
   if skip_ct > 0:
     print "Skipped {} zero confidence rows".format(skip_ct)
   if notfnd:
@@ -196,7 +200,7 @@ def load(args):
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
     tsvreader = csv.reader(tsv, delimiter='\t')
     ct = 0
-    tmark = {}
+    pmark = {}
     notfnd = set()
     dis_ct = 0
     dba_err_ct = 0
@@ -216,8 +220,9 @@ def load(args):
         continue
       dtype = 'JensenLab Text Mining'
       for t in targets:
-        tmark[t['id']] = True
-        rv = dba.ins_disease( {'target_id': t['id'], 'dtype': dtype, 'name': row[3],
+        p = t['components']['protein'][0]
+        pmark[p['id']] = True
+        rv = dba.ins_disease( {'protein_id': p['id'], 'dtype': dtype, 'name': row[3],
                                'did': row[2], 'zscore': row[4], 'conf': row[5]} )
         if not rv:
           dba_err_ct += 1
@@ -226,7 +231,7 @@ def load(args):
       pbar.update(ct)
   pbar.finish()
   print "{} lines processed.".format(ct)
-  print "Inserted {} new disease rows for {} targets".format(dis_ct, len(tmark))
+  print "Inserted {} new disease rows for {} proteins".format(dis_ct, len(pmark))
   if notfnd:
     print "No target found for {} stringids/symbols. See logfile {} for details.".format(len(notfnd), logfile)
   if dba_err_ct > 0:

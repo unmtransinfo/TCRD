@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-05-23 10:24:33 smathias>
+# Time-stamp: <2019-09-04 12:10:52 smathias>
 """Load IMPC mice tdl_infod into TCRD from CSV file.
 
 Usage:
@@ -24,23 +24,23 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2016-2018, Steve Mathias"
+__copyright__ = "Copyright 2016-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.1.0"
+__version__   = "3.0.0"
 
 import os,sys,time
 from docopt import docopt
-from TCRD import DBAdaptor
+from TCRDMP import DBAdaptor
 import logging
 import csv
 from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd5logs"
+LOGDIR = "./tcrd6logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
-IMPC_FILE = '../data/IMPC/IDG summary-1.csv'
-OUT_FILE = '../data/IMPC/IDGSummary-1_TCRD.csv'
+IMPC_FILE = '../data/IMPC/notifications_by_gene_for_idg-04-09-19--11-09.csv'
+OUT_FILE = '../data/IMPC/IDGSummary-TCRDv6.csv'
 
 def load(args):
   loglevel = int(args['--loglevel'])
@@ -65,7 +65,7 @@ def load(args):
     print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
   # Dataset
-  dataset_id = dba.ins_dataset( {'name': 'IMPC Mouse Clones', 'source': "File %s obtained directly from Terry Meehan/Steve Murray"%os.path.basename(IMPC_FILE), 'app': PROGRAM, 'app_version': __version__, 'url': 'http://www.mousephenotype.org/'} )
+  dataset_id = dba.ins_dataset( {'name': 'IMPC Mouse Clones', 'source': "File %s obtained directly from Terry Meehan/Alba Gomez at EBI."%os.path.basename(IMPC_FILE), 'app': PROGRAM, 'app_version': __version__, 'url': 'http://www.mousephenotype.org/'} )
   assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
   # Provenance
   provs = [ {'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': "itype = 'IMPC Clones'"},
@@ -89,6 +89,7 @@ def load(args):
   with open(IMPC_FILE, 'rU') as csvfile:
     csvreader = csv.DictReader(csvfile)
     for d in csvreader:
+      # Gene,MGI Accession,Public IDG,Public CMG Tier1,Public CMG Tier 2,Number of notifications,Status,# Clones,Non-Assigned Plans,Assigned plans,Aborted MIs,MIs in Progress,GLT Mice,Private
       ct += 1
       sym = d['Gene'].upper()
       targets = dba.find_targets({'sym': sym})
@@ -97,19 +98,17 @@ def load(args):
       if not targets:
         k = "%s,%s"%(d['Gene'], d['MGI Accession'])
         notfnd.add(k)
-        logger.warn("No target found for: {}".format(k))
         continue
-      if not d['Best Status'] and not d['# Clones']:
+      if not d['Status'] and not d['# Clones']:
         skip_ct += 1
         continue
       tids = list()
-      tdls = list()
       for t in targets:
         pid = t['components']['protein'][0]['id']
-        if not d['Best Status']:
+        if not d['Status']:
           status = '?'
         else:
-          status = d['Best Status']
+          status = d['Status']
         rv = dba.ins_tdl_info({'protein_id': pid, 'itype': 'IMPC Status',
                                'string_value': status})
         if rv:
@@ -126,7 +125,8 @@ def load(args):
           dba_err_ct += 1
       pbar.update(ct)
   pbar.finish()
-  
+  for k in notfnd:
+    logger.warn("No target found for: {}".format(k))
   if not args['--quiet']:
     print "{} rows processed.".format(ct)
   print "Inserted {} new 'IMPC Status' tdl_info rows".format(ti1_ct)

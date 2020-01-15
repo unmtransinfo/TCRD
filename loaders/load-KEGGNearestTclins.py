@@ -1,5 +1,5 @@
 #!/usr/local/bin/python
-# Time-stamp: <2018-05-31 09:49:34 smathias>
+# Time-stamp: <2019-08-27 15:40:10 smathias>
 """Calculate and load all neareast upstream and downstream Tclin from KEGG Pathways into TCRD.
 
 Usage:
@@ -24,19 +24,19 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2016-2018, Steve Mathias"
+__copyright__ = "Copyright 2016-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.1.0"
+__version__   = "3.0.0"
 
 import os,sys,time
 from docopt import docopt
-from TCRD import DBAdaptor
+from TCRDMP import DBAdaptor
 import logging
 from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd5logs"
+LOGDIR = "./tcrd6logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 
 def calc_and_load(args):
@@ -117,9 +117,9 @@ def calc_and_load(args):
 
   if not args['--quiet']:
     print "\n{} targets processed.".format(ct)
-    print "  {} non-Tclin targets have upstream Tclin targets".format(len(umark))
+    print "  {} non-Tclin targets have upstream Tclin target(s)".format(len(umark))
     print "    Inserted {} upstream kegg_nearest_tclin rows".format(uct)
-    print "  {} non-Tclin targets have downstream Tclin targets".format(len(dmark))
+    print "  {} non-Tclin targets have downstream Tclin target(s)".format(len(dmark))
     print "    Inserted {} upstream kegg_nearest_tclin rows".format(dct)
   if dba_err_ct > 0:
     print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)

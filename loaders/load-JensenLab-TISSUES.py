@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-03-29 13:13:11 smathias>
+# Time-stamp: <2019-08-15 15:53:36 smathias>
 """Load expression data into TCRD from JensenLab TISSUES TSV files..
 
 Usage:
@@ -24,14 +24,15 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2014-2018, Steve Mathias"
+__copyright__ = "Copyright 2014-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.1.0"
+__version__   = "2.3.0"
 
 import os,sys,time
 from docopt import docopt
-from TCRD import DBAdaptor
+from TCRDMP import DBAdaptor
 import logging
+import ast
 import csv
 import urllib
 import shelve
@@ -39,7 +40,7 @@ from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd5logs"
+LOGDIR = "./tcrd6logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 DOWNLOAD_DIR = '../data/JensenLab/'
 BASE_URL = 'http://download.jensenlab.org/'
@@ -49,6 +50,9 @@ FILE_T = 'human_tissue_textmining_filtered.tsv'
 SRC_FILES = [os.path.basename(FILE_K),
              os.path.basename(FILE_E),
              os.path.basename(FILE_T)]
+# This file contains a manually currated dict mapping tissue names to Uberon IDs.
+# These are ones for which TCRDMP.get_uberon_id does not return a uid.
+TISSUE2UBERON_FILE = '../data/Tissue2Uberon.txt'
 
 def download(args):
   for f in [FILE_K, FILE_E, FILE_T]:
@@ -92,6 +96,11 @@ def load(args):
     print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
     sys.exit(1)
 
+  with open(TISSUE2UBERON_FILE, 'r') as ifh:
+    tiss2uid = ast.literal_eval(ifh.read())
+  if not args['--quiet']:
+    print "\nGot {} tissue to Uberon ID mappings from file {}".format(len(tiss2uid), TISSUE2UBERON_FILE)
+
   # this dict will map ENSP|sym from input files to TCRD protein_id(s)
   # so we only have to find target(s) once for each pair.
   # See find_pids() below
@@ -110,6 +119,7 @@ def load(args):
     pmark = {}
     exp_ct = 0
     notfnd = set()
+    nouid = set()
     dba_err_ct = 0
     for row in tsvreader:
       ct += 1
@@ -120,23 +130,40 @@ def load(args):
       pids = find_pids(dba, k, pmap)
       if not pids:
         notfnd.add(k)
-        logger.warn("No target found for {}".format(k))
         continue
       etype = 'JensenLab Knowledge ' + row[4]
+      init = {'etype': etype, 'tissue': row[3],'boolean_value': 1, 
+              'oid': row[2], 'evidence': row[5], 'conf': row[6]}
+      # Add Uberon ID, if we can find one
+      if row[2]:
+        uberon_id = dba.get_uberon_id({'oid': row[2]})
+      if not uberon_id:
+        uberon_id = dba.get_uberon_id({'name': row[3]})
+      if not uberon_id and row[3] in tiss2uid:
+        uberon_id = tiss2uid[row[3]]
+      if uberon_id:
+        init['uberon_id'] = uberon_id
+      else:
+        nouid.add(row[3])
       for pid in pids:
-        pmark[pid] = True
-        rv = dba.ins_expression( {'protein_id': pid, 'etype': etype, 'tissue': row[3],
-                                  'boolean_value': 1, 'oid': row[2], 'evidence': row[5], 
-                                  'conf': row[6]} )
+        init['protein_id'] = pid
+        rv = dba.ins_expression(init)
         if not rv:
           dba_err_ct += 1
           continue
         exp_ct += 1
+        pmark[pid] = True
   pbar.finish()
+  for k in notfnd:
+    logger.warn("No target found for {}".format(k))
+  for t in nouid:
+    logger.warn("No Uberon ID found for {}".format(t))
   print "{} rows processed.".format(ct)
   print "  Inserted {} new expression rows for {} proteins".format(exp_ct, len(pmark))
   if notfnd:
     print "No target found for {} stringids/symbols. See logfile {} for details.".format(len(notfnd), logfile)
+  if nouid:
+    print "No Uberon ID found for {} tissues. See logfile {} for details.".format(len(nouid), logfile)
   if dba_err_ct > 0:
     print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
   
@@ -153,6 +180,7 @@ def load(args):
     pmark = {}
     exp_ct = 0
     notfnd = set()
+    nouid = set()
     skip_ct = 0
     dba_err_ct = 0
     for row in tsvreader:
@@ -162,9 +190,9 @@ def load(args):
         # skip zero confidence rows
         skip_ct += 1
         continue
+      sym = row[1]
       # some rows look like:
       # ['ENSP00000468389', 'PSENEN {ECO:0000313|Ensembl:ENSP00000468593}', 'BTO:0002860', 'Oral mucosa', 'HPA', 'High: 1 antibody', '1']
-      sym = row[1]
       if ' ' in sym:
         sym = sym.split()[0]
       k = "%s|%s" % (row[0], sym) # ENSP|sym
@@ -176,23 +204,41 @@ def load(args):
         print "[ERROR] Row: %s; k: %s" % (str(row), k)
       if not pids:
         notfnd.add(k)
-        logger.warn("No target found for {}".format(k))
         continue
       etype = 'JensenLab Experiment ' + row[4]
+      init = {'etype': etype, 'tissue': row[3],
+              'string_value': row[5], 'oid': row[2], 'conf': row[6]}
+      # Add Uberon ID, if we can find one
+      if row[2]:
+        uberon_id = dba.get_uberon_id({'oid': row[2]})
+      if not uberon_id:
+        uberon_id = dba.get_uberon_id({'name': row[3]})
+      if not uberon_id and row[3] in tiss2uid:
+        uberon_id = tiss2uid[row[3]]
+      if uberon_id:
+        init['uberon_id'] = uberon_id
+      else:
+        nouid.add(row[3])
       for pid in pids:
         pmark[pid] = True
-        rv = dba.ins_expression( {'protein_id': pid, 'etype': etype, 'tissue': row[3],
-                                  'string_value': row[5], 'oid': row[2], 'conf': row[6]} )
+        init['protein_id'] = pid
+        rv = dba.ins_expression(init)
         if not rv:
           dba_err_ct += 1
           continue
         exp_ct += 1
   pbar.finish()
+  for k in notfnd:
+    logger.warn("No target found for {}".format(k))
+  for t in nouid:
+    logger.warn("No Uberon ID found for {}".format(t))
   print "{} rows processed.".format(ct)
   print "  Inserted {} new expression rows for {} proteins".format(exp_ct, len(pmark))
   print "  Skipped {} zero confidence rows".format(skip_ct)
   if notfnd:
     print "No target found for {} stringids/symbols. See logfile {} for details.".format(len(notfnd), logfile)
+  if nouid:
+    print "No Uberon ID found for {} tissues. See logfile {} for details.".format(len(nouid), logfile)
   if dba_err_ct > 0:
     print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
 
@@ -209,6 +255,7 @@ def load(args):
     pmark = {}
     exp_ct = 0
     notfnd = set()
+    nouid = set()
     dba_err_ct = 0
     for row in tsvreader:
       ct += 1
@@ -222,20 +269,38 @@ def load(args):
         logger.warn("No target found for {}".format(k))
         continue
       etype = 'JensenLab Text Mining'
+      init = {'etype': etype, 'tissue': row[3], 'boolean_value': 1,
+              'oid': row[2], 'zscore': row[4], 'conf': row[5], 'url': row[6]}
+      # Add Uberon ID, if we can find one
+      if row[2]:
+        uberon_id = dba.get_uberon_id({'oid': row[2]})
+      if not uberon_id:
+        uberon_id = dba.get_uberon_id({'name': row[3]})
+      if not uberon_id and row[3] in tiss2uid:
+        uberon_id = tiss2uid[row[3]]
+      if uberon_id:
+        init['uberon_id'] = uberon_id
+      else:
+        nouid.add(row[3])
       for pid in pids:
         pmark[pid] = True
-        rv = dba.ins_expression( {'protein_id': pid, 'etype': etype, 'tissue': row[3],
-                                  'boolean_value': 1, 'oid': row[2], 'zscore': row[4], 
-                                  'conf': row[5], 'url': row[6]} )
+        init['protein_id'] = pid
+        rv = dba.ins_expression(init)
         if not rv:
           dba_err_ct += 1
           continue
         exp_ct += 1
   pbar.finish()
+  for k in notfnd:
+    logger.warn("No target found for {}".format(k))
+  for t in nouid:
+    logger.warn("No Uberon ID found for {}".format(t))
   print "{} rows processed.".format(ct)
   print "  Inserted {} new expression rows for {} proteins".format(exp_ct, len(pmark))
   if notfnd:
     print "No target found for {} stringids/symbols. See logfile {} for details.".format(len(notfnd), logfile)
+  if nouid:
+    print "No Uberon ID found for {} tissues. See logfile {} for details.".format(len(nouid), logfile)
   if dba_err_ct > 0:
     print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-04-05 10:13:42 smathias>
+# Time-stamp: <2019-08-20 10:40:40 smathias>
 """
 Load Cell Surface Protein Atlas expression data into TCRD from CSV files.
 
@@ -25,22 +25,21 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2017-2018, Steve Mathias"
+__copyright__ = "Copyright 2017-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "1.1.0"
+__version__   = "2.0.0"
 
 import os,sys,time
 from docopt import docopt
-import pandas as pd
-import numpy as np
+from TCRDMP import DBAdaptor
 import csv
-from TCRD import DBAdaptor
+from collections import defaultdict
 import logging
 from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = 'tcrd5logs/'
+LOGDIR = 'tcrd6logs/'
 LOGFILE = LOGDIR+'%s.log'%PROGRAM
 INFILE = '../data/CSPA/S1_File.csv'
 
@@ -80,10 +79,11 @@ def load(args):
     print "\nProcessing {} lines from CSPA file {}".format(line_ct, INFILE)
   pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
   ct = 0
-  skip_ct = 0
+  k2pids = defaultdict(list)
   notfnd = set()
+  skip_ct = 0
   dba_err_ct = 0
-  tmark = {}
+  pmark = {}
   exp_ct = 0
   with open(INFILE, 'rU') as csvfile:
     csvreader = csv.reader(csvfile)
@@ -96,17 +96,25 @@ def load(args):
         continue
       uniprot = row[1]
       geneid = row[4]
-      targets = dba.find_targets({'uniprot': uniprot}, False)
-      if not targets:
-        targets = dba.find_targets({'geneid': geneid}, False)
-      if not targets:
-        k = "%s|%s"%(uniprot,geneid)
-        notfnd.add(k)
-        logger.warn("No target found for {}".format(k))
+      k = "%s|%s"%(uniprot,geneid)
+      if k in k2pids:
+        # we've already found it
+        pids = k2pids[k]
+      elif k in notfnd:
+        # we've already not found it
         continue
-      for t in targets:
-        tmark[t['id']] = True
-        pid = t['components']['protein'][0]['id']
+      else:
+        # look it up
+        targets = dba.find_targets({'uniprot': uniprot}, False)
+        if not targets:
+          targets = dba.find_targets({'geneid': geneid}, False)
+        if not targets:
+          notfnd.add(k)
+          continue
+        pids = []
+        for t in targets:
+          pids.append(t['components']['protein'][0]['id'])
+      for pid in pids:
         cell_lines = [c for c in header[6:-1]] # there's a blank field at the end of the header line
         for (i,cl) in enumerate(cell_lines):
           val_idx = i + 6 # add six because row has other values at beginning
@@ -118,9 +126,12 @@ def load(args):
             dba_err_ct += 1
             continue
           exp_ct += 1
+        pmark[pid] = True
   pbar.finish()
+  for k in notfnd:
+    logger.warn("No target found for {}".format(k))
   print "Processed {} CSPA lines.".format(ct)
-  print "  Inserted {} new expression rows for {} targets".format(exp_ct, len(tmark))
+  print "  Inserted {} new expression rows for {} proteins.".format(exp_ct, len(pmark))
   print "  Skipped {} non-high confidence rows".format(skip_ct)
   if notfnd:
     print "  No target found for {} UniProts/GeneIDs. See logfile {} for details".format(len(notfnd), logfile)

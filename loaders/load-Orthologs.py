@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-05-17 11:08:48 smathias>
+# Time-stamp: <2019-04-11 11:51:15 smathias>
 """Load ortholog data into TCRD via HGNC web API.
 
 Usage:
@@ -24,13 +24,13 @@ Options:
 __author__ = "Steve Mathias"
 __email__ = "smathias@salud.unm.edu"
 __org__ = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2017-2018, Steve Mathias"
+__copyright__ = "Copyright 2017-2019, Steve Mathias"
 __license__ = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__ = "1.3.0"
+__version__ = "1.4.0"
 
 import os,sys,time
 from docopt import docopt
-from TCRD import DBAdaptor
+from TCRDMP import DBAdaptor
 import logging
 import urllib
 import gzip
@@ -40,7 +40,7 @@ from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = 'tcrd5logs/'
+LOGDIR = 'tcrd6logs/'
 LOGFILE = LOGDIR + '%s.log'%PROGRAM
 DOWNLOAD_DIR = '../data/HGNC/'
 BASE_URL = 'ftp://ftp.ebi.ac.uk/pub/databases/genenames/hcop/'
@@ -238,7 +238,7 @@ if __name__ == '__main__':
   if args['--debug']:
     print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
   start_time = time.time()
-  #download(args)
+  download(args)
   fn = DOWNLOAD_DIR + FILENAME
   fn = fn.replace('.gz', '')
   ortho_df = parse_hcop16(fn, args)

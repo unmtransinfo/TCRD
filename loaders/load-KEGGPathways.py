@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-05-31 10:47:29 smathias>
+# Time-stamp: <2019-08-21 12:29:58 smathias>
 """Load KEGG Pathway links into TCRD via KEGG REST API.
 
 Usage:
@@ -24,21 +24,22 @@ Options:
 __author__ = "Steve Mathias"
 __email__ = "smathias@salud.unm.edu"
 __org__ = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2015-2018, Steve Mathias"
+__copyright__ = "Copyright 2015-2019, Steve Mathias"
 __license__ = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__ = "2.1.0"
+__version__ = "3.0.0"
 
 import os,sys,time
 from docopt import docopt
 from TCRD import DBAdaptor
 import requests
 from bs4 import BeautifulSoup
+from collections import defaultdict
 import logging
 from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd5logs"
+LOGDIR = "./tcrd6logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 KEGG_BASE_URL = 'http://rest.kegg.jp'
 
@@ -96,7 +97,8 @@ def load(args):
   print "Processing {} KEGG Pathways".format(pw_ct)
   pbar = ProgressBar(widgets=pbar_widgets, maxval=pw_ct).start()  
   ct = 0
-  gid_mark = {}
+  gid2pids = defaultdict(list)
+  pmark = set()
   notfnd = set()
   net_err_ct = 0
   xml_err_ct = 0
@@ -122,29 +124,36 @@ def load(args):
       xml_err_ct += 1
       continue
     pw = soup.find('pathway').attrs
-    for geneid in geneids:
-      gid_mark[geneid] = True
-      if geneid in notfnd:
+    for gid in geneids:
+      if gid in gid2pids:
+        pids = gid2pids[gid]
+      elif gid in notfnd:
         continue
-      targets = dba.find_targets({'geneid': geneid})
-      if not targets:
-        notfnd.add(geneid)
-        logger.warn("No target found for Gene ID: {}".format(geneid))
-        continue
-      for t in targets:
-        pid = t['components']['protein'][0]['id']
+      else:
+        targets = dba.find_targets({'geneid': gid})
+        if not targets:
+          notfnd.add(gid)
+          continue
+        pids = []
+        for t in targets:
+          pids.append(t['components']['protein'][0]['id'])
+        gid2pids[gid] = pids # save this mapping so we only lookup each target once
+      for pid in pids:
         rv = dba.ins_pathway({'protein_id': pid, 'pwtype': 'KEGG', 'name': pw['title'],
                               'id_in_source': pw['name'], 'url': pw['link']})
         if rv:
           pw_ct += 1
+          pmark.add(pid)
         else:
           dba_err_ct += 1
     pbar.update(ct)
   pbar.finish()
+  for gid in gid2pids:
+    logger.warn("No target found for {}".format(gid))
   print "Processed {} KEGG Pathways.".format(ct)
-  print "  Inserted {} pathway rows".format(pw_ct)
+  print "  Inserted {} pathway rows for {} proteins.".format(pw_ct, len(pmark))
   if notfnd:
-    print "WARNNING: {} (of {}) KEGG IDs did not find a TCRD target.".format(len(notfnd), len(gid_mark))
+    print "  No target found for {} Gene IDs. See logfile {} for details.".format(len(notfnd), logfile)
   if net_err_ct > 0:
     print "WARNNING: {} network errors occurred. See logfile {} for details.".format(len(net_errs), logfile)
   if xml_err_ct > 0:

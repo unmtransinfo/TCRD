@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-04-06 11:59:06 smathias>
+# Time-stamp: <2019-08-20 10:36:44 smathias>
 """
 Load Human Cell Atlas expression and compartment data into TCRD from CSV files.
 
@@ -25,22 +25,23 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2017-2018, Steve Mathias"
+__copyright__ = "Copyright 2017-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "1.1.0"
+__version__   = "2.0.0"
 
 import os,sys,time
 from docopt import docopt
+from TCRDMP import DBAdaptor
 import pandas as pd
 import numpy as np
+from collections import defaultdict
 import csv
-from TCRD import DBAdaptor
 import logging
 from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = 'tcrd5logs/'
+LOGDIR = 'tcrd6logs/'
 LOGFILE = LOGDIR+'%s.log'%PROGRAM
 RNA_FILE = '../data/HCA/aal3321_Thul_SM_table_S1.csv'
 LOC_FILE = '../data/HCA/aal3321_Thul_SM_table_S6.csv'
@@ -123,9 +124,10 @@ def load(args):
     print "\nProcessing {} lines from HCA file {}".format(line_ct, RNA_FILE)
   pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
   ct = 0
+  k2pids = defaultdict(list)
   notfnd = set()
   dba_err_ct = 0
-  tmark = {}
+  pmark = {}
   exp_ct = 0
   with open(RNA_FILE, 'rU') as csvfile:
     csvreader = csv.reader(csvfile)
@@ -136,18 +138,25 @@ def load(args):
       sym = row[1]
       ensg = row[0]
       k = "%s|%s"%(sym,ensg)
-      if k in notfnd:
+      if k in k2pids:
+        # we've already found it
+        pids = k2pids[k]
+      elif k in notfnd:
+        # we've already not found it
         continue
-      targets = dba.find_targets({'sym': sym}, False)
-      if not targets:
-        targets = dba.find_targets_by_xref({'xtype': 'Ensembl', 'value': ensg}, False)
-      if not targets:
-        notfnd.add(k)
-        logger.warn("No target found for {}".format(k))
-        continue
-      for t in targets:
-        tmark[t['id']] = True
-        pid = t['components']['protein'][0]['id']
+      else:
+        # look it up
+        targets = dba.find_targets({'sym': sym}, False)
+        if not targets:
+          targets = dba.find_targets_by_xref({'xtype': 'Ensembl', 'value': ensg}, False)
+        if not targets:
+          notfnd.add(k)
+          continue
+        pids = []
+        for t in targets:
+          pids.append(t['components']['protein'][0]['id'])
+        k2pids[k] = pids
+      for pid in pids:
         cell_lines = [c.replace(' (TPM)', '') for c in header[2:]]
         for (i,cl) in enumerate(cell_lines):
           tpm_idx = i + 2 # add two because row has ENSG and Gene at beginning
@@ -160,9 +169,12 @@ def load(args):
             dba_err_ct += 1
             continue
           exp_ct += 1
+        pmark[pid] = True
   pbar.finish()
+  for k in notfnd:
+    logger.warn("No target found for {}".format(k))
   print "Processed {} lines.".format(ct)
-  print "  Inserted {} new expression rows for {} proteins".format(exp_ct, len(tmark))
+  print "  Inserted {} new expression rows for {} proteins.".format(exp_ct, len(pmark))
   if notfnd:
     print "  No target found for {} Symbols/ENSGs. See logfile {} for details".format(len(notfnd), logfile)
   if dba_err_ct > 0:
@@ -176,9 +188,10 @@ def load(args):
     print "\nProcessing {} lines from HCA file {}".format(line_ct, LOC_FILE)
   pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
   ct = 0
+  k2pids = defaultdict(list)
   notfnd = set()
   dba_err_ct = 0
-  tmark = {}
+  pmark = {}
   cpt_ct = 0
   with open(LOC_FILE, 'rU') as csvfile:
     csvreader = csv.reader(csvfile)
@@ -189,36 +202,45 @@ def load(args):
       uniprot = row[2]
       sym = row[1]
       k = "%s|%s"%(uniprot,sym)
-      if k in notfnd:
+      if k in k2pids:
+        # we've already found it
+        pids = k2pids[k]
+      elif k in notfnd:
+        # we've already not found it
         continue
-      targets = dba.find_targets({'uniprot': uniprot}, False)
-      if not targets:
-        targets = dba.find_targets({'sym': sym}, False)
-        notfnd.add(k)
-        logger.warn("No target found for %s" % k)
-        continue
-      t = targets[0]
-      tmark[t['id']] = True
-      pid = t['components']['protein'][0]['id']
-      compartments = [c for c in header[3:-5]]
-      for (i,c) in enumerate(compartments):
-        val_idx = i + 3 # add three because row has ENSG,Gene,Uniprot at beginning
-        val = int(row[val_idx])
-        if val == 0:
+      else:
+        # look it up
+        targets = dba.find_targets({'uniprot': uniprot}, False)
+        if not targets:
+          targets = dba.find_targets({'sym': sym}, False)
+        if not targets:
+          notfnd.add(k)
           continue
-        rel = row[-5]
-        if rel == 'Uncertain':
-          continue
-        rv = dba.ins_compartment( {'protein_id': pid, 'ctype': 'Human Cell Atlas',
-                                   'go_id': COMPARTMENTS[c][1], 
-                                   'go_term': COMPARTMENTS[c][0], 'reliability': rel} )
-        if not rv:
-          dba_err_ct += 1
-          continue
-        cpt_ct += 1
+        pids = []
+        for t in targets:
+          pids.append(t['components']['protein'][0]['id'])
+        k2pids[k] = pids
+      for pid in pids:
+        compartments = [c for c in header[3:-5]]
+        for (i,c) in enumerate(compartments):
+          val_idx = i + 3 # add three because row has ENSG,Gene,Uniprot at beginning
+          val = int(row[val_idx])
+          if val == 0:
+            continue
+          rel = row[-5]
+          if rel == 'Uncertain':
+            continue
+          rv = dba.ins_compartment( {'protein_id': pid, 'ctype': 'Human Cell Atlas',
+                                     'go_id': COMPARTMENTS[c][1], 
+                                     'go_term': COMPARTMENTS[c][0], 'reliability': rel} )
+          if not rv:
+            dba_err_ct += 1
+            continue
+          cpt_ct += 1
+        pmark[pid] = True
   pbar.finish()
   print "Processed {} lines.".format(ct)
-  print "  Inserted {} new compartment rows for {} proteins".format(cpt_ct, len(tmark))
+  print "  Inserted {} new compartment rows for {} protein.s".format(cpt_ct, len(pmark))
   if notfnd:
     print "  No target found for {} UniProts/Symbols. See logfile {} for details".format(len(notfnd), logfile)
   if dba_err_ct > 0:

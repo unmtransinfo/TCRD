@@ -23,15 +23,15 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2016-2018, Steve Mathias"
+__copyright__ = "Copyright 2016-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.1.0"
+__version__   = "3.0.0"
 
 import os,sys,time,re
 from docopt import docopt
 import KEGG_Graph as kg
 import networkx as nx
-from TCRD import DBAdaptor
+from TCRDMP import DBAdaptor
 import logging
 import csv
 from collections import defaultdict
@@ -39,7 +39,7 @@ from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd5logs"
+LOGDIR = "./tcrd6logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 KGML_DIR = '../data/KEGG/pathways'
 

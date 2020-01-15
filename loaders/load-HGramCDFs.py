@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-05-01 12:15:06 smathias>
+# Time-stamp: <2019-09-04 09:36:44 smathias>
 """Calculate CDFs for Harmonizome data and load into TCRD.
 
 Usage:
@@ -24,13 +24,13 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2016-2018, Steve Mathias"
+__copyright__ = "Copyright 2016-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.1.0"
+__version__   = "3.0.0"
 
 import os,sys,time
 from docopt import docopt
-from TCRD import DBAdaptor
+from TCRDMP import DBAdaptor
 import math
 import numpy
 import logging
@@ -38,7 +38,7 @@ from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = 'tcrd5logs/'
+LOGDIR = 'tcrd6logs/'
 LOGFILE = LOGDIR + '%s.log'%PROGRAM
 
 def load(args):
@@ -94,7 +94,6 @@ def load(args):
     if not 'gene_attribute_counts' in p: continue
     for type,attr_count in p['gene_attribute_counts'].items():
       counts[type].append(attr_count)
-      #p2cts[pid] = attr_count
   pbar.finish()
 
   print "\nCalculatig Gene Attribute stats. See logfile {}.".format(logfile)

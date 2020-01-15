@@ -4,7 +4,7 @@
 
   Steve Mathias
   smathias@salud.unm.edu
-  Time-stamp: <2019-01-28 11:54:07 smathias>
+  Time-stamp: <2020-01-10 13:27:53 smathias>
 '''
 from __future__ import print_function
 import sys
@@ -642,7 +642,7 @@ class DBAdaptor:
     else:
       self.warning("Invalid parameters sent to ins_expression(): ", init)
       return False
-    for optcol in ['qual_value', 'string_value', 'number_value', 'boolean_value', 'pubmed_id', 'evidence', 'zscore', 'conf', 'oid', 'confidence', 'age', 'gender', 'url']:
+    for optcol in ['qual_value', 'string_value', 'number_value', 'boolean_value', 'pubmed_id', 'evidence', 'zscore', 'conf', 'oid', 'confidence', 'url', 'cell_id', 'uberon_id']:
       if optcol in init:
         cols.append(optcol)
         vals.append('%s')
@@ -662,6 +662,34 @@ class DBAdaptor:
         return False
     return True
 
+  def ins_gtex(self, init, commit=True):
+    if 'protein_id' in init and 'tissue' in init and 'gender' in init and 'tpm' in init and 'tpm_level' in init:
+      cols = ['protein_id', 'tissue', 'gender', 'tpm', 'tpm_level']
+      vals = ['%s','%s', '%s','%s','%s']
+      params = [init['protein_id'], init['tissue'], init['gender'], init['tpm'], init['tpm_level']]
+    else:
+      self.warning("Invalid parameters sent to ins_gtex(): ", init)
+      return False
+    for optcol in ['tpm_rank', 'tpm_rank_bysex', 'tpm_level_bysex', 'tpm_f', 'tpm_m', 'log2foldchange', 'tau', 'tau_bysex', 'uberon_id']:
+      if optcol in init:
+        cols.append(optcol)
+        vals.append('%s')
+        params.append(init[optcol])
+    sql = "INSERT INTO gtex (%s) VALUES (%s)" % (','.join(cols), ','.join(vals))
+    self._logger.debug("SQLpat: %s"%sql)
+    self._logger.debug("SQLparams: %s"%", ".join([str(p) for p in params]))
+    with closing(self._conn.cursor()) as curs:
+      try:
+        curs.execute(sql, params)
+        if commit: self._conn.commit()
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL Error in ins_gtex(): %s"%str(e))
+        self._logger.error("SQLpat: %s"%sql)
+        self._logger.error("SQLparams: %s"%','.join([str(p) for p in params]))
+        return False
+    return True
+  
   def ins_drug_activity(self, init, commit=True):
     if 'target_id' in init and 'drug' in init and 'dcid' in init and 'has_moa' in init:
       params = [init['target_id'], init['drug'], init['dcid'], init['has_moa']]
@@ -719,23 +747,21 @@ class DBAdaptor:
     return True
 
   def ins_phenotype(self, init, commit=True):
-    if 'ptype' in init:
-      params = [init['ptype']]
-    else:
+    if 'ptype' not in init:
       self.warning("Invalid parameters sent to ins_phenotype(): ", init)
       return False
     if 'protein_id' in init:
       cols = ['protein_id', 'ptype']
       vals = ['%s','%s']
-      params.insert(0, init['protein_id'])
-    elif 'target_id' in init:
-      cols = ['target_id', 'ptype']
+      params = [init['protein_id'], init['ptype']]
+    elif 'nhprotein_id' in init:
+      cols = ['nhprotein_id', 'ptype']
       vals = ['%s','%s']
-      params.insert(0, init['target_id'])
+      params = [init['nhprotein_id'], init['ptype']]
     else:
       self.warning("Invalid parameters sent to ins_phenotype(): ", init)
       return False
-    for optcol in ['trait', 'pmid', 'top_level_term_id', 'top_level_term_name', 'term_id', 'term_name', 'term_description', 'snps', 'p_value', 'percentage_change', 'effect_size', 'statistical_method', 'sex']:
+    for optcol in ['trait', 'top_level_term_id', 'top_level_term_name', 'term_id', 'term_name', 'term_description', 'p_value', 'percentage_change', 'effect_size', 'procedure_name', 'parameter_name', 'gp_assoc', 'statistical_method', 'sex']:
       if optcol in init:
         cols.append(optcol)
         vals.append('%s')
@@ -755,6 +781,34 @@ class DBAdaptor:
         return False
     return True
 
+  def ins_gwas(self, init, commit=True):
+    if 'protein_id' in init and 'disease_trait' in init:
+      params = [init['protein_id'], init['disease_trait']]
+    else:
+      self.warning("Invalid parameters sent to ins_gwas(): ", init)
+      return False
+    cols = ['protein_id', 'disease_trait']
+    vals = ['%s','%s']
+    for optcol in ['snps', 'pmid', 'study', 'context', 'intergenic', 'p_value', 'or_beta', 'cnv', 'mapped_trait', 'mapped_trait_uri']:
+      if optcol in init:
+        cols.append(optcol)
+        vals.append('%s')
+        params.append(init[optcol])
+    sql = "INSERT INTO gwas (%s) VALUES (%s)" % (','.join(cols), ','.join(vals))
+    self._logger.debug("SQLpat: %s"%sql)
+    self._logger.debug("SQLparams: %s"%','.join([str(p) for p in params]))
+    with closing(self._conn.cursor()) as curs:
+      try:
+        curs.execute(sql, tuple(params))
+        if commit: self._conn.commit()
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL Error in ins_gwas(): %s"%str(e))
+        self._logger.error("SQLpat: %s"%sql)
+        self._logger.error("SQLparams: %s"%','.join([str(p) for p in params]))
+        return False
+    return True
+
   def ins_ppi(self, init, commit=True):
     if 'ppitype' in init and 'protein1_id' in init and 'protein2_id' in init:
       params = [init['ppitype'], init['protein1_id'], init['protein2_id']]
@@ -763,7 +817,7 @@ class DBAdaptor:
       return False
     cols = ['ppitype', 'protein1_id', 'protein2_id']
     vals = ['%s','%s','%s']
-    for optcol in ['protein1_str', 'protein2_str', 'p_int', 'p_ni', 'p_wrong', 'evidence']:
+    for optcol in ['protein1_str', 'protein2_str', 'p_int', 'p_ni', 'p_wrong', 'evidence', 'interaction_type', 'score']:
       if optcol in init:
         cols.append(optcol)
         vals.append('%s')
@@ -850,10 +904,10 @@ class DBAdaptor:
     return True
 
   def ins_ortholog_disease(self, init, commit=True):
-    if 'did' in init and 'name' in init and 'target_id' in init and 'protein_id' in init and 'ortholog_id' in init and 'score' in init:
-      cols = ['target_id', 'protein_id', 'did', 'name', 'ortholog_id', 'score']
-      vals = ['%s','%s','%s','%s','%s','%s']
-      params = [init['target_id'], init['protein_id'], init['did'], init['name'], init['ortholog_id'], init['score']]
+    if 'did' in init and 'name' in init and 'protein_id' in init and 'ortholog_id' in init and 'score' in init:
+      cols = ['protein_id', 'did', 'name', 'ortholog_id', 'score']
+      vals = ['%s','%s','%s','%s','%s']
+      params = [init['protein_id'], init['did'], init['name'], init['ortholog_id'], init['score']]
     else:
       self.warning("Invalid parameters sent to ins_ortholog_disease(): ", init)
       return False
@@ -1412,17 +1466,18 @@ class DBAdaptor:
     return True
 
   def ins_do(self, init, commit=True):
-    if 'id' in init and 'name' in init:
-      cols = ['id', 'name']
+    if 'doid' in init and 'name' in init:
+      cols = ['doid', 'name']
       vals = ['%s','%s']
-      params = [init['id'], init['name']]
+      params = [init['doid'], init['name']]
     else:
       self.warning("Invalid parameters sent to ins_do(): ", init)
       return False
-    if 'def' in init:
-      cols.append('def')
-      vals.append('%s')
-      params.append(init['def'])
+    for optcol in ['def']:
+      if optcol in init:
+        cols.append(optcol)
+        vals.append('%s')
+        params.append(init[optcol])
     sql = "INSERT INTO do (%s) VALUES (%s)" % (','.join(cols), ','.join(vals))
     self._logger.debug("SQLpat: %s"%sql)
     self._logger.debug("SQLparams: %s"%(", ".join([str(p) for p in params])))
@@ -1436,9 +1491,9 @@ class DBAdaptor:
         self._logger.error("SQLparams: %s"%','.join([str(p) for p in params]))
         return False
     if 'parents' in init:
-      for parent in init['parents']:
-        sql = "INSERT INTO do_parent (doid, parent) VALUES (%s, %s)"
-        params = [init['id'], parent]
+      for parent_id in init['parents']:
+        sql = "INSERT INTO do_parent (doid, parent_id) VALUES (%s, %s)"
+        params = [init['doid'], parent_id]
         self._logger.debug("SQLpat: %s"%sql)
         self._logger.debug("SQLparams: %s"%(", ".join([str(p) for p in params])))
         with closing(self._conn.cursor()) as curs:
@@ -1446,17 +1501,208 @@ class DBAdaptor:
             curs.execute(sql, params)
           except mysql.Error, e:
             self._conn.rollback()
-            self._logger.error("MySQL Error in ins_do(): %s"%str(e))
+            self._logger.error("MySQL Error inserting do_parent in ins_do(): %s"%str(e))
             self._logger.error("SQLpat: %s"%sql)
             self._logger.error("SQLparams: %s"%','.join([str(p) for p in params]))
             return False
-
+    if 'xrefs' in init:
+      for xref in init['xrefs']:
+        sql = "INSERT INTO do_xref (doid, db, value) VALUES (%s, %s, %s)"
+        params = [init['doid'], xref['db'], xref['value']]
+        self._logger.debug("SQLpat: %s"%sql)
+        self._logger.debug("SQLparams: %s"%(", ".join([str(p) for p in params])))
+        with closing(self._conn.cursor()) as curs:
+          try:
+            curs.execute(sql, params)
+          except mysql.Error, e:
+            if e[1].startswith('Duplicate entry') and "for key 'PRIMARY'" in e[1]:
+              pass
+            else:
+              self._conn.rollback()
+              self._logger.error("MySQL Error inserting do_xref in ins_do(): %s"%str(e))
+              self._logger.error("SQLpat: %s"%sql)
+              self._logger.error("SQLparams: %s"%','.join([str(p) for p in params]))
+              return False
     if commit:
       try:
         self._conn.commit()
       except mysql.Error, e:
         self._conn.rollback()
         self._logger.error("MySQL commit error in ins_do(): %s"%str(e))
+        return False
+    
+    return True
+
+  def ins_mpo(self, init, commit=True):
+    if 'mpid' in init and 'name' in init:
+      cols = ['mpid', 'name']
+      vals = ['%s','%s']
+      params = [init['mpid'], init['name']]
+    else:
+      self.warning("Invalid parameters sent to ins_mpo(): ", init)
+      return False
+    for optcol in ['def', 'parent_id']:
+      if optcol in init:
+        cols.append(optcol)
+        vals.append('%s')
+        if optcol == 'def':
+          init[optcol] = init[optcol].encode('ascii', 'ignore').decode('ascii')
+        params.append(init[optcol])
+    sql = "INSERT INTO mpo (%s) VALUES (%s)" % (','.join(cols), ','.join(vals))
+    self._logger.debug("SQLpat: %s"%sql)
+    #self._logger.debug("SQLparams: %s"%(", ".join([str(p) for p in params])))
+    with closing(self._conn.cursor()) as curs:
+      try:
+        curs.execute(sql, params)
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL Error in ins_do(): %s"%str(e))
+        self._logger.error("SQLpat: %s"%sql)
+        #self._logger.error("SQLparams: %s"%','.join([str(p) for p in params]))
+        self._logger.error("SQLparams: mpid %s"%sinit['mpid'])
+        return False
+    if commit:
+      try:
+        self._conn.commit()
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL commit error in ins_do(): %s"%str(e))
+        return False
+    
+    return True
+
+  def ins_rdo(self, init, commit=True):
+    if 'doid' in init and 'name' in init:
+      cols = ['doid', 'name']
+      vals = ['%s','%s']
+      params = [init['doid'], init['name']]
+    else:
+      self.warning("Invalid parameters sent to ins_rdo(): ", init)
+      return False
+    for optcol in ['def']:
+      if optcol in init:
+        cols.append(optcol)
+        vals.append('%s')
+        params.append(init[optcol])
+    sql = "INSERT INTO rdo (%s) VALUES (%s)" % (','.join(cols), ','.join(vals))
+    self._logger.debug("SQLpat: %s"%sql)
+    self._logger.debug("SQLparams: %s"%(", ".join([str(p) for p in params])))
+    with closing(self._conn.cursor()) as curs:
+      try:
+        curs.execute(sql, params)
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL Error in ins_do(): %s"%str(e))
+        self._logger.error("SQLpat: %s"%sql)
+        self._logger.error("SQLparams: %s"%','.join([str(p) for p in params]))
+        return False
+    # if 'parents' in init:
+    #   for parent_id in init['parents']:
+    #     sql = "INSERT INTO do_parent (doid, parent_id) VALUES (%s, %s)"
+    #     params = [init['doid'], parent_id]
+    #     self._logger.debug("SQLpat: %s"%sql)
+    #     self._logger.debug("SQLparams: %s"%(", ".join([str(p) for p in params])))
+    #     with closing(self._conn.cursor()) as curs:
+    #       try:
+    #         curs.execute(sql, params)
+    #       except mysql.Error, e:
+    #         self._conn.rollback()
+    #         self._logger.error("MySQL Error inserting do_parent in ins_do(): %s"%str(e))
+    #         self._logger.error("SQLpat: %s"%sql)
+    #         self._logger.error("SQLparams: %s"%','.join([str(p) for p in params]))
+    #         return False
+    if 'xrefs' in init:
+      for xref in init['xrefs']:
+        sql = "INSERT INTO rdo_xref (doid, db, value) VALUES (%s, %s, %s)"
+        params = [init['doid'], xref['db'], xref['value']]
+        self._logger.debug("SQLpat: %s"%sql)
+        self._logger.debug("SQLparams: %s"%(", ".join([str(p) for p in params])))
+        with closing(self._conn.cursor()) as curs:
+          try:
+            curs.execute(sql, params)
+          except mysql.Error, e:
+            if e[1].startswith('Duplicate entry') and "for key 'PRIMARY'" in e[1]:
+              pass
+            else:
+              self._conn.rollback()
+              self._logger.error("MySQL Error inserting rdo_xref in ins_rdo(): %s"%str(e))
+              self._logger.error("SQLpat: %s"%sql)
+              self._logger.error("SQLparams: %s"%','.join([str(p) for p in params]))
+              return False
+    if commit:
+      try:
+        self._conn.commit()
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL commit error in ins_do(): %s"%str(e))
+        return False
+    
+    return True
+
+  def ins_uberon(self, init, commit=True):
+    if 'uid' in init and 'name' in init:
+      cols = ['uid', 'name']
+      vals = ['%s','%s']
+      params = [init['uid'], init['name']]
+    else:
+      self.warning("Invalid parameters sent to ins_uberon(): ", init)
+      return False
+    for optcol in ['def', 'comment']:
+      if optcol in init:
+        cols.append(optcol)
+        vals.append('%s')
+        params.append(init[optcol])
+    sql = "INSERT INTO uberon (%s) VALUES (%s)" % (','.join(cols), ','.join(vals))
+    self._logger.debug("SQLpat: %s"%sql)
+    self._logger.debug("SQLparams: %s"%(", ".join([str(p) for p in params])))
+    with closing(self._conn.cursor()) as curs:
+      try:
+        curs.execute(sql, params)
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL Error in ins_uberon(): %s"%str(e))
+        self._logger.error("SQLpat: %s"%sql)
+        self._logger.error("SQLparams: %s"%','.join([str(p) for p in params]))
+        return False
+    if 'parents' in init:
+      for parent_id in init['parents']:
+        sql = "INSERT INTO uberon_parent (uid, parent_id) VALUES (%s, %s)"
+        params = [init['uid'], parent_id]
+        self._logger.debug("SQLpat: %s"%sql)
+        self._logger.debug("SQLparams: %s"%(", ".join([str(p) for p in params])))
+        with closing(self._conn.cursor()) as curs:
+          try:
+            curs.execute(sql, params)
+          except mysql.Error, e:
+            self._conn.rollback()
+            self._logger.error("MySQL Error inserting uberon_parent in ins_uberon(): %s"%str(e))
+            self._logger.error("SQLpat: %s"%sql)
+            self._logger.error("SQLparams: %s"%','.join([str(p) for p in params]))
+            return False
+    if 'xrefs' in init:
+      for xref in init['xrefs']:
+        sql = "INSERT INTO uberon_xref (uid, db, value) VALUES (%s, %s, %s)"
+        params = [init['uid'], xref['db'], xref['value']]
+        self._logger.debug("SQLpat: %s"%sql)
+        self._logger.debug("SQLparams: %s"%(", ".join([str(p) for p in params])))
+        with closing(self._conn.cursor()) as curs:
+          try:
+            curs.execute(sql, params)
+          except mysql.Error, e:
+            if e[1].startswith('Duplicate entry') and "for key 'PRIMARY'" in e[1]:
+              pass
+            else:
+              self._conn.rollback()
+              self._logger.error("MySQL Error inserting uberon_xref in ins_uberon(): %s"%str(e))
+              self._logger.error("SQLpat: %s"%sql)
+              self._logger.error("SQLparams: %s"%','.join([str(p) for p in params]))
+              return False
+    if commit:
+      try:
+        self._conn.commit()
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL commit error in ins_uberon(): %s"%str(e))
         return False
     
     return True
@@ -1662,6 +1908,39 @@ class DBAdaptor:
     
     return True
 
+  def ins_homologene(self, init, commit=True):
+    if 'groupid' in init and 'taxid' in init:
+      cols = ['groupid', 'taxid']
+      params = [init['groupid'], init['taxid']]
+    else:
+      self.warning("Invalid parameters sent to ins_homologene(): ", init)
+      return False
+    if 'protein_id' in init:
+      cols.insert(0, 'protein_id')
+      vals = ['%s','%s','%s']
+      params.insert(0, init['protein_id'])
+    elif 'nhprotein_id' in init:
+      cols.insert(0, 'nhprotein_id')
+      vals = ['%s','%s','%s']
+      params.insert(0, init['nhprotein_id'])
+    else:
+      self.warning("Invalid parameters sent to ins_homologene(): ", init)
+      return False
+    sql = "INSERT INTO homologene (%s) VALUES (%s)" % (','.join(cols), ','.join(vals))
+    self._logger.debug("SQLpat: %s"%sql)
+    self._logger.debug("SQLparams: %s"%(", ".join([str(p) for p in params])))
+    with closing(self._conn.cursor()) as curs:
+      try:
+        curs.execute(sql, tuple(params))
+        if commit: self._conn.commit()
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL Error in ins_homologene(): %s"%str(e))
+        self._logger.error("SQLpat: %s"%sql)
+        self._logger.error("SQLparams: %s"%','.join([str(p) for p in params]))
+        return False
+    return True
+
   def ins_omim(self, init, commit=True):
     if 'mim' in init and 'title' in init:
       cols = ['mim', 'title']
@@ -1724,6 +2003,264 @@ class DBAdaptor:
         return False
     return True
 
+  def ins_rat_qtl(self, init, commit=True):
+    if 'nhprotein_id' in init and 'rgdid' in init and 'qtl_rgdid' in init and 'qtl_symbol' in init and 'qtl_name' in init:
+      cols = ['nhprotein_id', 'rgdid', 'qtl_rgdid', 'qtl_symbol', 'qtl_name']
+      vals = ['%s','%s','%s', '%s','%s']
+      params = [init['nhprotein_id'], init['rgdid'], init['qtl_rgdid'], init['qtl_symbol'], init['qtl_name']]
+
+    else:
+      self.warning("Invalid parameters sent to ins_rat_qtl(): ", init)
+      return False
+    for optcol in ['trait_name', 'measurement_type', 'associated_disease', 'phenotype', 'p_value', 'lod']:
+      if optcol in init:
+        cols.append(optcol)
+        vals.append('%s')
+        params.append(init[optcol])
+    sql = "INSERT INTO rat_qtl (%s) VALUES (%s)" % (','.join(cols), ','.join(vals))
+    self._logger.debug("SQLpat: %s"%sql)
+    self._logger.debug("SQLparams: %s"%','.join([str(p) for p in params]))
+    with closing(self._conn.cursor()) as curs:
+      try:
+        curs.execute(sql, params)
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL Error in ins_rat_qtl(): %s"%str(e))
+        self._logger.error("SQLpat: %s"%sql)
+        self._logger.error("SQLparams: %s"%','.join([str(p) for p in params]))
+        return False
+    if commit:
+      try:
+        self._conn.commit()
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL commit error in ins_rat_qtl(): %s"%str(e))
+        return False
+    return True
+
+  def ins_rat_term(self, init, commit=True):
+    if 'rgdid' in init and 'term_id' in init:
+      cols = ['rgdid', 'term_id']
+      vals = ['%s','%s']
+      params = [init['rgdid'], init['term_id']]
+    else:
+      self.warning("Invalid parameters sent to ins_rat_term(): ", init)
+      return False
+    for optcol in ['obj_symbol', 'term_name', 'qualifier', 'evidence', 'ontology']:
+      if optcol in init:
+        cols.append(optcol)
+        vals.append('%s')
+        params.append(init[optcol])
+    sql = "INSERT INTO rat_term (%s) VALUES (%s)" % (','.join(cols), ','.join(vals))
+    self._logger.debug("SQLpat: %s"%sql)
+    self._logger.debug("SQLparams: %s"%','.join([str(p) for p in params]))
+    with closing(self._conn.cursor()) as curs:
+      try:
+        curs.execute(sql, params)
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL Error in ins_rat_term(): %s"%str(e))
+        self._logger.error("SQLpat: %s"%sql)
+        self._logger.error("SQLparams: %s"%','.join([str(p) for p in params]))
+        return False
+    if commit:
+      try:
+        self._conn.commit()
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL commit error in ins_rat_term(): %s"%str(e))
+        return False
+    return True
+
+  def ins_lincs(self, init, commit=True):
+    if 'protein_id' in init and 'cellid' in init and 'zscore' in init and 'pert_dcid' in init and 'pert_smiles' in init:
+      cols = ['protein_id', 'cellid', 'zscore', 'pert_dcid', 'pert_smiles']
+      vals = ['%s','%s', '%s','%s','%s']
+      params = [init['protein_id'], init['cellid'], init['zscore'], init['pert_dcid'], init['pert_smiles']]
+    else:
+      self.warning("Invalid parameters sent to ins_lincs(): ", init)
+      return False
+    for optcol in ['pert_canonical_smiles']:
+      if optcol in init:
+        cols.append(optcol)
+        vals.append('%s')
+        params.append(init[optcol])
+    sql = "INSERT INTO lincs (%s) VALUES (%s)" % (','.join(cols), ','.join(vals))
+    self._logger.debug("SQLpat: %s"%sql)
+    self._logger.debug("SQLparams: %s"%','.join([str(p) for p in params]))
+    with closing(self._conn.cursor()) as curs:
+      try:
+        curs.execute(sql, params)
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL Error in ins_lincs(): %s"%str(e))
+        self._logger.error("SQLpat: %s"%sql)
+        self._logger.error("SQLparams: %s"%','.join([str(p) for p in params]))
+        return False
+    if commit:
+      try:
+        self._conn.commit()
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL commit error in ins_lincs(): %s"%str(e))
+        return False
+    return True
+
+  def ins_drgc_resource(self, init, commit=True):
+    if 'target_id' in init and 'resource_type' in init and 'json' in init:
+      cols = ['target_id', 'resource_type', 'json']
+      vals = ['%s','%s','%s']
+      params = [init['target_id'], init['resource_type'], init['json']]
+    else:
+      self.warning("Invalid parameters sent to ins_drgc_resource(): ", init)
+      return False
+    sql = "INSERT INTO drgc_resource (%s) VALUES (%s)" % (','.join(cols), ','.join(vals))
+    self._logger.debug("SQLpat: %s"%sql)
+    self._logger.debug("SQLparams: %s"%(", ".join([str(p) for p in params])))
+    with closing(self._conn.cursor()) as curs:
+      try:
+        curs.execute(sql, tuple(params))
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL Error in ins_drgc_resource(): %s"%str(e))
+        self._logger.error("SQLpat: %s"%sql)
+        self._logger.error("SQLparams: %s"%','.join([str(p) for p in params]))
+        return False
+    if commit:
+      try:
+        self._conn.commit()
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL commit error in ins_drgc_resource(): %s"%str(e))
+        return False
+    
+    return True
+
+  def ins_clinvar_phenotype(self, init):
+    if 'name' in init:
+      cols = ['name']
+      vals = ['%s']
+      params = [init['name']]
+    else:
+      self.warning("Invalid parameters sent to ins_clinvar_phenotype(): ", init)
+      return False
+    sql = "INSERT INTO clinvar_phenotype (%s) VALUES (%s)" % (','.join(cols), ','.join(vals))
+    self._logger.debug("SQLpat: %s"%sql)
+    self._logger.debug("SQLparams: %s"%(", ".join([str(p) for p in params])))
+    with closing(self._conn.cursor()) as curs:
+      try:
+        curs.execute(sql, tuple(params))
+        cvpt_id = curs.lastrowid
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL Error in ins_clinvar_phenotype: %s"%str(e))
+        self._logger.error("SQLpat: %s"%sql)
+        self._logger.error("SQLparams: %s"%','.join([str(p) for p in params]))
+        return False
+    try:
+      self._conn.commit()
+    except mysql.Error, e:
+      self._conn.rollback()
+      self._logger.error("MySQL commit error in ins_clinvar_phenotype(): %s"%str(e))
+      return False
+    
+    return cvpt_id
+
+  def ins_clinvar_phenotype_xref(self, init):
+    if 'clinvar_phenotype_id' in init and 'source' in init and 'value' in init:
+      cols = ['clinvar_phenotype_id', 'source', 'value']
+      vals = ['%s', '%s', '%s']
+      params = [init['clinvar_phenotype_id'], init['source'], init['value']]
+    else:
+      self.warning("Invalid parameters sent to ins_clinvar_phenotype_xref(): ", init)
+      return False
+    sql = "INSERT INTO clinvar_phenotype_xref (%s) VALUES (%s)" % (','.join(cols), ','.join(vals))
+    self._logger.debug("SQLpat: %s"%sql)
+    self._logger.debug("SQLparams: %s"%(", ".join([str(p) for p in params])))
+    with closing(self._conn.cursor()) as curs:
+      try:
+        curs.execute(sql, tuple(params))
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL Error in ins_clinvar_phenotype_xref: %s"%str(e))
+        self._logger.error("SQLpat: %s"%sql)
+        self._logger.error("SQLparams: %s"%','.join([str(p) for p in params]))
+        return False
+    try:
+      self._conn.commit()
+    except mysql.Error, e:
+      self._conn.rollback()
+      self._logger.error("MySQL commit error in ins_clinvar_phenotype_xref(): %s"%str(e))
+      return False
+    
+    return True
+
+  def ins_clinvar(self, init):
+    if 'protein_id' in init and 'clinvar_phenotype_id' in init and 'alleleid' in init and 'type' in init and 'name' in init and 'review_status' in init:
+      cols = ['protein_id', 'clinvar_phenotype_id', 'alleleid', 'type', 'name', 'review_status']
+      vals = ['%s','%s','%s','%s','%s','%s']
+      params = [init['protein_id'], init['clinvar_phenotype_id'], init['alleleid'], init['type'],init['name'], init['review_status']]
+    else:
+      self.warning("Invalid parameters sent to ins_clinvar(): ", init)
+      return False
+    for optcol in ['clinical_significance', 'clin_sig_simple', 'last_evaluated', 'dbsnp_rs', 'dbvarid', 'origin', 'origin_simple', 'assembly', 'chr', 'chr_acc', 'start', 'stop', 'number_submitters', 'tested_in_gtr', 'submitter_categories']:
+      if optcol in init:
+        cols.append(optcol)
+        vals.append('%s')
+        params.append(init[optcol])
+    sql = "INSERT INTO clinvar (%s) VALUES (%s)" % (','.join(cols), ','.join(vals))
+    self._logger.debug("SQLpat: %s"%sql)
+    self._logger.debug("SQLparams: %s"%','.join([str(p) for p in params]))
+    with closing(self._conn.cursor()) as curs:
+      try:
+        curs.execute(sql, params)
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL Error in ins_clinvar(): %s"%str(e))
+        self._logger.error("SQLpat: %s"%sql)
+        self._logger.error("SQLparams: %s"%','.join([str(p) for p in params]))
+        return False
+    try:
+      self._conn.commit()
+    except mysql.Error, e:
+      self._conn.rollback()
+      self._logger.error("MySQL commit error in ins_clinvar(): %s"%str(e))
+      return False
+    return True
+
+  def ins_idg_evol(self, init):
+    if 'tcrd_ver' in init and 'tcrd_dbid' in init and 'name' in init and 'description' in init and 'uniprot' in init and 'tdl' in init:
+      cols = ['tcrd_ver', 'tcrd_dbid', 'name', 'description', 'uniprot', 'tdl']
+      vals = ['%s','%s','%s','%s','%s','%s']
+      params = [init['tcrd_ver'], init['tcrd_dbid'], init['name'], init['description'],init['uniprot'], init['tdl']]
+    else:
+      self.warning("Invalid parameters sent to ins_idg_evol(): ", init)
+      return False
+    for optcol in ['sym', 'geneid', 'fam']:
+      if optcol in init:
+        cols.append(optcol)
+        vals.append('%s')
+        params.append(init[optcol])
+    sql = "INSERT INTO idg_evol (%s) VALUES (%s)" % (','.join(cols), ','.join(vals))
+    self._logger.debug("SQLpat: %s"%sql)
+    self._logger.debug("SQLparams: %s"%','.join([str(p) for p in params]))
+    with closing(self._conn.cursor()) as curs:
+      try:
+        curs.execute(sql, params)
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL Error in ins_idg_evol(): %s"%str(e))
+        self._logger.error("SQLpat: %s"%sql)
+        self._logger.error("SQLparams: %s"%','.join([str(p) for p in params]))
+        return False
+    try:
+      self._conn.commit()
+    except mysql.Error, e:
+      self._conn.rollback()
+      self._logger.error("MySQL commit error in ins_idg_evol(): %s"%str(e))
+      return False
+    return True
+  
   #
   # Read Methods
   #
@@ -1768,6 +2305,49 @@ class DBAdaptor:
       for pmid in curs:
         pmids.append(pmid[0])
     return pmids
+
+  def get_expression_count(self, etype=None, oid_flag=False):
+    '''
+    Function  : Function to get TCRD expression count
+    Arguments : Optional flag to require an oid
+    Returns   : Integer
+    Example   : 
+    Scope     : Public
+    '''
+    sql = "SELECT count(*) FROM expression"
+    if etype:
+      if oid_flag:
+        sql += " WHERE etype = '%s' AND oid IS NOT NULL"
+      else:
+        sql += " WHERE etype = '%s'" % etype
+    elif oid_flag:
+      sql += " WHERE oid IS NOT NULL"
+    with closing(self._conn.cursor()) as curs:
+      curs.execute(sql)
+      ct = curs.fetchone()[0]
+    return ct
+
+  def get_expressions(self, etype=None, oid_flag=False):
+    '''
+    Function  : Generator function to get TCRD expressions
+    Arguments : Optional flag to require an oid
+    Returns   : One expression dict at a time
+    Example   : for exp in dba.get_expressions():
+                  do something with exp
+    Scope     : Public
+    '''
+    sql = 'SELECT * FROM expression'
+    if etype:
+      if oid_flag:
+        sql += " WHERE etype = '%s' AND oid IS NOT NULL"
+      else:
+        sql += " WHERE etype = '%s'" % etype
+    elif oid_flag:
+      sql += " WHERE oid IS NOT NULL"
+    with closing(self._conn.cursor(mysql.cursors.DictCursor)) as curs:
+      curs.execute(sql)
+      for exp in curs:
+        yield exp
 
   def get_beans(self):
     beans = {}
@@ -1915,6 +2495,26 @@ class DBAdaptor:
       else:
         return None
 
+  def get_uberon_id(self, q):
+    if 'oid' in q:
+      (db, val) = q['oid'].split(':')
+      sql = "SELECT uid FROM uberon_xref WHERE db = %s AND value = %s"
+      params = (db, val)
+    elif 'name' in q:
+      name = q['name'].lower()
+      sql = "SELECT uid FROM uberon WHERE LOWER(name) = %s"
+      params = (name,)
+    else:
+      self.warning("Invalid query parameters sent to get_uberon_id(): ", q)
+      return False
+    with closing(self._conn.cursor()) as curs:
+      curs.execute(sql, params)
+      row = curs.fetchone()
+    if row:
+      return row[0]
+    else:
+      return None
+
   def get_target(self, id, include_annotations=False, get_ga_counts=False):
     '''
     Function  : Get a target by id. To get a target by any other attribute, see find_targets().
@@ -1960,14 +2560,6 @@ class DBAdaptor:
           if l:
             t['xrefs'][xt] = l
         if not t['xrefs']: del(t['xrefs'])
-        # diseases
-        t['diseases'] = []
-        bad_diseases = ['Disease', 'Disease by infectious agent', 'Bacterial infectious disease', 'Fungal infectious disease', 'Parasitic infectious disease', 'Viral infectious disease', 'Disease of anatomical entity', 'Cardiovascular system disease', 'Endocrine system disease', 'Gastrointestinal system disease', 'Immune system disease', 'Integumentary system disease', 'Musculoskeletal system disease', 'Nervous system disease', 'Reproductive system disease', 'Respiratory system disease', 'Thoracic disease', 'Urinary system disease', 'Disease of cellular proliferation', 'Benign neoplasm', 'Cancer', 'Pre-malignant neoplasm', 'Disease of mental health', 'Cognitive disorder', 'Developmental disorder of mental health', 'Dissociative disorder', 'Factitious disorder', 'Gender identity disorder', 'Impulse control disorder', 'Personality disorder', 'Sexual disorder', 'Sleep disorder', 'Somatoform disorder', 'Substance-related disorder', 'Disease of metabolism', 'Acquired metabolic disease', 'Inherited metabolic disorder', 'Genetic disease', 'Physical disorder', 'Syndrome']
-        curs.execute("SELECT * FROM disease WHERE target_id = %s ORDER BY zscore DESC", (id,))
-        for d in curs:
-          #if d['name'] not in bad_diseases:
-          t['diseases'].append(d)
-        if not t['diseases']: del(t['diseases'])
         # Drug Activity
         t['drug_activities'] = []
         curs.execute("SELECT * FROM drug_activity WHERE target_id = %s", (id,))
@@ -1980,24 +2572,6 @@ class DBAdaptor:
         for ca in curs:
           t['cmpd_activities'].append(ca)
         if not t['cmpd_activities']: del(t['cmpd_activities'])
-        # phenotypes
-        t['phenotypes'] = []
-        curs.execute("SELECT * FROM phenotype WHERE target_id = %s", (id,))
-        for pt in curs:
-          t['phenotypes'].append(pt)
-        if not t['phenotypes']: del(t['phenotypes'])
-        # pathways
-        t['pathways'] = []
-        curs.execute("SELECT * FROM pathway WHERE target_id = %s", (id,))
-        for pw in curs:
-          t['pathways'].append(pw)
-        if not t['pathways']: del(t['pathways'])
-        # # grants
-        # t['grants'] = []
-        # curs.execute("SELECT * FROM `grant` WHERE target_id = %s", (id,))
-        # for t2g in curs:
-        #   t['grants'].append(t2g)
-        # if not t['grants']: del(t['grants'])
       # Components
       t['components'] = {}
       t['components']['protein'] = []
@@ -2074,6 +2648,40 @@ class DBAdaptor:
         for pms in curs:
           p['pmscores'].append(pms)
         if not p['pmscores']: del(p['pmscores'])
+        # phenotypes
+        p['phenotypes'] = []
+        curs.execute("SELECT * FROM phenotype WHERE protein_id = %s", (id,))
+        for pt in curs:
+          p['phenotypes'].append(pt)
+        if not p['phenotypes']: del(p['phenotypes'])
+        # GWAS
+        p['gwases'] = []
+        curs.execute("SELECT * FROM gwas WHERE protein_id = %s", (id,))
+        for gw in curs:
+          p['gwases'].append(gw)
+        if not p['gwases']: del(p['gwases'])
+        # IMPC phenotypes (via Mouse ortholog)
+        p['impcs'] = []
+        curs.execute("SELECT DISTINCT pt.term_id, pt.term_name, pt.p_value FROM ortholog o, nhprotein nhp, phenotype pt WHERE o.symbol = nhp.sym AND o.species = 'Mouse' AND nhp.species = 'Mus musculus' AND nhp.id = pt.nhprotein_id AND o.protein_id = %s", (id,))
+        for pt in curs:
+          p['impcs'].append(pt)
+        if not p['impcs']: del(p['impcs'])
+        # RGD QTLs (via Rat ortholog)
+        # TBD
+        # diseases
+        p['diseases'] = []
+        bad_diseases = ['Disease', 'Disease by infectious agent', 'Bacterial infectious disease', 'Fungal infectious disease', 'Parasitic infectious disease', 'Viral infectious disease', 'Disease of anatomical entity', 'Cardiovascular system disease', 'Endocrine system disease', 'Gastrointestinal system disease', 'Immune system disease', 'Integumentary system disease', 'Musculoskeletal system disease', 'Nervous system disease', 'Reproductive system disease', 'Respiratory system disease', 'Thoracic disease', 'Urinary system disease', 'Disease of cellular proliferation', 'Benign neoplasm', 'Cancer', 'Pre-malignant neoplasm', 'Disease of mental health', 'Cognitive disorder', 'Developmental disorder of mental health', 'Dissociative disorder', 'Factitious disorder', 'Gender identity disorder', 'Impulse control disorder', 'Personality disorder', 'Sexual disorder', 'Sleep disorder', 'Somatoform disorder', 'Substance-related disorder', 'Disease of metabolism', 'Acquired metabolic disease', 'Inherited metabolic disorder', 'Genetic disease', 'Physical disorder', 'Syndrome']
+        curs.execute("SELECT * FROM disease WHERE protein_id = %s ORDER BY zscore DESC", (id,))
+        for d in curs:
+          #if d['name'] not in bad_diseases:
+          p['diseases'].append(d)
+        if not p['diseases']: del(p['diseases'])
+        # ortholog_diseases
+        p['ortholog_diseases'] = []
+        curs.execute("SELECT od.did, od.name, od.ortholog_id, od.score, o.taxid, o.species, o.db_id, o.geneid, o.symbol, o.name FROM ortholog o, ortholog_disease od WHERE o.id = od.ortholog_id AND od.protein_id = %s", (id,))
+        for od in curs:
+          p['ortholog_diseases'].append(od)
+        if not p['ortholog_diseases']: del(p['ortholog_diseases'])
         # expression
         p['expressions'] = []
         curs.execute("SELECT * FROM expression WHERE protein_id = %s", (id,))
@@ -2087,12 +2695,12 @@ class DBAdaptor:
           p['expressions'].append(ex)
           #p['expressions'].append({'id': ex['id'], 'etype': etype, 'tissue': ex['tissue'], 'evidence': ex['evidence'], 'zscore': str(ex['zscore']), 'conf': ex['conf'], 'oid': ex['oid'], 'value': ex[val_col], 'qual_value': ex['qual_value'], 'confidence': ex['confidence'], 'gender': ex['gender']})
         if not p['expressions']: del(p['expressions'])
-        # mpl_assay_info
-        p['mlp_assay_infos'] = []
-        curs.execute("SELECT * FROM mlp_assay_info WHERE protein_id = %s", (id,))
-        for mai in curs:
-          p['mlp_assay_infos'].append(mai)
-        if not p['mlp_assay_infos']: del(p['mlp_assay_infos'])
+        # gtex
+        p['gtexs'] = []
+        curs.execute("SELECT * FROM gtex WHERE protein_id = %s", (id,))
+        for gtex in curs:
+          p['gtexs'].append(gtex)
+        if not p['gtexs']: del(p['gtexs'])
         # compartments
         p['compartments'] = []
         curs.execute("SELECT * FROM compartment WHERE protein_id = %s", (id,))
@@ -2149,7 +2757,7 @@ class DBAdaptor:
         for pc in curs:
           p['patent_counts'].append(pc)
         if not p['patent_counts']: del(p['patent_counts'])
-        # TIN-X Novelty and Importance
+        # TIN-X Novelty and Importance(s)
         curs.execute("SELECT * FROM tinx_novelty WHERE protein_id = %s", (id,))
         row = curs.fetchone()
         if row:
@@ -2195,7 +2803,7 @@ class DBAdaptor:
     '''
     Function  : Get count of TCRD targets
     Arguments : Optional arg:
-                idg: Get only IDG Phase 2 targets [Default = False]
+                idg: Get only IDG-Eligible targets [Default = False]
     Returns   : Integer
     Example   : ct = dba.get_target_count()
     Scope     : Public
@@ -2204,10 +2812,10 @@ class DBAdaptor:
     with closing(self._conn.cursor()) as curs:
       if idg:
         if past_id:
-          sql = "SELECT count(*) FROM target WHERE id > %s AND idg2"
+          sql = "SELECT count(*) FROM target WHERE id > %s AND idg"
           curs.execute(sql, (past_id,))
         else:
-          sql = "SELECT count(*) FROM target WHERE idg2"
+          sql = "SELECT count(*) FROM target WHERE idg"
           curs.execute(sql)
       else:
         if past_id:
@@ -2233,10 +2841,10 @@ class DBAdaptor:
     with closing(self._conn.cursor()) as curs:
       if idg:
         if past_id:
-          sql = "SELECT id FROM target WHERE WHERE id > %s AND idg2"
+          sql = "SELECT id FROM target WHERE WHERE id > %s AND idg"
           curs.execute(sql, (past_id,))
         else:
-          sql = "SELECT id FROM target WHERE idg2"
+          sql = "SELECT id FROM target WHERE idg"
           curs.execute(sql)
       else:
         if past_id:
@@ -2263,7 +2871,7 @@ class DBAdaptor:
     '''
     with closing(self._conn.cursor()) as curs:
       if idg:
-        sql = "SELECT count(*) FROM target WHERE tdl = %s AND idg2"
+        sql = "SELECT count(*) FROM target WHERE tdl = %s AND idg"
         curs.execute(sql, (tdl,))
       else:
         sql = "SELECT count(*) FROM target WHERE tdl = %s "
@@ -2286,7 +2894,7 @@ class DBAdaptor:
     '''
     with closing(self._conn.cursor()) as curs:
       if idg:
-        sql = "SELECT id FROM target WHERE tdl = %s AND idg2"
+        sql = "SELECT id FROM target WHERE tdl = %s AND idg"
         curs.execute(sql, (tdl,))
       else:
         sql = "SELECT id FROM target WHERE tdl = %s"
@@ -2319,7 +2927,7 @@ class DBAdaptor:
                 include_annotations=True
     '''
     if idg:
-      sql = "SELECT t.id FROM target t, t2tc, protein p WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND t.idg2"
+      sql = "SELECT t.id FROM target t, t2tc, protein p WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND t.idg"
     else:
       sql ="SELECT target_id FROM t2tc, protein p WHERE t2tc.protein_id = p.id"
     if 'sym' in q:
@@ -2371,7 +2979,7 @@ class DBAdaptor:
       tids = []
       # first look by target xrefs
       if idg:
-        sql = "SELECT t.id FROM target t, xref x WHERE t.id = x.target_id AND t.idg2 AND x.protein_id IS NULL AND x.xtype = %s AND x.value = %s"
+        sql = "SELECT t.id FROM target t, xref x WHERE t.id = x.target_id AND t.idg AND x.protein_id IS NULL AND x.xtype = %s AND x.value = %s"
       else:
         sql = "SELECT target_id FROM xref WHERE protein_id IS NULL AND xtype = %s AND value = %s"
       params = (q['xtype'], q['value'])
@@ -2381,7 +2989,7 @@ class DBAdaptor:
           tids.append(row[0])
       # then look by component xrefs
       if idg:
-        sql ="SELECT t.id FROM target t, t2tc, protein p, xref x WHERE t.id = t2tc.target_id AND t.idg2 AND t2tc.protein_id = p.id and p.id = x.protein_id AND x.xtype = %s AND x.value = %s"
+        sql ="SELECT t.id FROM target t, t2tc, protein p, xref x WHERE t.id = t2tc.target_id AND t.idg AND t2tc.protein_id = p.id and p.id = x.protein_id AND x.xtype = %s AND x.value = %s"
       else:
         sql ="SELECT t2tc.target_id FROM t2tc, protein p, xref x WHERE t2tc.protein_id = p.id and p.id = x.protein_id AND x.xtype = %s AND x.value = %s"
       params = (q['xtype'], q['value'])
@@ -2427,7 +3035,7 @@ class DBAdaptor:
     tids = []
     targets = []
     if idg:
-      sql = "SELECT t.id FROM target t, protein p, t2tc, alias a WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = a.protein_id AND t.idg2 AND a.type = %s AND a.value = %s"
+      sql = "SELECT t.id FROM target t, protein p, t2tc, alias a WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = a.protein_id AND t.idg AND a.type = %s AND a.value = %s"
     else:
       sql = "SELECT t.id FROM target t, protein p, t2tc, alias a WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = a.protein_id AND a.type = %s AND a.value = %s"
     params = (q['type'], q['value'])
@@ -2445,6 +3053,31 @@ class DBAdaptor:
       targets.append( self.get_target(id, include_annotations, get_ga_counts) )
     
     return targets
+
+  def get_nhprotein(self, id, include_annotations=False):
+    '''
+    Function  : Get an nhprotein by id.
+    Arguments : An integer and an optional boolean.
+    Returns   : Dictionary containing nhprotein data.
+    Example   : nhprotein = dba->get_nhprotein(42, include_annotations=True) ;
+    Scope     : Public
+    Comments  : By default, this returns nhprotein data only. To get all
+                associated annotations, call with include_annotations=True
+    '''
+    with closing(self._conn.cursor(mysql.cursors.DictCursor)) as curs:
+      curs.execute("SELECT * FROM nhprotein WHERE id = %s", (id,))
+      nhp = curs.fetchone()
+      if not nhp:
+        return False
+      
+      if include_annotations:
+        # phenotypes
+        nhp['phenotypes'] = []
+        curs.execute("SELECT * FROM phenotype WHERE nhprotein_id = %s", (id,))
+        for pt in curs:
+          nhp['phenotypes'].append(pt)
+        if not nhp['phenotypes']: del(nhp['phenotypes'])
+    return nhp
 
   def get_nhprotein_count(self):
     '''
@@ -2468,7 +3101,7 @@ class DBAdaptor:
                 species: Get nhproteins for a given spesies [Default = None]
     Returns   : One nhprotein dictionary at a time
     Example   : for nhp in dba.get_nhproteins():
-                do something with nhp
+                  do something with nhp
     Scope     : Public
     '''
     with closing(self._conn.cursor(mysql.cursors.DictCursor)) as curs:
@@ -2480,6 +3113,52 @@ class DBAdaptor:
         curs.execute(sql)
       for nhp in curs:
         yield nhp
+
+  def find_nhproteins(self, q, species=None):
+    '''
+    Function  : Get nhprotein(s) by various query criteria
+    Arguments : A dictionary containing query criteria.
+                Optional arg
+                species: Get nhproteins for a given spesies [Default = None]
+    Returns   : A List of dictionaries containing nhprotein data.
+    Examples  : Find nhproteins by HGNC Gene Symbol:
+                nhproteins = dba.find_nhproteins({'sym': 'HRH3'})
+                Find nhproteins by name (Swissprot Accession):
+                nhproteins = dba.find_nhproteins({'name': '5HT1A_HUMAN'})
+                Find nhproteins by UniProt Accession:
+                nhproteins = dba.find_nhproteins({'uniprot': 'Q9UP38'})
+                Find nhproteins by NCBI Gene ID:
+                nhproteins = dba.find_nhproteins({'geneid': 167359})
+    Scope     : Public
+    Comments  : 
+    '''
+    sql = "SELECT * FROM nhprotein WHERE "
+    if 'sym' in q:
+      sql += "sym = %s"
+      params = (q['sym'],)
+    elif 'name' in q:
+      sql += "name = %s"
+      params = (q['name'],)
+    elif 'uniprot' in q:
+      sql += "uniprot = %s"
+      params = (q['uniprot'],)
+    elif 'geneid' in q:
+      sql += "geneid = %s"
+      params = (q['geneid'],)
+    else:
+      self.warning("Invalid query parameters sent to find_nhproteins(): ", q)
+      return False
+    self._logger.debug("SQLpat: %s"%sql)
+    self._logger.debug("SQLparams: %s"%(str(params[0])))
+    if species:
+      sql += " AND species = %s"
+      params = params + (species,)
+    nhproteins = []
+    with closing(self._conn.cursor(mysql.cursors.DictCursor)) as curs:
+      curs.execute(sql, params)
+      for row in curs:
+        nhproteins.append(row)
+    return nhproteins
 
   def get_xref_values(self, xtype):
     '''
@@ -2521,7 +3200,7 @@ class DBAdaptor:
     features = {}
     # Classifications
     if idg:
-      sql = "SELECT DISTINCT pc.pcid, pc.name FROM panther_class pc, p2pc, target t, t2tc, protein p WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = p2pc.protein_id AND pc.id = p2pc.panther_class_id AND t.id IN (SELECT id FROM target WHERE idg2)"
+      sql = "SELECT DISTINCT pc.pcid, pc.name FROM panther_class pc, p2pc, target t, t2tc, protein p WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = p2pc.protein_id AND pc.id = p2pc.panther_class_id AND t.id IN (SELECT id FROM target WHERE idg)"
     else:
       sql = "SELECT DISTINCT pc.pcid, pc.name FROM panther_class pc, p2pc WHERE pc.id = p2pc.panther_class_id"
     classifications = []
@@ -2538,7 +3217,7 @@ class DBAdaptor:
     features['Classifications'] = classifications
     # Domains
     if idg:
-      sql = "SELECT DISTINCT x.value FROM xref x, target t, t2tc, protein p WHERE xtype = 'Pfam' AND t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = x.protein_id AND t.id IN (SELECT id FROM target WHERE idg2)"
+      sql = "SELECT DISTINCT x.value FROM xref x, target t, t2tc, protein p WHERE xtype = 'Pfam' AND t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = x.protein_id AND t.id IN (SELECT id FROM target WHERE idg)"
     else:
       sql = "SELECT DISTINCT value FROM xref WHERE xtype = 'Pfam'"
     domains = []
@@ -2554,7 +3233,7 @@ class DBAdaptor:
         self._logger.error(msg)
         return False
     if idg:
-      sql = "SELECT DISTINCT x.value FROM xref x, target t, t2tc, protein p WHERE xtype = 'InterPro' AND t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = x.protein_id AND t.id IN (SELECT id FROM target WHERE idg2)"
+      sql = "SELECT DISTINCT x.value FROM xref x, target t, t2tc, protein p WHERE xtype = 'InterPro' AND t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = x.protein_id AND t.id IN (SELECT id FROM target WHERE idg)"
     else:
       sql = "SELECT DISTINCT value FROM xref WHERE xtype = 'InterPro'"
     with closing(self._conn.cursor()) as curs:
@@ -2569,7 +3248,7 @@ class DBAdaptor:
         self._logger.error(msg)
         return False
     if idg:
-      sql = "SELECT DISTINCT x.value FROM xref x, target t, t2tc, protein p WHERE xtype = 'PROSITE' AND t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = x.protein_id AND t.id IN (SELECT id FROM target WHERE idg2)"
+      sql = "SELECT DISTINCT x.value FROM xref x, target t, t2tc, protein p WHERE xtype = 'PROSITE' AND t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = x.protein_id AND t.id IN (SELECT id FROM target WHERE idg)"
     else:
       sql = "SELECT DISTINCT value FROM xref WHERE xtype = 'PROSITE'"
     with closing(self._conn.cursor()) as curs:
@@ -2586,7 +3265,7 @@ class DBAdaptor:
     features['Domains'] = domains
     # Expressions
     if idg:
-      sql = "SELECT DISTINCT e.etype, e.tissue FROM expression e, target t, t2tc, protein p WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = e.protein_id AND t.id IN (SELECT id FROM target WHERE idg2)"
+      sql = "SELECT DISTINCT e.etype, e.tissue FROM expression e, target t, t2tc, protein p WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = e.protein_id AND t.id IN (SELECT id FROM target WHERE idg)"
     else:
       sql = "SELECT DISTINCT etype, tissue FROM expression"
     expressions = []
@@ -2604,7 +3283,7 @@ class DBAdaptor:
     features['Expressions'] = expressions
     # Phenotypes
     if idg:
-      sql = "SELECT DISTINCT pt.ptype, pt.trait, pt.term_id, pt.term_name FROM phenotype pt, target t, t2tc, protein p WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = pt.protein_id AND t.id IN (SELECT id FROM target WHERE idg2)"
+      sql = "SELECT DISTINCT pt.ptype, pt.trait, pt.term_id, pt.term_name FROM phenotype pt, target t, t2tc, protein p WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = pt.protein_id AND t.id IN (SELECT id FROM target WHERE idg)"
     else:
       sql = "SELECT DISTINCT ptype, trait, term_id, term_name FROM phenotype"
     phenotypes = []
@@ -2624,7 +3303,7 @@ class DBAdaptor:
     features['Phenotypes'] = phenotypes
     # Diseases
     if idg:
-      sql = "SELECT DISTINCT dtype, name FROM disease td, WHERE target_id IN (SELECT id FROM target WHERE idg2)"
+      sql = "SELECT DISTINCT dtype, name FROM disease td, WHERE target_id IN (SELECT id FROM target WHERE idg)"
     else:
       sql = "SELECT DISTINCT dtype, name FROM disease"
     diseases = []
@@ -2642,7 +3321,7 @@ class DBAdaptor:
     features['Diseases'] = diseases
     # Pathways
     if idg:
-      sql = "SELECT DISTINCT pw.pwtype, pw.name FROM pathway pw, target t, t2tc, protein p  WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = pw.protein_id AND t.id IN (SELECT id FROM target WHERE idg2)"
+      sql = "SELECT DISTINCT pw.pwtype, pw.name FROM pathway pw, target t, t2tc, protein p  WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = pw.protein_id AND t.id IN (SELECT id FROM target WHERE idg)"
     else:
       sql = "SELECT DISTINCT pwtype, name FROM pathway"
     pathways = []
@@ -2660,7 +3339,7 @@ class DBAdaptor:
     features['Pathways'] = pathways
     # GO Terms
     if idg:
-      sql = "SELECT DISTINCT g.go_term FROM goa g, target t, t2tc, protein p WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = g.protein_id AND t.id IN (SELECT id FROM target WHERE idg2)"
+      sql = "SELECT DISTINCT g.go_term FROM goa g, target t, t2tc, protein p WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = g.protein_id AND t.id IN (SELECT id FROM target WHERE idg)"
     else:
       sql = "SELECT DISTINCT go_term FROM goa"
     goas = []
@@ -2678,7 +3357,7 @@ class DBAdaptor:
     features['GOAs'] = goas
     # UniProt Features
     if idg:
-      sql = "SELECT DISTINCT f.type FROM feature f, target t, t2tc, protein p WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = g.protein_id AND t.id IN (SELECT id FROM target WHERE idg2)"
+      sql = "SELECT DISTINCT f.type FROM feature f, target t, t2tc, protein p WHERE t.id = t2tc.target_id AND t2tc.protein_id = p.id AND p.id = g.protein_id AND t.id IN (SELECT id FROM target WHERE idg)"
     else:
       sql = "SELECT DISTINCT type FROM feature"
     upfeats = []
@@ -2989,6 +3668,40 @@ class DBAdaptor:
     return goas
 
   def get_orthologs_dbid2id(self):
+    dbid2id = {}
+    sql = "SELECT * FROM ortholog"
+    self._logger.error("Executing SQL: %s"%sql)
+    with closing(self._conn.cursor(mysql.cursors.DictCursor)) as curs:
+      try:
+        curs.execute(sql)
+        for d in curs:
+          dbid2id[d['db_id']] = d['id']
+      except mysql.Error, e:
+        msg = "MySQL Error: %s" % str(e)
+        #self.error(msg)
+        self._logger.error(msg)
+        return False
+    return dbid2id
+
+  def get_ortholog(self, q):
+    if 'taxid' not in q:
+      self.warning("Invalid query parameters sent to get_ortholog(): ", q)
+      return False
+    if 'symbol' in q:
+      sql = "SELECT * FROM ortholog WHERE symbol = %s AND taxid = %s"
+      params = (q['symbol'], q['taxid'])
+    elif 'geneid' in q:
+      sql = "SELECT * FROM ortholog WHERE geneid = %s AND taxid = %s"
+      params = (q['geneid'], q['taxid'])
+    else:
+      self.warning("Invalid query parameters sent to get_ortholog(): ", q)
+      return False
+    with closing(self._conn.cursor(mysql.cursors.DictCursor)) as curs:
+      curs.execute(sql, params)
+      ortholog = curs.fetchone()
+    return ortholog
+
+    
     dbid2id = {}
     sql = "SELECT * FROM ortholog"
     self._logger.error("Executing SQL: %s"%sql)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-03-29 12:57:54 smathias>
+# Time-stamp: <2019-10-15 09:28:23 smathias>
 """ Load Reactome ppis into TCRD from TSV file.
 
 Usage:
@@ -24,9 +24,9 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2015-2018, Steve Mathias"
+__copyright__ = "Copyright 2015-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.1.0"
+__version__   = "3.0.0"
 
 import os,sys,time
 from docopt import docopt
@@ -39,7 +39,7 @@ from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd5logs"
+LOGDIR = "./tcrd6logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 DOWNLOAD_DIR = '../data/Reactome/'
 BASE_URL = 'https://reactome.org/download/current/interactors/'
@@ -91,7 +91,6 @@ def load(args):
 
   infile = DOWNLOAD_DIR + FILENAME
   line_ct = slmf.wcl(infile)
-  line_ct -= 1
   if not args['--quiet']:
     print "\nProcessing {} lines from Reactome PPI file {}".format(line_ct, infile)
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
@@ -99,8 +98,9 @@ def load(args):
   with open(infile, 'rU') as tsv:
     tsvreader = csv.reader(tsv, delimiter='\t')
     header = tsvreader.next() # skip header line
-    ct = 0
+    ct = 1
     skip_ct = 0
+    same12_ct = 0
     dup_ct = 0
     ppis = {}
     ppi_ct = 0
@@ -118,9 +118,6 @@ def load(args):
       # 7: Interaction context Pubmed references
       ct += 1
       pbar.update(ct)
-      if row[6] != 'complex':
-        skip_ct += 1
-        continue
       if not row[0].startswith('uniprotkb:'):
         continue
       if not row[3].startswith('uniprotkb:'):
@@ -139,7 +136,6 @@ def load(args):
         t1 = find_target(dba, up1)
         if not t1:
           notfnd.add(up1)
-          logger.warn("No target found for UniProt: {}".format(up1))
           continue
         pid1 = t1['components']['protein'][0]['id']
         up2pid[up1] = pid1
@@ -152,16 +148,19 @@ def load(args):
         t2 = find_target(dba, up2)
         if not t2:
           notfnd.add(up2)
-          logger.warn("No target found for UniProt: {}".format(up2))
           continue
         pid2 = t2['components']['protein'][0]['id']
         up2pid[up2] = pid2
-      ppik = up1 + "|" + up2
+      int_type = row[6]
+      ppik = up1 + "|" + up2 + 'int_type'
       if ppik in ppis:
         dup_ct += 1
         continue
+      if pid1 == pid2:
+        same12_ct += 1
+        continue
       # Insert PPI
-      rv = dba.ins_ppi( {'ppitype': 'Reactome', 
+      rv = dba.ins_ppi( {'ppitype': 'Reactome', 'interaction_type': int_type,
                          'protein1_id': pid1, 'protein1_str': up1,
                          'protein2_id': pid2, 'protein2_str': up2} )
       if rv:
@@ -170,13 +169,18 @@ def load(args):
       else:
         dba_err_ct += 1
   pbar.finish()
-  elapsed = time.time() - start_time
+  for up in notfnd:
+    logger.warn("No target found for: {}".format(up))
   print "{} Reactome PPI rows processed.".format(ct)
-  print "  Skipped {} non-complex rows or rows without two UniProt interactors".format(skip_ct)
-  print "  Skipped {} duplicate PPIs".format(dup_ct)
   print "  Inserted {} ({}) new ppi rows".format(ppi_ct, len(ppis))
+  if skip_ct:
+    print "  Skipped {} rows without two UniProt interactors".format(skip_ct)
+  if dup_ct:
+    print "  Skipped {} duplicate PPIs".format(dup_ct)
+  if same12_ct:
+    print "  Skipped {} PPIs involving the same protein".format(same12_ct)
   if notfnd:
-    print "WARNNING: {} UniProt accessions did not find a TCRD target.".format(len(notfnd))
+    print "  No target found for {} UniProt accessions. See logfile {} for details.".format(len(notfnd), logfile) 
   if dba_err_ct > 0:
     print "WARNNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
 

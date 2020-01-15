@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-05-17 11:04:59 smathias>
+# Time-stamp: <2019-01-31 16:40:40 smathias>
 """Load Disease Ontology into TCRD from OBO file.
 
 Usage:
-    load-DiseaseOntology.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
-    load-DiseaseOntology.py -h | --help
+    load-DO.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
+    load-DO.py -h | --help
 
 Options:
   -h --dbhost DBHOST   : MySQL database host name [default: localhost]
@@ -24,13 +24,13 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2016-2018, Steve Mathias"
+__copyright__ = "Copyright 2016-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.1.0"
+__version__   = "3.1.0"
 
 import os,sys,time,re
 from docopt import docopt
-from TCRD import DBAdaptor
+from TCRDMP import DBAdaptor
 import logging
 import urllib
 import obo
@@ -38,12 +38,11 @@ from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = 'tcrd5logs/'
+LOGDIR = 'tcrd6logs/'
 LOGFILE = LOGDIR + '%s.log'%PROGRAM
 DOWNLOAD_DIR = '../data/DiseaseOntology/'
 BASE_URL = 'http://purl.obolibrary.org/obo/'
 FILENAME = 'doid.obo'
-# http://www.obofoundry.org/ontology/doid.html
 
 def download(args):
   fn = DOWNLOAD_DIR + FILENAME
@@ -56,7 +55,44 @@ def download(args):
   if not args['--quiet']:
     print "Done."
 
-def load(args):
+def parse_do_obo(args, fn):
+  if not args['--quiet']:
+    print "\nParsing Disease Ontology file {}".format(fn)
+  do_parser = obo.Parser(open(fn))
+  raw_do = {}
+  for stanza in do_parser:
+    if stanza.name != 'Term':
+      continue
+    raw_do[stanza.tags['id'][0].value] = stanza.tags
+  dod = {}
+  for doid,d in raw_do.items():
+    if not doid.startswith('DOID:'):
+      continue
+    if 'is_obsolete' in d:
+      continue
+    init = {'doid': doid, 'name': d['name'][0].value}
+    if 'def' in d:
+      init['def'] = d['def'][0].value
+    if 'is_a' in d:
+      init['parents'] = []
+      for parent in d['is_a']:
+        init['parents'].append(parent.value)
+    if 'xref' in d:
+      init['xrefs'] = []
+      for xref in d['xref']:
+        if xref.value.startswith('http'):
+          continue
+        try:
+          (db, val) = xref.value.split(':')
+        except:
+          pass
+        init['xrefs'].append({'db': db, 'value': val})
+    dod[doid] = init
+  if not args['--quiet']:
+    print "Got {} Disease Ontology terms".format(len(dod))
+  return dod
+    
+def load(args, dod):
   loglevel = int(args['--loglevel'])
   if args['--logfile']:
     logfile = args['--logfile']
@@ -92,43 +128,20 @@ def load(args):
   # Provenance
   rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'do'})
   assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
-  rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'do_parent'})
+  rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'do_xref'})
   assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
     
-  # Parse the Disease Ontology OBO file
-  if not args['--quiet']:
-    print "\nParsing Disease Ontology file {}".format(DOWNLOAD_DIR + FILENAME)
-  do_parser = obo.Parser(open(DOWNLOAD_DIR + FILENAME))
-  do = {}
-  for stanza in do_parser:
-    do[stanza.tags['id'][0].value] = stanza.tags
-  print "Got {} Disease Ontology terms".format(len(do))
-  
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   if not args['--quiet']:
-    print "\nLoading {} Disease Ontology terms".format(len(do))
-  pbar = ProgressBar(widgets=pbar_widgets, maxval=len(do)).start()
+    print "\nLoading {} Disease Ontology terms".format(len(dod))
+  pbar = ProgressBar(widgets=pbar_widgets, maxval=len(dod)).start()
   ct = 0
   do_ct = 0
-  skip_ct = 0
-  obs_ct = 0
   dba_err_ct = 0
-  for doid,dod in do.items():
+  for doid,d in dod.items():
     ct += 1
-    if not doid.startswith('DOID:'):
-      skip_ct += 1
-      continue
-    if 'is_obsolete' in dod:
-      obs_ct += 1
-      continue
-    init = {'id': doid, 'name': dod['name'][0].value}
-    if 'def' in dod:
-      init['def'] = dod['def'][0].value
-    if 'is_a' in dod:
-      init['parents'] = []
-      for parent in dod['is_a']:
-        init['parents'].append(parent.value)
-    rv = dba.ins_do(init)
+    d['doid'] = doid
+    rv = dba.ins_do(d)
     if rv:
       do_ct += 1
     else:
@@ -137,8 +150,6 @@ def load(args):
   pbar.finish()
   print "{} terms processed.".format(ct)
   print "  Inserted {} new do rows".format(do_ct)
-  print "  Skipped {} non-DOID terms".format(skip_ct)
-  print "  Skipped {} obsolete terms".format(obs_ct)
   if dba_err_ct > 0:
     print "WARNNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
 
@@ -150,6 +161,7 @@ if __name__ == '__main__':
     print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
   start_time = time.time()
   download(args)
-  load(args)
+  dod = parse_do_obo(args, DOWNLOAD_DIR+FILENAME)
+  load(args, dod)
   elapsed = time.time() - start_time
   print "\n{}: Done. Elapsed time: {}\n".format(PROGRAM, slmf.secs2str(elapsed))

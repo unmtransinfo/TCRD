@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-06-11 11:17:24 smathias>
+# Time-stamp: <2019-08-22 10:49:35 smathias>
 """Load data for TIN-X into TCRD from TSV files.
 
 Usage:
@@ -24,13 +24,13 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2015-2018, Steve Mathias"
+__copyright__ = "Copyright 2015-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.1.0"
+__version__   = "3.0.0"
 
 import os,sys,time,re
 from docopt import docopt
-from TCRD import DBAdaptor
+from TCRDMP import DBAdaptor
 import logging
 import obo
 import csv
@@ -38,7 +38,7 @@ from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-VER = '5' # CHANGE THIS!!!
+VER = '6' # CHANGE THIS!!!
 LOGDIR = 'tcrd%slogs/'%VER
 LOGFILE = LOGDIR + '%s.log'%PROGRAM
 DISEASE_ONTOLOGY_OBO = '../data/DiseaseOntology/doid.obo'

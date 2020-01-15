@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-05-24 10:45:53 smathias>
+# Time-stamp: <2019-08-27 15:38:52 smathias>
 """Load CMap Landmark Gene ID xrefs into TCRD from CSV file.
 
 Usage:
@@ -24,20 +24,20 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2015-2018, Steve Mathias"
+__copyright__ = "Copyright 2015-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.1.0"
+__version__   = "3.0.0"
 
 import os,sys,time
 from docopt import docopt
-from TCRD import DBAdaptor
+from TCRDMP import DBAdaptor
 import logging
 import csv
 from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd5logs"
+LOGDIR = "./tcrd6logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 L1000_FILE = '../data/CMap_LandmarkGenes_n978.csv'
 
@@ -80,7 +80,7 @@ def load(args):
     ct = 0
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start()
     ct = 0
-    tmark = {}
+    pmark = {}
     xref_ct = 0
     notfnd = set()
     dba_err_ct = 0
@@ -94,21 +94,21 @@ def load(args):
       if not targets:
         targets = dba.find_targets({'geneid': geneid})
         if not targets:
-          notfnd.add("%s|%s"%(sym,geneid))
           continue
       target = targets[0]
-      tmark[target['id']] = True
       pid = target['components']['protein'][0]['id']
       rv = dba.ins_xref({'protein_id': pid, 'xtype': 'L1000 ID',
                          'dataset_id': dataset_id, 'value': l1000})
       if rv:
         xref_ct += 1
+        pmark[pid] = True
       else:
         dba_err_ct += 1
   pbar.finish()
-  if not args['--quiet']:
-    print "\n{} rows processed.".format(ct)
-  print "  Inserted {} new L1000 ID xref rows for {} targets".format(xref_ct, len(tmark))
+  for k in notfnd:
+    logger.warn("No target found for {}".format(k))
+  print "{} rows processed.".format(ct)
+  print "  Inserted {} new L1000 ID xref rows for {} proteins.".format(xref_ct, len(pmark))
   if len(notfnd) > 0:
     print "No target found for {} symbols/geneids. See logfile {} for details.".format(len(notfnd), logfile)
   if dba_err_ct > 0:

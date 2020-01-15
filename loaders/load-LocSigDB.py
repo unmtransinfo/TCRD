@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-05-31 14:39:06 smathias>
+# Time-stamp: <2019-08-28 10:21:29 smathias>
 """Load signal localization data into TCRD from LocSigDB CSV file.
 
 Usage:
@@ -24,9 +24,9 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2017-2018, Steve Mathias"
+__copyright__ = "Copyright 2017-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "1.1.0"
+__version__   = "2.0.0"
 
 import os,sys,time
 from docopt import docopt
@@ -37,7 +37,7 @@ from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd5logs"
+LOGDIR = "./tcrd6logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 DOWNLOAD_DIR = '../data/LocSigDB/'
 BASE_URL = 'http://genome.unmc.edu/LocSigDB/doc/'
@@ -89,15 +89,13 @@ def load(args):
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
     ct = 0
     up2pid = {}
-    up_notfnd = {}
+    notfnd = set()
     ls_ct = 0
     skip_ct = 0
     pmark = set()
-    notfnd = set()
     dba_err_ct = 0
     for line in f:
       ct += 1
-      pbar.update(ct)
       data = line.split(',')
       if 'Homo sapiens' not in data[5]:
         skip_ct += 1
@@ -105,41 +103,36 @@ def load(args):
       fnd = False
       for up in data[4].split(';'):
         if up in up2pid:
-          fnd = True
+          # we've already found it
           pid = up2pid[up]
-          rv = dba.ins_locsig( {'protein_id': pid, 'location': data[2],
-                                'signal': data[0], 'pmids': data[3]} )
-          if not rv:
-            dba_err_ct += 1
-            continue
-          ls_ct += 1
-        elif up in up_notfnd:
+        elif up in notfnd:
+          # we've already not found it
           continue
         else:
           targets = dba.find_targets({'uniprot': up})
-          if targets:
-            fnd = True
-            t = targets[0]
-            pid = t['components']['protein'][0]['id']
-            pmark.add(pid)
-            up2pid[up] = pid
-            rv = dba.ins_locsig( {'protein_id': pid, 'location': data[2],
-                                  'signal': data[0], 'pmids': data[3]} )
-            if not rv:
-              dba_err_ct += 1
-              continue
-            ls_ct += 1
-      if not fnd:
-        notfnd.add(data[1])
-        logger.warn("No target found for Protein(s): {}".format(data[1]))
+          if not targets:
+            notfnd.add(up)
+            continue
+          pid = targets[0]['components']['protein'][0]['id']
+          up2pid[up] = pid
+        rv = dba.ins_locsig( {'protein_id': pid, 'location': data[2],
+                              'signal': data[0], 'pmids': data[3]} )
+        if not rv:
+          dba_err_ct += 1
+          continue
+        ls_ct += 1
+        pmark.add(pid)
+      pbar.update(ct)
   pbar.finish()
+  for up in notfnd:
+    logger.warn("No target found for {}".format(up))
   print "{} lines processed.".format(ct)
-  print "  Skipped {} non-human rows".format(skip_ct)
   print "  Inserted {} new locsig rows for {} proteins".format(ls_ct, len(pmark))
+  print "  Skipped {} non-human rows".format(skip_ct)
+  if notfnd:
+    print "No target found for {} UniProts. See logfile {} for details.".format(len(notfnd), logfile)
   if dba_err_ct > 0:
     print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
-  if notfnd:
-    print "No target found for {} input lines. See logfile {} for details".format(len(notfnd), logfile)
 
 
 if __name__ == '__main__':

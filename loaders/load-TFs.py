@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-05-22 11:45:24 smathias>
+# Time-stamp: <2019-08-28 11:44:29 smathias>
 """Load Is Transcription Factor tdl_infos into TCRD from CSV file.
 
 Usage:
@@ -25,13 +25,13 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2018, Steve Mathias"
+__copyright__ = "Copyright 2018-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "1.0.0"
+__version__   = "2.0.0"
 
 import os,sys,time
 from docopt import docopt
-from TCRD import DBAdaptor
+from TCRDMP import DBAdaptor
 import urllib
 import csv
 import logging
@@ -39,7 +39,7 @@ from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = 'tcrd5logs/'
+LOGDIR = 'tcrd6logs/'
 LOGFILE = LOGDIR + '%s.log'%PROGRAM
 DOWNLOAD_DIR = '../data/UToronto/'
 BASE_URL = 'http://humantfs.ccbr.utoronto.ca/download/v_1.01/'
@@ -142,7 +142,6 @@ def load(args):
       if not targets:
         k = "%s|%s|%s"%(sym,gid,ensg)
         notfnd.add(k)
-        logger.warn("No target found for {}".format(k))
         continue
       t = targets[0]
       TDLs[t['tdl']] += 1
@@ -155,6 +154,8 @@ def load(args):
         dba_err_ct += 1
       pbar.update(ct)
   pbar.finish()
+  for k in notfnd:
+    logger.warn("No target found for {}".format(k))
   print "\n{} lines processed.".format(ct)
   print "  Inserted {} new 'Is Transcription Factor' tdl_infos".format(ti_ct)
   print "  Skipped {} non-TF lines".format(skip_ct)

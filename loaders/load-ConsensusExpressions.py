@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-04-09 12:35:41 smathias>
+# Time-stamp: <2019-08-21 10:04:41 smathias>
 """
 Calculate and load consensus expression values into TCRD.
 Usage:
@@ -24,24 +24,24 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2016-2018, Steve Mathias"
+__copyright__ = "Copyright 2016-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.1.0"
+__version__   = "3.0.0"
 
 import os,sys,time
 from docopt import docopt
-from TCRD import DBAdaptor
-import logging
+from TCRDMP import DBAdaptor
 import csv
 from collections import defaultdict
 import operator
+import logging
 from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = 'tcrd5logs/'
+LOGDIR = 'tcrd6logs/'
 LOGFILE = LOGDIR + '%s.log'%PROGRAM
-TISSUESTYPEDFILE = '../data/Tissues_Typed_v2.1.csv'
+TISSUESTYPED_FILE = '../data/Tissues_Typed_v2.1.csv'
 
 def calc_and_load(args):
   loglevel = int(args['--loglevel'])
@@ -73,11 +73,11 @@ def calc_and_load(args):
   assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
 
   tmap = {} # tissue name to Tissue Type as per TIO
-  line_ct = slmf.wcl(TISSUESTYPEDFILE)
+  line_ct = slmf.wcl(TISSUESTYPED_FILE)
   line_ct -= 1
   if not args['--quiet']:
-    print '\nProcessiong {} lines in tissue mapping file: {}'.format(line_ct, TISSUESTYPEDFILE)
-  with open(TISSUESTYPEDFILE, 'rU') as csvfile:
+    print '\nProcessiong {} lines in tissue mapping file: {}'.format(line_ct, TISSUESTYPED_FILE)
+  with open(TISSUESTYPED_FILE, 'rU') as csvfile:
     csvreader = csv.reader(csvfile)
     header = csvreader.next() # skip header line
     ct = 0
@@ -95,19 +95,25 @@ def calc_and_load(args):
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   pbar = ProgressBar(widgets=pbar_widgets, maxval=tct).start() 
   ct = 0
+  nouid = set()
   exp_ct = 0
   dba_err_ct = 0
   for t in dba.get_targets(include_annotations=True):
     ct += 1
     p = t['components']['protein'][0]
-    if not 'expressions' in p:
+    if not 'expressions' in p and not 'gtexs' in p:
       continue
-    want = ['GTEx', 'HPA Protein', 'HPA RNA', 'HPM Gene', 'HPM Protein']
-    aggexps = aggregate_exps(p['expressions'], tmap, want)
+    want = ['HPA', 'HPM Gene', 'HPM Protein']
+    exps = [e for e in p['expressions'] if e['etype'] in want]
+    gtexs = None
+    if 'gtexs' in p:
+      gtexs = p['gtexs']
+    aggexps = aggregate_exps(exps, gtexs, tmap)
     for tissue, vals in aggexps.items():
       (cons, conf) = calculate_consensus(vals)
-      rv = dba.ins_expression( {'protein_id': p['id'], 'etype': 'Consensus', 
-                                'tissue': tissue, 'qual_value': cons, 'confidence': conf} )
+      init = {'protein_id': p['id'], 'etype': 'Consensus', 'tissue': tissue,
+              'qual_value': cons, 'confidence': conf}
+      rv = dba.ins_expression(init)
       if rv:
         exp_ct += 1
       else:
@@ -123,13 +129,12 @@ def calc_and_load(args):
 def default_factory():
   return {0: 0, 1: 0, 2: 0, 3: 0}
 
-def aggregate_exps(exps, tmap, want):
-  exps = [e for e in exps if e['etype'] in want]
+def aggregate_exps(exps, gtexs, tmap):
   aggexps = defaultdict(default_factory)
   fvalmap = {'Not Detected': 0, 'Low': 1, 'Medium': 2, 'High': 3}
   for e in exps:
     tissue = e['tissue'].lower()
-    if e['tissue'] not in tmap:
+    if tissue not in tmap:
       continue
     k1 = tmap[tissue]
     if e['qual_value'] in fvalmap:
@@ -137,6 +142,17 @@ def aggregate_exps(exps, tmap, want):
     else:
       continue
     aggexps[k1][k2] += 1
+  if gtexs:
+    for g in gtexs:
+      tissue = g['tissue'].lower()
+      if tissue not in tmap:
+        continue
+      k1 = tmap[tissue]
+      if g['tpm_level'] in fvalmap:
+        k2 = fvalmap[g['tpm_level']]
+      else:
+        continue
+      aggexps[k1][k2] += 1
   return aggexps
 
 def calculate_consensus(vals):

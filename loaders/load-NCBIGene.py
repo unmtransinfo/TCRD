@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-01-29 11:57:16 smathias>
+# Time-stamp: <2019-01-15 10:22:51 smathias>
 """TCRD with latest NCBI Gene data via EUtils.
 
 Usage:
@@ -24,13 +24,13 @@ Options:
 __author__ = "Steve Mathias"
 __email__ = "smathias@salud.unm.edu"
 __org__ = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2014-2018, Steve Mathias"
+__copyright__ = "Copyright 2014-2019, Steve Mathias"
 __license__ = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__ = "2.1.1"
+__version__ = "2.2.0"
 
 import os,sys,time
 from docopt import docopt
-from TCRD import DBAdaptor
+from TCRDMP import DBAdaptor
 import requests
 from bs4 import BeautifulSoup
 import logging
@@ -40,7 +40,7 @@ from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd5logs"
+LOGDIR = "./tcrd6logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 EFETCH_GENE_URL = "http://www.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=Gene&rettype=xml&id="
 SHELF_FILE = '%s/load-NCBIGene.db'%LOGDIR
@@ -90,10 +90,6 @@ def load(args):
       print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
       sys.exit(1)
 
-  start_time = time.time()
-  global xtypes
-  xtypes = dba.get_xref_types()
-  
   s = shelve.open(SHELF_FILE, writeback=True)
   s['loaded'] = []
   s['retries'] = {}
@@ -109,7 +105,6 @@ def load(args):
   skip_ct = 0
   for t in dba.get_targets(include_annotations=False):
     tid = t['id']
-    #if tid < 17872: continue
     ct += 1
     p = t['components']['protein'][0]
     pid = p['id']
@@ -190,7 +185,7 @@ def load(args):
   print "Inserted %d NCBI Gene PubMed Count tdl_infos" % s['counts']['pmc']
   print "Inserted %d GeneRIFs" % s['counts']['generif']
   print "Inserted %d PubMed xrefs" % s['counts']['pmxr']
-  print "Inserted %d other xrefs" % s['counts']['xref']  
+  #print "Inserted %d other xrefs" % s['counts']['xref']  
   if s['counts']['xml_err'] > 0:
     print "WARNNING: %d XML parsing errors occurred. See logfile %s for details." % (s['counts']['xml_err'], logfile)
   if s['counts']['dba_err'] > 0:
@@ -213,7 +208,6 @@ def get_ncbigene(id):
     return (False, False, False)
 
 def parse_genexml(xml):
-  global xtypes
   annotations = {}
   soup = BeautifulSoup(xml, "xml")
   if not soup:
@@ -248,29 +242,29 @@ def parse_genexml(xml):
       gctext = gc.find('Gene-commentary_text')
       if gctext:
         annotations['generifs'].append( {'pubmed_ids': "|".join([pmid.text for pmid in gc.findAll('PubMedId')]), 'text': gctext.text} )
-  # Other XRefs
-  annotations['xrefs'] = []
-  for gc in comments.findAll('Gene-commentary', recursive=False):
-    if gc.findChild('Gene-commentary_heading'):
-      if gc.find('Gene-commentary_heading').text == 'Interactions':
-        continue
-      if gc.find('Gene-commentary_heading').text == 'Additional Links':
-        for gc2 in gc.findAll('Gene-commentary'):
-          if not gc2.find('Dbtag_db'): continue
-          xt = gc2.find('Dbtag_db').text
-          if xt in xtypes:
-            if gc2.find('Object-id_str'):
-              val = gc2.find('Object-id_str').text
-            elif gc2.find('Object-id_id'):
-              val = gc2.find('Object-id_id').text
-            else:
-              continue
-            if gc2.find('Other-source_url'):
-              url = gc2.find('Other-source_url').text
-              init = {'xtype': xt, 'value': val, 'url': url}
-            else:
-              init = {'xtype': xt, 'value': val}
-            annotations['xrefs'].append(init)
+  # # Other XRefs
+  # annotations['xrefs'] = []
+  # for gc in comments.findAll('Gene-commentary', recursive=False):
+  #   if gc.findChild('Gene-commentary_heading'):
+  #     if gc.find('Gene-commentary_heading').text == 'Interactions':
+  #       continue
+  #     if gc.find('Gene-commentary_heading').text == 'Additional Links':
+  #       for gc2 in gc.findAll('Gene-commentary'):
+  #         if not gc2.find('Dbtag_db'): continue
+  #         xt = gc2.find('Dbtag_db').text
+  #         if xt in xtypes:
+  #           if gc2.find('Object-id_str'):
+  #             val = gc2.find('Object-id_str').text
+  #           elif gc2.find('Object-id_id'):
+  #             val = gc2.find('Object-id_id').text
+  #           else:
+  #             continue
+  #           if gc2.find('Other-source_url'):
+  #             url = gc2.find('Other-source_url').text
+  #             init = {'xtype': xt, 'value': val, 'url': url}
+  #           else:
+  #             init = {'xtype': xt, 'value': val}
+  #           annotations['xrefs'].append(init)
   return annotations
 
 def load_annotations(dba, t, dataset_id, gene_annotations, shelf):
@@ -313,15 +307,15 @@ def load_annotations(dba, t, dataset_id, gene_annotations, shelf):
         shelf['counts']['generif'] += 1
       else:
         shelf['counts']['dba_err'] += 1
-  if 'xrefs' in gene_annotations:
-    for xrd in gene_annotations['xrefs']:
-      xrd['protein_id'] = pid
-      xrd['dataset_id'] = dataset_id
-      rv = dba.ins_xref(xrd)
-      if rv:
-        shelf['counts']['xref'] += 1
-      else:
-        shelf['counts']['dba_err'] += 1
+  # if 'xrefs' in gene_annotations:
+  #   for xrd in gene_annotations['xrefs']:
+  #     xrd['protein_id'] = pid
+  #     xrd['dataset_id'] = dataset_id
+  #     rv = dba.ins_xref(xrd)
+  #     if rv:
+  #       shelf['counts']['xref'] += 1
+  #     else:
+  #       shelf['counts']['dba_err'] += 1
   shelf['loaded'].append(t['id'])
 
 

@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-05-18 12:00:41 smathias>
-"""Load disease associations into TCRD from JensenLab DISEASES TSV files..
+# Time-stamp: <2019-04-16 14:50:52 smathias>
+"""Load Expression Atlas disease associations into TCRD from TSV file.
 
 Usage:
-    load-ExpressionAtlas.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
-    load-ExpressionAtlas.py -? | --help
+    load-ExpressionAtlas-Diseases.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
+    load-ExpressionAtlas-Diseases.py -? | --help
 
 Options:
   -h --dbhost DBHOST   : MySQL database host name [default: localhost]
@@ -24,20 +24,20 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2016-2018, Steve Mathias"
+__copyright__ = "Copyright 2016-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.1.0"
+__version__   = "2.2.0"
 
 import os,sys,time
 from docopt import docopt
-from TCRD import DBAdaptor
+from TCRDMP import DBAdaptor
 import logging
 import csv
 from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd5logs"
+LOGDIR = "./tcrd6logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 # To generate the input file:
 # cd <TCRD ROOT>/data/ExpressionAtlas
@@ -84,8 +84,8 @@ def load(args):
     tsvreader = csv.reader(tsv, delimiter='\t')
     header = tsvreader.next() # skip header line
     ct = 0
-    k2tid = {}
-    tmark = {}
+    k2pids = {}
+    pmark = {}
     notfnd = set()
     dis_ct = 0
     dba_err_ct = 0
@@ -102,34 +102,38 @@ def load(args):
       sym = row[2]
       ensg = row[0]
       k = "%s|%s"%(sym,ensg)
-      if k in k2tid:
+      if k in k2pids:
         # we've already found it
-        tid = k2tid[k]
+        pids = k2pids[k]
       elif k in notfnd:
         # we've already not found it
           continue
       else:
         targets = dba.find_targets({'sym': sym}, idg = False)
         if not targets:
-          targets = dba.find_targets_by_xref({'xtype': 'Ensembl', 'value': ensg})
+          targets = dba.find_targets_by_xref({'xtype': 'ENSG', 'value': ensg})
         if not targets:
           notfnd.add(k)
           logger.warn("No target found for {}".format(k))
           continue
-        tid = targets[0]['id']
-        tmark[tid] = True
-        k2tid[k] = tid # save this mapping so we only lookup each target once
-      rv = dba.ins_disease( {'target_id': tid, 'dtype': 'Expression Atlas', 'name': row[5],
-                             'did': row[1], 'log2foldchange': "%.3f"%float(row[3]),
-                             'pvalue': row[4]} )
-      if not rv:
-        dba_err_ct += 1
-        continue
-      dis_ct += 1
+        pids = []
+        for t in targets:
+          p = t['components']['protein'][0]
+          pmark[p['id']] = True
+          pids.append(p['id'])
+        k2pids[k] = pids # save this mapping so we only lookup each target once
+      for pid in pids:
+        rv = dba.ins_disease( {'protein_id': pid, 'dtype': 'Expression Atlas', 'name': row[5],
+                               'did': row[1], 'log2foldchange': "%.3f"%float(row[3]),
+                               'pvalue': row[4]} )
+        if not rv:
+          dba_err_ct += 1
+          continue
+        dis_ct += 1
       pbar.update(ct)
   pbar.finish()
   print "{} lines processed.".format(ct)
-  print "Loaded {} new disease rows for {} targets.".format(dis_ct, len(tmark))
+  print "Loaded {} new disease rows for {} proteins.".format(dis_ct, len(pmark))
   if notfnd:
     print "No target found for {} symbols/ensgs. See logfile {} for details.".format(len(notfnd), logfile)
   if dba_err_ct > 0:

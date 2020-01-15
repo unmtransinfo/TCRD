@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-05-31 15:45:06 smathias>
+# Time-stamp: <2019-08-28 10:47:24 smathias>
 """Load PANTHER family classes into TCRD from TSV files.
 
 Usage:
@@ -25,26 +25,27 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2015-2018, Steve Mathias"
+__copyright__ = "Copyright 2015-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.1.0"
+__version__   = "3.0.0"
 
 import os,sys,time,re
 from docopt import docopt
-from TCRD import DBAdaptor
+from TCRDMP import DBAdaptor
 import csv
 import logging
 from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd5logs"
+LOGDIR = "./tcrd6logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 # ftp://ftp.pantherdb.org//sequence_classifications/current_release/PANTHER_Sequence_Classification_files/PTHR13.1_human
-P2PC_FILE = '../data/PANTHER/PTHR13.1_human'
-# http://data.pantherdb.org/PANTHER13.1/ontology/Protein_Class_13.0
-CLASS_FILE = '../data/PANTHER/Protein_Class_13.0'
-# http://data.pantherdb.org/PANTHER13.1/ontology/Protein_class_relationship
+# ftp://ftp.pantherdb.org/sequence_classifications/current_release/PANTHER_Sequence_Classification_files/PTHR14.1_human_
+P2PC_FILE = '../data/PANTHER/PTHR14.1_human_'
+# http://data.pantherdb.org/PANTHER14.1/ontology/Protein_Class_14.0
+CLASS_FILE = '../data/PANTHER/Protein_Class_14.0'
+# http://data.pantherdb.org/PANTHER14.1/ontology/Protein_class_relationship
 RELN_FILE = '../data/PANTHER/Protein_class_relationship'
 
 def load(args):
@@ -70,7 +71,7 @@ def load(args):
     print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
   # Dataset
-  dataset_id = dba.ins_dataset( {'name': 'PANTHER protein classes', 'source': 'File %s from ftp://ftp.pantherdb.org//sequence_classifications/current_release/PANTHER_Sequence_Classification_files/, and files %s and %s from http://data.pantherdb.org/PANTHER13.1/ontology/'%(os.path.basename(P2PC_FILE), os.path.basename(CLASS_FILE), os.path.basename(RELN_FILE)), 'app': PROGRAM, 'app_version': __version__, 'url': 'http://www.pantherdb.org/'} )
+  dataset_id = dba.ins_dataset( {'name': 'PANTHER protein classes', 'source': 'File %s from ftp://ftp.pantherdb.org//sequence_classifications/current_release/PANTHER_Sequence_Classification_files/, and files %s and %s from http://data.pantherdb.org/PANTHER14.1/ontology/'%(os.path.basename(P2PC_FILE), os.path.basename(CLASS_FILE), os.path.basename(RELN_FILE)), 'app': PROGRAM, 'app_version': __version__, 'url': 'http://www.pantherdb.org/'} )
   assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
   # Provenance
   provs = [ {'dataset_id': dataset_id, 'table_name': 'panther_class'},
@@ -159,7 +160,6 @@ def load(args):
       if not targets:
         k = "%s|%s"%(up,hgnc)
         notfnd.add(k)
-        logger.warn("No target found for: {}".format(k))
         continue
       t = targets[0]
       pid = t['components']['protein'][0]['id']
@@ -175,6 +175,8 @@ def load(args):
           dba_err_ct += 1
       pbar.update(ct)
   pbar.finish()
+  for k in notfnd:
+    logger.warn("No target found for {}".format(k))
   print "{} lines processed.".format(ct)
   print "  Inserted {} new p2pc rows for {} distinct proteins".format(p2pc_ct, len(pmark))
   print "  Skipped {} rows without PCs".format(skip_ct)

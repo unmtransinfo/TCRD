@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2019-01-14 16:40:05 smathias>
+# Time-stamp: <2019-04-05 10:15:49 smathias>
 """Load Ensembl Gene IDs into TCRD.
 
 Usage:
@@ -60,7 +60,9 @@ NS = '{http://uniprot.org/uniprot}'
 UP_SRC_FILES = [os.path.basename(d['upfile']) for d in CONFIG.values()]
 ENS_SRC_FILES = [os.path.basename(d['ensfile']) for d in CONFIG.values()]
 
-UP2ENSG = {'human': defaultdict(set), 'mouse': defaultdict(set), 'rat': defaultdict(set)}
+UP2ENSG = {'human': defaultdict(set),
+           'mouse': defaultdict(set),
+           'rat': defaultdict(set)}
 
 def parse_up_files(args):
   for sp in UP2ENSG.keys():

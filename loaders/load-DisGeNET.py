@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-10-04 09:04:16 smathias>
+# Time-stamp: <2019-10-14 11:58:12 smathias>
 """
 Load disease associations into TCRD from DisGeNET TSV file.
 Usage:
@@ -24,13 +24,13 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2016-2018, Steve Mathias"
+__copyright__ = "Copyright 2016-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.1.0"
+__version__   = "2.3.0"
 
 import os,sys,time
 from docopt import docopt
-from TCRD import DBAdaptor
+from TCRDMP import DBAdaptor
 import logging
 import urllib
 import gzip
@@ -38,10 +38,10 @@ from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd5logs"
+LOGDIR = "./tcrd6logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 DOWNLOAD_DIR = '../data/DisGeNET/'
-BASE_URL = 'http://www.disgenet.org/ds/DisGeNET/results/'
+BASE_URL = 'http://www.disgenet.org/static/disgenet_ap1/files/downloads/'
 INPUT_FILE = 'curated_gene_disease_associations.tsv.gz'
 
 def download(args):
@@ -100,20 +100,28 @@ def load(args):
   with open(infile, 'rU') as f:
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start()
     ct = 0
-    k2tid = {}
-    tmark = {}
+    k2pids = {}
+    pmark = {}
     notfnd = set()
     dis_ct = 0
     dba_err_ct = 0
     for line in f:
       # 0: geneId
       # 1: geneSymbol
-      # 2: diseaseId
-      # 3: diseaseName
-      # 4: score
-      # 5: NofPmids
-      # 6: NofSnps
-      # 7: source
+      # 2: DSI
+      # 3: DPI
+      # 4: diseaseId
+      # 5: diseaseName
+      # 6: diseaseType
+      # 7: diseaseClass
+      # 8: diseaseSemanticType
+      # 9: score
+      # 10: EI
+      # 11: YearInitial
+      # 12: YearFinal
+      # 13: NofPmids
+      # 14: NofSnps
+      # 15: source
       ct += 1
       if line.startswith('#'):
         continue
@@ -121,12 +129,12 @@ def load(args):
         # header row
         continue
       data = line.split('\t')
-      geneid = data[0]
+      geneid = data[0].strip()
       sym = data[1]
       k = "%s|%s"%(sym,geneid)
-      if k in k2tid:
+      if k in k2pids:
         # we've already found it
-        tid = k2tid[k]
+        pids = k2pids[k]
       elif k in notfnd:
         # we've already not found it
           continue
@@ -138,27 +146,33 @@ def load(args):
           notfnd.add(k)
           logger.warn("No target found for {}".format(k))
           continue
-        tid = targets[0]['id']
-        tmark[tid] = True
-        k2tid[k] = tid # save this mapping so we only lookup each target once
-      if data[5] != 0:
-        if data[6] != 0:
-          ev = "%s PubMed IDs; %s SNPs"%(data[5], data[6])
+        pids = []
+        for t in targets:
+          p = t['components']['protein'][0]
+          pmark[p['id']] = True
+          pids.append(p['id'])
+        k2pids[k] = pids # save this mapping so we only lookup each target once
+      pmid_ct = data[13].strip()
+      snp_ct = data[14].strip()
+      if pmid_ct != '0':
+        if snp_ct != '0':
+          ev = "%s PubMed IDs; %s SNPs"%(pmid_ct, snp_ct)
         else:
-          ev = "%s PubMed IDs"%data[5]
+          ev = "%s PubMed IDs"%pmid_ct
       else:
-        ev = "%s SNPs"%data[6]
-      rv = dba.ins_disease( {'target_id': tid, 'dtype': 'DisGeNET', 'name': data[3],
-                             'did': data[2], 'score': data[4], 'source': data[7],
-                             'evidence': ev} )
-      if not rv:
-        dba_err_ct += 1
-        continue
-      dis_ct += 1
+        ev = "%s SNPs"%snp_ct
+      for pid in pids:
+        rv = dba.ins_disease( {'protein_id': pid, 'dtype': 'DisGeNET', 'name': data[5],
+                               'did': data[4], 'score': data[9], 'source': data[15].strip(),
+                               'evidence': ev} )
+        if not rv:
+          dba_err_ct += 1
+          continue
+        dis_ct += 1
       pbar.update(ct)
   pbar.finish()
   print "{} lines processed.".format(ct)
-  print "Loaded {} new disease rows for {} targets.".format(dis_ct, len(tmark))
+  print "Loaded {} new disease rows for {} proteins.".format(dis_ct, len(pmark))
   if notfnd:
     print "No target found for {} symbols/geneids. See logfile {} for details.".format(len(notfnd), logfile)
   if dba_err_ct > 0:

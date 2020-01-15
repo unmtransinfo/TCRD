@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2019-01-17 12:17:19 smathias>
+# Time-stamp: <2019-12-10 10:43:06 smathias>
 """ Load Drug Central data into TCRD from TSV files.
 
 Usage:
@@ -26,13 +26,14 @@ __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
 __copyright__ = "Copyright 2015-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.3.0"
+__version__   = "2.5.0"
 
 import os,sys,time
 from docopt import docopt
 from TCRDMP import DBAdaptor
 import logging
 import csv
+from collections import defaultdict
 from progressbar import *
 import slm_tcrd_functions as slmf
 
@@ -74,7 +75,7 @@ def load(args):
     print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
   # Dataset
-  dataset_id = dba.ins_dataset( {'name': 'Drug Central', 'source': "Drug Central files (%s) obtained directly from Oleg Ursu"%", ".join(SRC_FILES), 'app': PROGRAM, 'app_version': __version__, 'url': 'http://drugcentral.org/'} )
+  dataset_id = dba.ins_dataset( {'name': 'Drug Central', 'source': "Drug Central files download files: %s"%", ".join(SRC_FILES), 'app': PROGRAM, 'app_version': __version__, 'url': 'http://drugcentral.org/'} )
   if not dataset_id:
     print "WARNING: Error inserting dataset. See logfile {} for details.".format(logfile)
     sys.exit(1)
@@ -120,7 +121,7 @@ def load(args):
   #
   # MOA activities
   #
-  drug2targets = {}
+  drug2tids = defaultdict(list)
   line_ct = slmf.wcl(TCLIN_FILE)
   line_ct -= 1
   if not args['--quiet']:
@@ -150,12 +151,8 @@ def load(args):
         if not targets:
           notfnd.append(up)
           continue
-      t = targets[0]
-      tid = t['id']
-      if drug in drug2targets:
-        drug2targets[drug].append(tid)
-      else:
-         drug2targets[drug] = [tid]
+      tid = targets[0]['id']
+      drug2tids[drug].append(tid)
       init = {'target_id': tid, 'drug': drug, 'dcid': dcid, 'has_moa': 1, 'source': row[5]}
       if row[3]:
         init['act_value'] = row[3]
@@ -221,12 +218,8 @@ def load(args):
         if not targets:
           notfnd.append(up)
           continue
-      t = targets[0]
-      tid = t['id']
-      if drug in drug2targets:
-        drug2targets[drug].append(tid)
-      else:
-         drug2targets[drug] = [tid]
+      tid = targets[0]['id']
+      drug2tids[drug].append(tid)
       init = {'target_id': tid, 'drug': drug, 'dcid': dcid, 'has_moa': 0, 'source': row[5]}
       if row[3]:
         init['act_value'] = row[3]
@@ -278,22 +271,25 @@ def load(args):
     for row in tsvreader:
       ct += 1
       drug = row[1]
-      if drug not in drug2targets:
+      if drug not in drug2tids:
         notfnd[drug] = True
         continue
-      for tid in drug2targets[drug]:
-        rv = dba.ins_disease({'target_id': tid, 'dtype': 'DrugCentral Indication',
-                              'name': row[2], 'doid': row[5], 'drug_name': drug})
+      init = {'protein_id': tid, 'dtype': 'DrugCentral Indication',
+              'name': row[2], 'drug_name': drug}
+      if row[5] != '':
+        init['did'] = row[5]
+      for tid in drug2tids[drug]:
+        # NB> Using target_id as protein_id works for now, but will not if/when we have multiple protein targets
+        init['protein_id'] = tid
+        rv = dba.ins_disease(init)
         if rv:
           t2d_ct += 1
         else:
           dba_err_ct += 1
   print "{} DrugCentral indication rows processed.".format(ct)
-  print "  Inserted {} new target2disease rows".format(t2d_ct)
+  print "  Inserted {} new disease rows".format(t2d_ct)
   if len(notfnd.keys()) > 0:
     print "WARNNING: {} drugs NOT FOUND in activity files:".format(len(notfnd))
-    #for drug in notfnd:
-    #  print drug
   if dba_err_ct > 0:
     print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
     

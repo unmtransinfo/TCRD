@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-05-18 12:06:26 smathias>
+# Time-stamp: <2019-08-21 14:28:17 smathias>
 """Load WikiPathways links into TCRD from TSV file.
 
 Usage:
@@ -24,9 +24,9 @@ Options:
 __author__ = "Steve Mathias"
 __email__ = "smathias@salud.unm.edu"
 __org__ = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2015-2018, Steve Mathias"
+__copyright__ = "Copyright 2015-2019, Steve Mathias"
 __license__ = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__ = "2.1.0"
+__version__ = "3.0.0"
 
 import os,sys,time
 from docopt import docopt
@@ -34,11 +34,12 @@ from TCRD import DBAdaptor
 import csv
 import urllib
 import logging
+from collections import defaultdict
 from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd5logs"
+LOGDIR = "./tcrd6logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 DOWNLOAD_DIR = '../data/WikiPathways/'
 BASE_URL = 'http://www.pathvisio.org/data/bots/gmt/current/'
@@ -85,14 +86,15 @@ def load(args):
   fn = DOWNLOAD_DIR + PATHWAYS_FILE
   line_ct = slmf.wcl(fn)
   if not args['--quiet']:
-    print "\nProcessing {} input line from WikiPathways file {}".format(line_ct, fn)
+    print "\nProcessing {} input lines from WikiPathways file {}".format(line_ct, fn)
   with open(fn, 'rU') as tsv:
     tsvreader = csv.reader(tsv, delimiter='\t')
     # Example line:
     # Apoptosis Modulation and Signaling%WikiPathways_20160516%WP1772%Homo sapiens    http://www.wikipathways.org/instance/WP1772_r85184       843     3725    842 ...
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start()
     ct = 0
-    gid_mark = {}
+    gid2pids = defaultdict(list)
+    pmark = set()
     notfnd = set()
     pw_ct = 0
     dba_err_ct = 0
@@ -101,29 +103,36 @@ def load(args):
       name = row[0].split('%')[0]
       wpid = row[1].split('/')[-1]
       geneids = row[2:]
-      for geneid in geneids:
-        gid_mark[geneid] = True
-        if geneid in notfnd:
+      for gid in geneids:
+        if gid in gid2pids:
+          pids = gid2pids[gid]
+        elif gid in notfnd:
           continue
-        targets = dba.find_targets({'geneid': geneid})
-        if not targets:
-          notfnd.add(geneid)
-          logger.warn("No target found for Gene ID: {}".format(geneid))
-          continue
+        else:
+          targets = dba.find_targets({'geneid': gid})
+          if not targets:
+            notfnd.add(gid)
+            continue
+          pids = []
         for t in targets:
-          pid = t['components']['protein'][0]['id']
+          pids.append(t['components']['protein'][0]['id'])
+        gid2pids[gid] = pids # save this mapping so we only lookup each target once
+        for pid in pids:
           rv = dba.ins_pathway({'protein_id': pid, 'pwtype': 'WikiPathways', 'name': name,
                                 'id_in_source': wpid, 'url': row[1]})
           if rv:
             pw_ct += 1
+            pmark.add(pid)
           else:
             dba_err_ct += 1
       pbar.update(ct)
   pbar.finish()
+  for gid in gid2pids:
+    logger.warn("No target found for {}".format(gid))
   print "Processed {} WikiPathways.".format(ct)
-  print "  Inserted {} pathway rows".format(pw_ct)
+  print "  Inserted {} pathway rows for {} proteins.".format(pw_ct, len(pmark))
   if notfnd:
-    print "WARNNING: {} (of {}) Gene IDs did not find a TCRD target.".format(len(notfnd), len(gid_mark))
+    print "  No target found for {} Gene IDs. See logfile {} for details.".format(len(notfnd), logfile)
   if dba_err_ct > 0:
     print "WARNNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
   

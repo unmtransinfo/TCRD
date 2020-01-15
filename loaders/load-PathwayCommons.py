@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-05-31 10:52:23 smathias>
+# Time-stamp: <2019-08-21 12:52:19 smathias>
 """Load PathwayCommons pathway links into TCRD from TSV file.
 
 Usage:
@@ -24,9 +24,9 @@ Options:
 __author__ = "Steve Mathias"
 __email__ = "smathias@salud.unm.edu"
 __org__ = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2016-2018, Steve Mathias"
+__copyright__ = "Copyright 2016-2019, Steve Mathias"
 __license__ = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__ = "2.1.0"
+__version__ = "3.0.0"
 
 import os,sys,time,re
 from docopt import docopt
@@ -39,11 +39,12 @@ from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd5logs"
+LOGDIR = "./tcrd6logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 DOWNLOAD_DIR = '../data/PathwayCommons/'
-BASE_URL = 'http://www.pathwaycommons.org/archives/PC2/v9/'
-PATHWAYS_FILE = 'PathwayCommons9.All.uniprot.gmt.gz'
+BASE_URL = 'http://www.pathwaycommons.org/archives/PC2/v11/'
+PATHWAYS_FILE = 'PathwayCommons11.All.uniprot.gmt.gz'
+PCAPP_BASE_URL = 'http://apps.pathwaycommons.org/pathways?uri='
 
 def download(args):
   gzfn = DOWNLOAD_DIR + PATHWAYS_FILE
@@ -53,7 +54,7 @@ def download(args):
   if os.path.exists(fn):
     os.remove(fn)
   if not args['--quiet']:
-    print "Downloading ", BASE_URL + PATHWAYS_FILE
+    print "\nDownloading ", BASE_URL + PATHWAYS_FILE
     print "         to ", DOWNLOAD_DIR + PATHWAYS_FILE
   urllib.urlretrieve(BASE_URL + PATHWAYS_FILE, DOWNLOAD_DIR + PATHWAYS_FILE)
   if not args['--quiet']:
@@ -97,53 +98,62 @@ def load(args):
   infile = (DOWNLOAD_DIR + PATHWAYS_FILE).replace('.gz', '')
   line_ct = slmf.wcl(infile)
   if not args['--quiet']:
-    print "\nProcessing {} input lines from PathwayCommons file {}".format(line_ct, infile)
+    print "\nProcessing {} records from PathwayCommons file {}".format(line_ct, infile)
   with open(infile, 'rU') as tsv:
     tsvreader = csv.reader(tsv, delimiter='\t')
     # Example line:
-    # 9606: Apoptosis signaling pathway       datasource: panther; organism: 9606; id type: uniprot   O00220   O00329  O14727 ...
+    # http://identifiers.org/kegg.pathway/hsa00010    name: Glycolysis / Gluconeogenesis; datasource: kegg; organism: 9606; idtype: uniprot  A8K7J7  B4DDQ8  B4DNK4  E9PCR7  P04406  P06744  P07205  P07738  P09467 P09622   P09972  P10515  P11177  P14550  P30838  P35557  P51648  P60174  Q01813  Q16822  Q53Y25  Q6FHV6 Q6IRT1   Q6ZMR3  Q8IUN7  Q96C23  Q9BRR6  Q9NQR9  Q9NR19
+    # However, note that pathway commons URLs in file give 404.
+    # E.g. URL from this line:
+    # http://pathwaycommons.org/pc2/Pathway_0136871cbdf9a3ecc09529f1878171df  name: VEGFR1 specific signals; datasource: pid; organism: 9606; idtype: uniprot    O14786  O15530  O60462  P05771  P07900  P15692  P16333  P17252  P17612  P17948  P19174  P20936     P22681  P27361  P27986  P28482  P29474  P31749  P42336  P49763  P49765  P62158  P98077  Q03135  Q06124  Q16665  Q9Y5K6
+    # needs to be converted to:
+    # http://apps.pathwaycommons.org/pathways?uri=http%3A%2F%2Fpathwaycommons.org%2Fpc2%2FPathway_0136871cbdf9a3ecc09529f1878171df
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start()
     ct = 0
     skip_ct = 0
-    up_mark = {}
+    up2pid = {}
+    pmark = set()
     notfnd = set()
     pw_ct = 0
     dba_err_ct = 0
-    pwtypes = set()
     for row in tsvreader:
       ct += 1
       src = re.search(r'datasource: (\w+)', row[1]).groups()[0]
       if src in ['kegg', 'wikipathways', 'reactome']:
         skip_ct += 1
         continue
-      pwname = row[0].replace('9606: ', '')
       pwtype = 'PathwayCommons: ' + src
-      pwtypes.add(pwtype)
+      name = re.search(r'name: (.+?);', row[1]).groups()[0]
+      url = PCAPP_BASE_URL + urllib.quote(row[0], safe='')
       ups = row[2:]
       for up in ups:
-        up_mark[up] = True
-        if up in notfnd:
+        if up in up2pid:
+          pid = up2pid[up]
+        elif up in notfnd:
           continue
-        targets = dba.find_targets({'uniprot': up})
-        if not targets:
-          notfnd.add(up)
-          logger.warn("No target found for UniProt: {}".format(up))
-          continue
-        for t in targets:
+        else:
+          targets = dba.find_targets({'uniprot': up})
+          if not targets:
+            notfnd.add(up)
+            continue
+          t = targets[0]
           pid = t['components']['protein'][0]['id']
-          rv = dba.ins_pathway({'protein_id': pid, 'pwtype': pwtype, 'name': pwname})
-          if rv:
-            pw_ct += 1
-          else:
-            dba_err_ct += 1
+          up2pid[up] = pid
+        rv = dba.ins_pathway({'protein_id': pid, 'pwtype': pwtype, 'name': name, 'url': url})
+        if rv:
+          pw_ct += 1
+          pmark.add(pid)
+        else:
+          dba_err_ct += 1
       pbar.update(ct)
   pbar.finish()
-  elapsed = time.time() - start_time
-  print "Processed {} Reactome Pathways.".format(ct)
-  print "  Inserted {} pathway rows".format(pw_ct)
-  print "  Skipped {} rows from 'kegg', 'wikipathways', 'reactome'".format(skip_ct)
+  for up in notfnd:
+    logger.warn("No target found for {}".format(up))
+  print "Processed {} Pathway Commons records.".format(ct)
+  print "  Inserted {} new pathway rows for {} proteins.".format(pw_ct, len(pmark))
+  print "  Skipped {} records from 'kegg', 'wikipathways', 'reactome'".format(skip_ct)
   if notfnd:
-    print "WARNNING: {} (of {}) UniProt accession(s) did not find a TCRD target.".format(len(notfnd), len(up_mark))
+    print "  No target found for {} UniProt accessions. See logfile {} for details.".format(len(notfnd), logfile)
   if dba_err_ct > 0:
     print "WARNNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-02-05 10:57:39 smathias>
+# Time-stamp: <2019-01-29 12:43:26 smathias>
 """Load JensenLab PubMed Score tdl_infos in TCRD from TSV file.
 
 Usage:
@@ -24,24 +24,22 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2014-2018, Steve Mathias"
+__copyright__ = "Copyright 2014-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.1.0"
+__version__   = "2.2.0"
 
 import os,sys,time
 from docopt import docopt
-from TCRD import DBAdaptor
+from TCRDMP import DBAdaptor
 import urllib
 import csv
-import shelve
 import logging
 from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd5logs"
+LOGDIR = "./tcrd6logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
-SHELF_FILE = '%s/%s.db' % (LOGDIR, PROGRAM)
 DOWNLOAD_DIR = '../data/JensenLab/'
 BASE_URL = 'http://download.jensenlab.org/KMC/Medline/'
 FILENAME = 'protein_counts.tsv'
@@ -73,7 +71,6 @@ def load(args):
   fh.setFormatter(fmtr)
   logger.addHandler(fh)
 
-  # DBAdaptor uses same logger as load()
   dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
   dba = DBAdaptor(dba_params)
   dbi = dba.get_dbinfo()
@@ -95,12 +92,11 @@ def load(args):
       sys.exit(1)
   
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
+  ensp2pids = {}
   pmscores = {} # protein.id => sum(all scores)
-  
-  s = shelve.open(SHELF_FILE, writeback=True)
-  s['notfnd'] = set()
   pms_ct = 0
   upd_ct = 0
+  notfnd = {}
   dba_err_ct = 0
   infile = DOWNLOAD_DIR + FILENAME
   line_ct = slmf.wcl(infile)
@@ -110,28 +106,30 @@ def load(args):
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
     tsvreader = csv.reader(tsv, delimiter='\t')
     ct = 0
-    ensp2pid = {}
     for row in tsvreader:
       # sym  year  score
       ct += 1
       pbar.update(ct)
       if not row[0].startswith('ENSP'): continue
       ensp = row[0]
-      if ensp in ensp2pid:
+      if ensp in ensp2pids:
         # we've already found it
-        pids = ensp2pid[ensp]
-      elif ensp in s['notfnd']:
+        pids = ensp2pids[ensp]
+      elif ensp in notfnd:
         # we've already not found it
         continue
       else:
         targets = dba.find_targets({'stringid': ensp})
         if not targets:
-          s['notfnd'].add(ensp)
-          continue
+          targets = dba.find_targets_by_xref({'xtype': 'STRING', 'value': '9606.'+ensp})
+          if not targets:
+            notfnd[ensp] = True
+            logger.warn("No target found for {}".format(ensp))
+            continue
         pids = []
         for target in targets:
           pids.append(target['components']['protein'][0]['id'])
-          ensp2pid[ensp] = pids # save this mapping so we only lookup each target once
+          ensp2pids[ensp] = pids # save this mapping so we only lookup each target once
       for pid in pids:
         rv = dba.ins_pmscore({'protein_id': pid, 'year': row[1], 'score': row[2]} )
         if rv:
@@ -144,11 +142,9 @@ def load(args):
           pmscores[pid] = float(row[2])
   pbar.finish()
   print "{} input lines processed.".format(ct)
-  print "  {} targets have JensenLab PubMed Scores".format(len(pmscores.keys()))
-  print "  Inserted {} new pmscore rows".format(pms_ct)
-  if len(s['notfnd']) > 0:
-    print "No target found for {} STRING IDs. Saved to file: {}".format(len(s['notfnd']), SHELF_FILE)
-  s.close()
+  print "  Inserted {} new pmscore rows for {} targets".format(pms_ct, len(pmscores))
+  if len(notfnd) > 0:
+    print "No target found for {} STRING IDs. See logfile {} for details.".format(len(notfnd), logfile)
   if dba_err_ct > 0:
     print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
   

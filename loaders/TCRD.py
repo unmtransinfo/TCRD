@@ -4,7 +4,7 @@
 
   Steve Mathias
   smathias@salud.unm.edu
-  Time-stamp: <2018-11-30 09:56:32 smathias>
+  Time-stamp: <2019-08-30 12:37:53 smathias>
 '''
 from __future__ import print_function
 import sys
@@ -1633,6 +1633,36 @@ class DBAdaptor:
     
     return True
 
+  def ins_drgc_resource(self, init, commit=True):
+    if 'target_id' in init and 'resource_type' in init and 'json' in init:
+      cols = ['target_id', 'resource_type', 'json']
+      vals = ['%s','%s','%s']
+      params = [init['target_id'], init['resource_type'], init['json']]
+    else:
+      self.warning("Invalid parameters sent to ins_drgc_resource(): ", init)
+      return False
+    sql = "INSERT INTO drgc_resource (%s) VALUES (%s)" % (','.join(cols), ','.join(vals))
+    self._logger.debug("SQLpat: %s"%sql)
+    self._logger.debug("SQLparams: %s"%(", ".join([str(p) for p in params])))
+    with closing(self._conn.cursor()) as curs:
+      try:
+        curs.execute(sql, tuple(params))
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL Error in ins_ortholog(): %s"%str(e))
+        self._logger.error("SQLpat: %s"%sql)
+        self._logger.error("SQLparams: %s"%','.join([str(p) for p in params]))
+        return False
+    if commit:
+      try:
+        self._conn.commit()
+      except mysql.Error, e:
+        self._conn.rollback()
+        self._logger.error("MySQL commit error in ins_drgc_resource(): %s"%str(e))
+        return False
+    
+    return True
+
   #
   # Read Methods
   #
@@ -2014,6 +2044,18 @@ class DBAdaptor:
         for pt in curs:
           p['phenotypes'].append(pt)
         if not p['phenotypes']: del(p['phenotypes'])
+        # orthologs
+        p['orthologs'] = []
+        curs.execute("SELECT * FROM ortholog WHERE protein_id = %s", (id,))
+        for o in curs:
+          p['orthologs'].append(o)
+        if not p['orthologs']: del(p['orthologs'])
+        # ortholog_diseases
+        p['ortholog_diseases'] = []
+        curs.execute("SELECT * FROM ortholog_disease WHERE protein_id = %s", (id,))
+        for od in curs:
+          p['ortholog_diseases'].append(od)
+        if not p['ortholog_diseases']: del(p['ortholog_diseases'])
         # pathways
         p['pathways'] = []
         curs.execute("SELECT * FROM pathway WHERE protein_id = %s", (id,))
@@ -2043,12 +2085,6 @@ class DBAdaptor:
         for pc in curs:
           p['panther_classes'].append(pc)
         if not p['panther_classes']: del(p['panther_classes'])
-        # orthologs
-        p['orthologs'] = []
-        curs.execute("SELECT * FROM ortholog WHERE protein_id = %s", (id,))
-        for o in curs:
-          p['orthologs'].append(o)
-        if not p['orthologs']: del(p['orthologs'])
         ## DTO classification
         #if p['dtoid']:
         #  p['dto_classification'] = "::".join(self.get_protein_dto(p['dtoid']))

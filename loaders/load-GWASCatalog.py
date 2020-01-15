@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-05-18 12:02:05 smathias>
+# Time-stamp: <2019-04-17 11:40:39 smathias>
 """Load GWAS Catalog phenotype data into TCRD from TSV file.
 
 Usage:
-    load-GWASCatalogPhenotypes.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
-    load-GWASCatalogPhenotypes.py -? | --help
+    load-GWASCatalog.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
+    load-GWASCatalog.py -? | --help
 
 Options:
   -h --dbhost DBHOST   : MySQL database host name [default: localhost]
@@ -24,27 +24,28 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2015-2018, Steve Mathias"
+__copyright__ = "Copyright 2015-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.1.0"
+__version__   = "2.2.0"
 
 import os,sys,time, re
 from docopt import docopt
-from TCRD import DBAdaptor
+from TCRDMP import DBAdaptor
 import logging
 import csv
 from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd5logs"
+LOGDIR = "./tcrd6logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 # File description is here:
 # http://www.ebi.ac.uk/gwas/docs/fileheaders
 # Get file here:
 # https://www.ebi.ac.uk/gwas/docs/file-downloads
-INFILE = '../data/EBI/gwas_catalog_v1.0.1-associations_e91_r2018-03-13.tsv'
-OUTFILE = '../data/EBI/TCRDv5-GWAS_Mapping.csv'
+# or directly via
+# https://www.ebi.ac.uk/gwas/api/search/downloads/alternative
+INFILE = '../data/EBI/gwas_catalog_v1.0.2-associations_e96_r2019-04-06.tsv'
 
 def load(args):
   loglevel = int(args['--loglevel'])
@@ -69,10 +70,10 @@ def load(args):
     print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
   # Dataset
-  dataset_id = dba.ins_dataset( {'name': 'GWAS Catalog', 'source': 'File %s from http://www.ebi.ac.uk/gwas/docs/file-downloads'%os.path.basename(INFILE), 'app': PROGRAM, 'app_version': __version__, 'url': 'https://www.ebi.ac.uk/gwas/docs/file-downloads'} )
+  dataset_id = dba.ins_dataset( {'name': 'GWAS Catalog', 'source': 'File %s from http://www.ebi.ac.uk/gwas/docs/file-downloads'%os.path.basename(INFILE), 'app': PROGRAM, 'app_version': __version__, 'url': 'https://www.ebi.ac.uk/gwas/home'} )
   assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
   # Provenance
-  rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'phenotype', 'where_clause': "ptype = 'GWAS Catalog'"})
+  rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'gwas'})
   assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
   
   line_ct = slmf.wcl(INFILE)
@@ -87,8 +88,8 @@ def load(args):
     header = tsvreader.next() # skip header line
     ct = 0
     notfnd = set()
-    tmark = {}
-    pt_ct = 0
+    pmark = {}
+    gwas_ct = 0
     dba_err_ct = 0
     # 0: DATE ADDED TO CATALOG
     # 1: PUBMEDID
@@ -127,6 +128,7 @@ def load(args):
     # 34: MAPPED_TRAIT
     # 35: MAPPED_TRAIT_URI
     # 36: STUDY ACCESSION
+    # 37: GENOTYPING TECHNOLOGY
     symregex = re.compile(r' ?[-,;] ?')
     for row in tsvreader:
       ct += 1
@@ -140,36 +142,39 @@ def load(args):
         targets = dba.find_targets({'sym': sym})
         if not targets:
           notfnd.add(sym)
-          logger.warn("Symbol {} not found".format(sym))
+          logger.warn("No target found for symbol {}".format(sym))
           continue
         for t in targets:
           p = t['components']['protein'][0]
-          tmark[t['id']] = True
           try:
             pval = float(row[27])
           except:
             pval = None
-          #outlist.append( [t['id'], p['sym'], p['name'], p['description'], t['fam'], t['tdl'], p['geneid'], p['uniprot'], row[6], row[1], row[7], row[21], row[26] ] )
-          rv = dba.ins_phenotype({'protein_id': p['id'], 'ptype': 'GWAS Catalog', 'trait': row[7], 'pmid': row[1], 'snps': row[21], 'p_value': pval})
+          try:
+            orbeta = float(row[30])
+          except:
+            orbeta = None
+          if row[25]:
+            ig = int(row[25])
+          else:
+            ig = None
+          rv = dba.ins_gwas({'protein_id': p['id'], 'disease_trait': row[7], 'snps': row[21],
+                             'pmid': row[1], 'study': row[6], 'context': row[24], 'intergenic': ig,
+                             'p_value': pval, 'or_beta': orbeta, 'cnv': row[33],
+                             'mapped_trait': row[34], 'mapped_trait_uri': row[35]})
           if not rv:
             dba_err_ct += 1
             continue
-          pt_ct += 1
+          pmark[p['id']] = True
+          gwas_ct += 1
       pbar.update(ct)
   pbar.finish()
   print "{} lines processed.".format(ct)
-  print "Loaded {} GWAS phenotypes for {} targets".format(pt_ct, len(tmark.keys()))
+  print "Inserted {} new gwas rows for {} proteins".format(gwas_ct, len(pmark.keys()))
   if notfnd:
     print "No target found for {} symbols. See logfile {} for details.".format(len(notfnd), logfile)
   if dba_err_ct > 0:
     print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
-
-  # header = ['TCRD ID', 'HGNC Sym', 'Name', 'Description', 'IDG Family', 'TDL', 'NCBI Gene ID', 'UniProt', 'GWAS Study', 'PubMed ID', 'Disease/Trait', 'SNP(s)', 'p-value']
-  # with open(OUTFILE, 'wb') as csvout:
-  #   csvwriter = csv.writer(csvout, quotechar='"', quoting=csv.QUOTE_MINIMAL)
-  #   csvwriter.writerow(header)
-  #   for outrow in outlist:
-  #     csvwriter.writerow(outrow)
 
 
 if __name__ == '__main__':

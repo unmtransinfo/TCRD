@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2019-01-09 11:27:01 smathias>
+# Time-stamp: <2019-08-19 09:16:17 smathias>
 """Load protein data from UniProt.org into TCRD via the web.
 
 Usage:
@@ -26,7 +26,7 @@ __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
 __copyright__ = "Copyright 2014-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "3.1.0"
+__version__   = "3.1.1"
 
 import os,sys,time,re
 from docopt import docopt
@@ -327,7 +327,7 @@ def entry2target(entry, dataset_id, e2e):
           xtra = el.attrib['value']
       xrefs.append( {'xtype': 'DrugBank', 'dataset_id': dataset_id, 'value': dbr.attrib['id'],
                      'xtra': xtra} )
-    elif dbr.attrib['type'] in ['BRENDA', 'ChEMBL', 'MIM', 'PANTHER', 'PDB', 'UniGene']:
+    elif dbr.attrib['type'] in ['BRENDA', 'ChEMBL', 'MIM', 'PANTHER', 'PDB', 'RefSeq', 'UniGene']:
         xrefs.append( {'xtype': dbr.attrib['type'], 'dataset_id': dataset_id,
                        'value': dbr.attrib['id']} )
   protein['goas'] = goas
@@ -398,16 +398,18 @@ def entry2nhprotein(entry, dataset_id):
   for dbr in entry.dbReference:
     if dbr.attrib['type'] == 'GeneID':
       nhprotein['geneid'] = dbr.attrib['id']
-  # # Ensembl Gene ID
-  # xrefs = []
-  # for dbr in entry.dbReference:
-  #   if(dbr.attrib["type"] == "Ensembl"):
-  #     if dbr.property is not None and len(dbr.property) > 0:
-  #       for prop in dbr.property:
-  #         if prop.attrib["type"] == "gene ID":
-  #           nhprotein['xrefs'].append({'xtype': 'ENSG', 'dataset_id': dataset_id, 'value': prop.attrib["value"]})
-  #           break
-  # nhprotein['xrefs'] = xrefs
+  xrefs = []
+  for dbr in entry.dbReference:
+    if(dbr.attrib["type"] == "Ensembl"):
+      xrefs.append( {'xtype': 'Ensembl', 'dataset_id': dataset_id, 'value': dbr.attrib['id']} )
+      for el in dbr.findall(NS+'property'):
+        if el.attrib['type'] == 'protein sequence ID':
+          xrefs.append( {'xtype': 'Ensembl', 'dataset_id': dataset_id, 'value': el.attrib['value']} )
+        elif el.attrib['type'] == 'gene ID':
+          xrefs.append( {'xtype': 'Ensembl', 'dataset_id': dataset_id, 'value': el.attrib['value']} )
+    elif dbr.attrib['type'] == 'STRING':
+      xrefs.append( {'xtype': 'STRING', 'dataset_id': dataset_id, 'value': dbr.attrib['id']} )
+  nhprotein['xrefs'] = xrefs
   
   return nhprotein
   

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-05-18 12:00:24 smathias>
+# Time-stamp: <2019-10-15 09:15:29 smathias>
 """ Load BioPlex ppis into TCRD from TSV file.
 
 Usage:
@@ -24,9 +24,9 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2015-2018, Steve Mathias"
+__copyright__ = "Copyright 2015-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.1.0"
+__version__   = "3.0.0"
 
 import os,sys,time
 from docopt import docopt
@@ -37,7 +37,7 @@ from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd5logs"
+LOGDIR = "./tcrd6logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 # http://wren.hms.harvard.edu/bioplex/downloadInteractions.php
 # http://bioplex.hms.harvard.edu/data/BioPlex_interactionList_v4a.tsv
@@ -93,6 +93,7 @@ def load(args):
     # GeneA   GeneB   UniprotA        UniprotB        SymbolA SymbolB pW      pNI     pInt
     ct = 0
     ppi_ct = 0
+    same12_ct = 0
     k2pid = {}
     notfnd = set()
     dba_err_ct = 0
@@ -118,7 +119,6 @@ def load(args):
         t1 = find_target(dba, k1)
         if not t1:
           notfnd.add(k1)
-          logger.warn("No target found for: {}".format(k1))
           continue
         pid1 = t1['components']['protein'][0]['id']
       k2pid[k1] = pid1
@@ -132,10 +132,12 @@ def load(args):
         t2 = find_target(dba, k2)
         if not t2:
           notfnd.add(k2)
-          logger.warn("No target found for: {}".format(k2))
           continue
         pid2 = t2['components']['protein'][0]['id']
       k2pid[k2] = pid2
+      if pid1 == pid2:
+        same12_ct += 1
+        continue
       # Insert PPI
       rv = dba.ins_ppi( {'ppitype': 'BioPlex','p_int': pint, 'p_ni': pni, 'p_wrong': pw,
                          'protein1_id': pid1, 'protein1_str': k1,
@@ -145,10 +147,14 @@ def load(args):
       else:
         dba_err_ct += 1
   pbar.finish()
+  for k in notfnd:
+    logger.warn("No target found for: {}".format(k))
   print "{} BioPlex PPI rows processed.".format(ct)
   print "  Inserted {} new ppi rows".format(ppi_ct)
+  if same12_ct:
+    print "  Skipped {} PPIs involving the same protein".format(same12_ct)
   if notfnd:
-    print "WARNNING: {} keys did not find a TCRD target. See logfile {} for details.".format(len(notfnd), logfile) 
+    print "  No target found for {} UniProts/Syms/GeneIDs. See logfile {} for details.".format(len(notfnd), logfile) 
   if dba_err_ct > 0:
     print "WARNNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
 
@@ -165,6 +171,7 @@ def load(args):
       # plate_num       well_num        db_protein_id   symbol  gene_id bait_symbol     bait_geneid     pWrongID        pNoInt  pInt
       ct = 0
       ppi_ct = 0
+      same12_ct = 0
       k2pid = {}
       notfnd = set()
       dba_err_ct = 0
@@ -188,7 +195,6 @@ def load(args):
           t1 = find_target(dba, k1)
           if not t1:
             notfnd.add(k1)
-            logger.warn("No target found for: {}".format(k1))
             continue
           pid1 = t1['components']['protein'][0]['id']
           k2pid[k1] = pid1
@@ -202,10 +208,12 @@ def load(args):
           t2 = find_target(dba, k2)
           if not t2:
             notfnd.add(k2)
-            logger.warn("No target found for: {}".format(k2))
             continue
           pid2 = t2['components']['protein'][0]['id']
           k2pid[k2] = pid2
+        if pid1 == pid2:
+          same12_ct += 1
+          continue
         # Insert PPI
         rv = dba.ins_ppi( {'ppitype': 'BioPlex','p_int': pint, 'p_ni': pni, 'p_wrong': pw,
                            'protein1_id': pid1, 'protein1_str': k1,
@@ -215,10 +223,14 @@ def load(args):
         else:
           dba_err_ct += 1
     pbar.finish()
+    for k in notfnd:
+      logger.warn("No target found for: {}".format(k))
     print "{} BioPlex PPI rows processed.".format(ct)
     print "  Inserted {} new ppi rows".format(ppi_ct)
+    if same12_ct:
+      print "  Skipped {} PPIs involving the same protein".format(same12_ct)
     if notfnd:
-      print "WARNNING: {} keys did not find a TCRD target. See logfile {} for details.".format(len(notfnd), logfile) 
+      print "  No target found for {} UniProts/Syms/GeneIDs. See logfile {} for details.".format(len(notfnd), logfile) 
     if dba_err_ct > 0:
       print "WARNNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
 
@@ -235,6 +247,7 @@ def find_target(dba, k):
     return targets[0]
   else:
     return None
+
 
 if __name__ == '__main__':
   print "\n{} (v{}) [{}]:".format(PROGRAM, __version__, time.strftime("%c"))

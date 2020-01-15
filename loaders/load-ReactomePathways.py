@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-05-18 12:05:52 smathias>
+# Time-stamp: <2019-08-21 12:32:11 smathias>
 """Load Reactome Pathway links into TCRD from download files.
 
 Usage:
@@ -24,9 +24,9 @@ Options:
 __author__ = "Steve Mathias"
 __email__ = "smathias@salud.unm.edu"
 __org__ = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2015-2018, Steve Mathias"
+__copyright__ = "Copyright 2015-2019, Steve Mathias"
 __license__ = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__ = "2.1.0"
+__version__ = "3.0.0"
 
 import os,sys,time
 from docopt import docopt
@@ -34,12 +34,13 @@ from TCRD import DBAdaptor
 import csv
 import urllib
 import zipfile
+from collections import defaultdict
 import logging
 from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd5logs"
+LOGDIR = "./tcrd6logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 DOWNLOAD_DIR = '../data/Reactome/'
 BASE_URL = 'http://www.reactome.org/download/current/'
@@ -102,7 +103,8 @@ def load(args):
     # Apoptosis       R-HSA-109581    Reactome Pathway        ACIN1   ADD1    AKT1    AKT2   ...
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start()
     ct = 0
-    sym_mark = {}
+    sym2pids = defaultdict(list)
+    pmark = set()
     notfnd = set()
     pw_ct = 0
     dba_err_ct = 0
@@ -113,28 +115,35 @@ def load(args):
       url = 'http://www.reactome.org/content/detail/' + pwid
       syms = row[3:]
       for sym in syms:
-        sym_mark[sym] = True
-        if sym in notfnd:
+        if sym in sym2pids:
+          pids = sym2pids[sym]
+        elif sym in notfnd:
           continue
-        targets = dba.find_targets({'sym': sym})
-        if not targets:
-          notfnd.add(sym)
-          logger.warn("No target found for Gene symbol: {}".format(sym))
-          continue
-        for t in targets:
-          pid = t['components']['protein'][0]['id']
+        else:
+          targets = dba.find_targets({'sym': sym})
+          if not targets:
+            notfnd.add(sym)
+            continue
+          pids = []
+          for t in targets:
+            pids.append(t['components']['protein'][0]['id'])
+          sym2pids[sym] = pids # save this mapping so we only lookup each target once
+        for pid in pids:
           rv = dba.ins_pathway({'protein_id': pid, 'pwtype': 'Reactome', 'name': pwname,
                                 'id_in_source': pwid, 'url': url})
           if rv:
             pw_ct += 1
+            pmark.add(pid)
           else:
             dba_err_ct += 1
       pbar.update(ct)
   pbar.finish()
+  for sym in sym2pids:
+    logger.warn("No target found for {}".format(sym))
   print "Processed {} Reactome Pathways.".format(ct)
-  print "  Inserted {} pathway rows".format(pw_ct)
+  print "  Inserted {} pathway rows for {} proteins.".format(pw_ct, len(pmark))
   if notfnd:
-    print "WARNNING: {} (of {}) Gene symbols did not find a TCRD target.".format(len(notfnd), len(sym_mark))
+    print "  No target found for {} Gene IDs. See logfile {} for details.".format(len(notfnd), logfile)
   if dba_err_ct > 0:
     print "WARNNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
 

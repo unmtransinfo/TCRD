@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-04-03 10:03:32 smathias>
+# Time-stamp: <2019-08-20 10:28:53 smathias>
 """ Load qualitative HPM expression data and Tissue Specificity Index tdl_infos into TCRD from tab-delimited files.
 
 Usage:
@@ -24,22 +24,27 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2015-2018, Steve Mathias"
+__copyright__ = "Copyright 2015-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.1.0"
+__version__   = "3.0.0"
 
 import os,sys,time,re
 from docopt import docopt
+from TCRDMP import DBAdaptor
+import ast
 import csv
-from TCRD import DBAdaptor
+from collections import defaultdict
 import logging
-import cPickle as pickle
 from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = 'tcrd5logs/'
+LOGDIR = 'tcrd6logs/'
 LOGFILE = LOGDIR+'%s.log'%PROGRAM
+# This file contains a manually currated dict mapping tissue names to Uberon IDs.
+# These are ones for which TCRDMP.get_uberon_id does not return a uid.
+TISSUE2UBERON_FILE = '../data/Tissue2Uberon.txt'
+# 
 PROTEIN_QUAL_FILE = '../data/HPM/HPM.protein.qualitative.2015-09-10.tsv'
 PROTEIN_TAU_FILE = '../data/HPM/HPM.protein.tau.2015-09-10.tsv'
 GENE_QUAL_FILE = '../data/HPM/HPM.gene.qualitative.2015-09-10.tsv'
@@ -80,6 +85,11 @@ def load(args):
     assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
 
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
+
+  with open(TISSUE2UBERON_FILE, 'r') as ifh:
+    tiss2uid = ast.literal_eval(ifh.read())
+  if not args['--quiet']:
+    print "\nGot {} tissue to Uberon ID mappings from file {}".format(len(tiss2uid), TISSUE2UBERON_FILE)
   
   #
   # Protein Level Expressions
@@ -88,11 +98,12 @@ def load(args):
   if not args['--quiet']:
     print "\nProcessing {} lines in HPM file {}".format(line_ct, PROTEIN_QUAL_FILE)
   pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
-  rs2pid = {}
-  notfnd = set()
   ct = 0
+  rs2pids = defaultdict(list)
+  notfnd = set()
+  nouid = set()
   dba_err_ct = 0
-  tmark = {}
+  pmark = {}
   exp_ct = 0
   with open(PROTEIN_QUAL_FILE, 'rU') as tsv:
     tsvreader = csv.reader(tsv, delimiter='\t')
@@ -103,39 +114,54 @@ def load(args):
       pbar.update(ct)
       #rs = re.sub('\.\d+$', '', row[0]) # get rid of version
       rs = row[0]
-      if rs in rs2pid:
-        pid = rs2pid[rs]
+      if rs in rs2pids:
+        # we've already found it
+        pids = rs2pids[rs]
       elif rs in notfnd:
+        # we've already not found it
         continue
       else:
+        # look it up
         targets = dba.find_targets_by_xref({'xtype': 'RefSeq', 'value': rs}, False)
         if not targets:
           notfnd.add(rs)
           continue
-        t = targets[0]
-        tmark[t['id']] = True
-        pid = t['components']['protein'][0]['id']
-        rs2pid[rs] = pid # save this mapping so we only lookup each target once
+        pids = []
+        for t in targets:
+          pids.append(t['components']['protein'][0]['id'])
+        rs2pids[rs] = pids # save this mapping so we only lookup each target once
+      tissue = row[1]
       if row[3] == 'NA':
-        init = {'protein_id': pid,'etype': 'HPM Protein', 'tissue': row[1], 'qual_value': row[4],}
+        init = {'etype': 'HPM Protein', 'tissue': tissue, 'qual_value': row[4],}
       else:
-        init = {'protein_id': pid, 'etype': 'HPM Protein','tissue': row[1], 
+        init = {'etype': 'HPM Protein','tissue': tissue, 
                 'qual_value': row[4], 'number_value': row[3]}
-      rv = dba.ins_expression(init)
-      if not rv:
-        dba_err_ct += 1
-        continue
-      exp_ct += 1
+      # Add Uberon ID, if we can find one
+      if tissue in tiss2uid:
+        uberon_id = tiss2uid[tissue]
+      else:
+        uberon_id = dba.get_uberon_id({'name': tissue})
+      if uberon_id:
+        init['uberon_id'] = uberon_id
+      else:
+        nouid.add(tissue)
+      for pid in pids:
+        init['protein_id'] = pid
+        rv = dba.ins_expression(init)
+        if not rv:
+          dba_err_ct += 1
+          continue
+        exp_ct += 1
+        pmark[pid] = True
   pbar.finish()
   print "Processed {} lines.".format(ct)
-  print "  Inserted {} new expression rows for {} targets ({} RefSeqs)".format(exp_ct, len(tmark), len(rs2pid))
+  print "  Inserted {} new expression rows for {} proteins ({} RefSeqs)".format(exp_ct, len(pmark), len(rs2pids))
   if notfnd:
     print "No target found for {} RefSeqs. See logfile {} for details.".format(len(notfnd), logfile)
+  if nouid:
+    print "No Uberon ID found for {} tissues. See logfile {} for details.".format(len(nouid), logfile)
   if dba_err_ct > 0:
     print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
-  #pfile = LOGDIR + 'HPMP-RefSeq2PID.p'
-  #print "Dumping ENSG to protein_id mapping to {}".format(pfile)
-  #pickle.dump(rs2pid, open(pfile, 'wb'))
 
   line_ct = slmf.wcl(PROTEIN_TAU_FILE)
   if not args['--quiet']:
@@ -143,8 +169,8 @@ def load(args):
   pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
   ct = 0
   dba_err_ct = 0
-  tmark = {}
-  notfnd = set()
+  pmark = {}
+  skip_ct = 0
   ti_ct = 0
   with open(PROTEIN_TAU_FILE, 'rU') as tsv:
     tsvreader = csv.reader(tsv, delimiter='\t')
@@ -156,22 +182,22 @@ def load(args):
       #rs = re.sub('\.\d+$', '', row[0]) # get rid of version
       rs = row[0]
       tau = row[1]
-      if rs not in rs2pid:
-        notfnd.add(rs)
+      if rs not in rs2pids:
+        skip_ct += 1
         continue
-      pid = rs2pid[rs]
-      tmark[pid] = True
-      rv = dba.ins_tdl_info({'protein_id': pid, 'itype': 'HPM Protein Tissue Specificity Index',
-                             'number_value': tau})
-      if not rv:
-        dba_err_ct += 1
-        continue
-      ti_ct += 1
+      for pid in rs2pids[rs]:
+        rv = dba.ins_tdl_info({'protein_id': pid, 'itype': 'HPM Protein Tissue Specificity Index',
+                               'number_value': tau})
+        if not rv:
+          dba_err_ct += 1
+          continue
+        ti_ct += 1
+        pmark[pid] = True
   pbar.finish()
   print "Processed {} lines.".format(ct)
-  print "  Inserted {} new HPM Protein Tissue Specificity Index tdl_info rows for {} targets".format(ti_ct, len(tmark))
-  if notfnd:
-    print "  {} RefSeqs not in map from expression file".format(len(notfnd))
+  print "  Inserted {} new HPM Protein Tissue Specificity Index tdl_info rows for {} proteins.".format(ti_ct, len(pmark))
+  if skip_ct > 0:
+    print "  Skipped {} rows with RefSeqs not in map from expression file.".format(skip_ct)
   if dba_err_ct > 0:
     print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
 
@@ -182,11 +208,12 @@ def load(args):
   if not args['--quiet']:
     print "\nProcessing {} lines in HPM file {}".format(line_ct, GENE_QUAL_FILE)
   pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
-  sym2pid = {}
-  notfnd = set()
   ct = 0
+  sym2pids = defaultdict(list)
+  notfnd = set()
+  nouid = set()
   dba_err_ct = 0
-  tmark = {}
+  pmark = {}
   exp_ct = 0
   with open(GENE_QUAL_FILE, 'rU') as tsv:
     tsvreader = csv.reader(tsv, delimiter='\t')
@@ -196,39 +223,54 @@ def load(args):
       ct += 1
       pbar.update(ct)
       sym = re.sub('\.\d+$', '', row[0]) # get rid of version
-      if sym in sym2pid:
-        pid = sym2pid[sym]
+      if sym in sym2pids:
+        pids = sym2pids[sym]
       elif sym in notfnd:
+        # we've already not found it
         continue
       else:
+        # look it up
         targets = dba.find_targets({'sym': sym}, False)
         if not targets:
           notfnd.add(sym)
           continue
-        t = targets[0]
-        tmark[t['id']] = True
-        pid = t['components']['protein'][0]['id']
-        sym2pid[sym] = pid # save this mapping so we only lookup each target once
+        pids = []
+        for t in targets:
+          pids.append(t['components']['protein'][0]['id'])
+        sym2pids[sym] = pids # save this mapping so we only lookup each target once
+      tissue = row[1]
+      
       if row[3] == 'NA':
-        init = {'protein_id': pid,'etype': 'HPM Gene', 'tissue': row[1], 'qual_value': row[4],}
+        init = {'etype': 'HPM Gene', 'tissue': tissue, 'qual_value': row[4],}
       else:
-        init = {'protein_id': pid, 'etype': 'HPM Gene','tissue': row[1], 
+        init = {'etype': 'HPM Gene','tissue': tissue, 
                 'qual_value': row[4], 'number_value': row[3]}
-      rv = dba.ins_expression(init)
-      if not rv:
-        dba_err_ct += 1
-        continue
-      exp_ct += 1
+      # Add Uberon ID, if we can find one
+      if tissue in tiss2uid:
+        uberon_id = tiss2uid[tissue]
+      else:
+        uberon_id = dba.get_uberon_id({'name': tissue})
+      if uberon_id:
+        init['uberon_id'] = uberon_id
+      else:
+        nouid.add(tissue)
+      for pid in pids:
+        init['protein_id'] = pid
+        rv = dba.ins_expression(init)
+        if not rv:
+          dba_err_ct += 1
+          continue
+        exp_ct += 1
+        pmark[pid] = True
   pbar.finish()
   print "Processed {} lines.".format(ct)
-  print "  Inserted {} new expression rows for {} targets ({} Gene Symbols)".format(exp_ct, len(tmark.keys()), len(sym2pid))
+  print "  Inserted {} new expression rows for {} proteins ({} Gene Symbols)".format(exp_ct, len(pmark), len(sym2pids))
   if notfnd:
     print "  No target found for {} symbols. See logfile {} for details.".format(len(notfnd), logfile)
+  if nouid:
+    print "No Uberon ID found for {} tissues. See logfile {} for details.".format(len(nouid), logfile)
   if dba_err_ct > 0:
     print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
-  #pfile = LOGDIR + 'HPMG-Sym2PID.p'
-  #print "Dumping symbol to protein_id mapping to {}".format(pfile)
-  #pickle.dump(sym2pid, open(pfile, 'wb'))
 
   line_ct = slmf.wcl(GENE_TAU_FILE)
   if not args['--quiet']:
@@ -236,8 +278,8 @@ def load(args):
   pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
   ct = 0
   dba_err_ct = 0
-  tmark = {}
-  notfnd = set()
+  pmark = {}
+  skip_ct = 0
   ti_ct = 0
   with open(GENE_TAU_FILE, 'rU') as tsv:
     tsvreader = csv.reader(tsv, delimiter='\t')
@@ -248,22 +290,22 @@ def load(args):
       pbar.update(ct)
       sym = re.sub('\.\d+$', '', row[0]) # get rid of version
       tau = row[1]
-      if sym not in sym2pid:
-        notfnd.add(sym)
+      if sym not in sym2pids:
+        skip_ct += 1
         continue
-      pid = sym2pid[sym]
-      tmark[pid] = True
-      rv = dba.ins_tdl_info({'protein_id': pid, 'itype': 'HPM Gene Tissue Specificity Index',
-                             'number_value': tau})
-      if not rv:
-        dba_err_ct += 1
-        continue
-      ti_ct += 1
+      for pid in rs2pids[rs]:
+        rv = dba.ins_tdl_info({'protein_id': pid, 'itype': 'HPM Gene Tissue Specificity Index',
+                               'number_value': tau})
+        if not rv:
+          dba_err_ct += 1
+          continue
+        ti_ct += 1
+        pmark[pid] = True
   pbar.finish()
   print "Processed {} lines.".format(ct)
-  print "  Inserted {} new HPM Gene Tissue Specificity Index tdl_info rows for {} targets".format(ti_ct, len(tmark))
-  if notfnd:
-    print "  {} symbols not in map from expression file".format(len(notfnd))
+  print "  Inserted {} new HPM Gene Tissue Specificity Index tdl_info rows for {} proteins.".format(ti_ct, len(pmark))
+  if skip_ct > 0:
+    print "  Skipped {} rows with symbols not in map from expression file".format(skip_ct)
   if dba_err_ct > 0:
     print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
   
