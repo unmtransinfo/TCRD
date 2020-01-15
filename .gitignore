@@ -30,6 +30,7 @@ webapp/
 exports/
 doc/old/
 loaders/old/
+python/old/
 
 # sym links
 python/slm_dataframe_functions.py
