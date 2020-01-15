@@ -13,7 +13,7 @@ dumps of recent versions are available for download
 [here](http://juniper.health.unm.edu/tcrd/download/).
 
 ## Overview of the Build Process
-There are 50+ datasets in TCRD and one loader script in the loaders
+There are 70+ datasets in TCRD and, generally, one loader script in the loaders
 directory to load each. Targets in TCRD correspond to reviewed human
 entries in UniProt and so UniProt data is loaded first.
 
@@ -25,24 +25,24 @@ directories and/or files needed are set as all caps variables at the top
 of the loader scripts. Have a look at each loader script before running
 and make sure the necessary directories and/or files are in place.
 
-Some datasets require pre-processing steps to be run before loading, and
-a few also require manual steps be perforemd after the load is
-completed.
+Some datasets require pre-processing steps (by code in R/ or python/
+directories) to be run before loading. A few also require manual
+steps be perforemd after the load is completed.
 
 ### doc/TCRD_Build_Notes.txt
 This file has information for each dataset on the steps required and
 also an estimate of the time required. Some loaders run in a few
 minutes, others require days.
 
-### doc/README_v*.txt
+### doc/README_v*.txt and doc/TCRDv*_Fixes.txt
 These files contains all command lines, and most of their output, run to
-build the corresponding version TCRD. There are notes in this file that
+build and fix the corresponding version TCRD. There are notes in this file that
 should help with the pre- and post- processing required for some of the
 datasets.
 
 ### Loading Order
-Some of the loaders need to be run before others. Generally, the steps
-1-13 (UniProt through TDLs) should be run in the order they are listed
+Some of the loaders need to be run before others. Importantly, the steps
+through TDLs should be run in the order they are listed
 in doc/TCRD_Build_Notes.txt. After that, loaders can be run in whatever
 order you like.
 
