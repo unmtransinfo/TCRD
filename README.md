@@ -1,9 +1,9 @@
 
 TCRD is the central resource behind the
 [Illuminating the Druggable Genome Knowledge Management Center (IDG-KMC)](http://targetcentral.ws/KMC_TiD/). TCRD
-contains information about human targets, with special emphasis on four
+contains information about human targets, with special emphasis on three
 families of targets that are central to the NIH IDG initiative: GPCRs,
-kinases, ion channels and nuclear receptors. Olfactory GPCRs (oGPCRs)
+kinases, ion channels. Olfactory GPCRs (oGPCRs)
 are treated as a separate family. The official public portal for IDG-KMC
 is: [Pharos](https://pharos.nih.gov/).
 
