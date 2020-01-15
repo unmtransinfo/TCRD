@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-01-19 12:06:50 smathias>
+# Time-stamp: <2019-12-18 11:33:42 smathias>
 """Download ClinVar variant_summary.txt and process for loading into TCRD.
 
 Usage:
@@ -14,7 +14,7 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2018, Steve Mathias"
+__copyright__ = "Copyright 2018-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
 __version__   = "1.0.0"
 
