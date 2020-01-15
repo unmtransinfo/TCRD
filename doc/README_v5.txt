@@ -1991,7 +1991,6 @@ load-TMHMM_Predictions.py: Done. Elapsed time: 0:34:59.936
 
 [smathias@juniper SQL]$ mysqldump tcrd5 > dumps5/tcrd5-50.sql
 
-
 ## GeneRIF Years
 [smathias@juniper python]$ ./mk-PubMed2DateMap.py --dbname tcrd5
 
@@ -2607,3 +2606,81 @@ load-eRAM.py: Done. Elapsed time: 1:02:34.764
 
 mysql> UPDATE dbinfo SET data_ver = '5.4.2';
 [smathias@juniper SQL]$ mysqldump tcrd5 > dumps5/tcrd_v5.4.2.sql
+
+
+# Uberon
+CREATE TABLE `uberon` (
+  `uid` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+  `name` text COLLATE utf8_unicode_ci NOT NULL,
+  `def` text COLLATE utf8_unicode_ci,
+  `comment` text COLLATE utf8_unicode_ci,
+  PRIMARY KEY (`uid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+CREATE TABLE `uberon_parent` (
+  `uid` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+  `parent_id` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+  CONSTRAINT `fk_uberon_parent__uberon` FOREIGN KEY (`uid`) REFERENCES `uberon` (`uid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+CREATE TABLE `uberon_xref` (
+  `uid` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+  `db` varchar(24) COLLATE utf8_unicode_ci NOT NULL,
+  `value` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  PRIMARY KEY `uberon_xref__idx1` (`uid`, `db`, `value`),
+  CONSTRAINT `fk_uberon_xref__uberon` FOREIGN KEY (`uid`) REFERENCES `uberon` (`uid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+ALTER TABLE expression ADD COLUMN uberon_id varchar(20) COLLATE utf8_unicode_ci DEFAULT NULL;
+ALTER TABLE expression ADD CONSTRAINT `fk_expression_uberon` FOREIGN KEY (`uberon_id`) REFERENCES `uberon` (`uid`);
+
+[smathias@juniper loaders]$ ./load-Uberon-IDs.py --dbname tcrd5
+
+load-Uberon-IDs.py (v1.0.0) [Tue Mar 26 12:12:54 2019]:
+
+Connected to TCRD database tcrd5 (schema ver 5.1.0; data ver 5.4.2)
+
+Processing 16872259 expression rows
+Progress: 100% [###################################################################] Time: 2 days, 7:29:11
+16872259 expressions processed.
+  Updated 4089756 expressions with Uberon IDs
+  No Uberon ID found for 12782503 expressions
+
+load-Uberon-IDs.py: Done. Elapsed time: 55:29:13.657
+
+mysql> UPDATE dbinfo SET schema_ver = '5.1.1', data_ver = '5.4.3';
+[smathias@juniper SQL]$ mysqldump tcrd5 > dumps5/tcrd_v5.4.3.sql
+
+
+# DRGC Resources
+CREATE TABLE `drgc_resource` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `target_id` int(11) NOT NULL,
+  `resource_type` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  `json` text COLLATE utf8_unicode_ci NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `drgc_resource_idx1` (`target_id`),
+  CONSTRAINT `fk_drgc_resource__target` FOREIGN KEY (`target_id`) REFERENCES `target` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+
+[smathias@juniper loaders]$ ./load-DRGC_Resources.py --dbname tcrd5 
+
+load-DRGC_Resources.py (v1.0.0) [Mon May 13 13:12:24 2019]:
+
+Connected to TCRD database tcrd5 (schema ver 5.1.1; data ver 5.4.3)
+
+Getting targets from RSS...
+  Got 18 targets with DRGC resource(s)
+18 targets processed.
+  Inserted 18 new drgc_resource rows for 18 targets
+
+load-DRGC_Resources.py: Done. Elapsed time: 0:00:02.598
+
+mysql> UPDATE dbinfo SET schema_ver = '5.2.0', data_ver = '5.4.4';
+[smathias@juniper SQL]$ mysqldump tcrd5 > dumps5/tcrd_v5.4.4.sql
+
+
+
+# ENSGs
+INSERT INTO xref_type (name, description) VALUES ('ENSG', 'Ensembl Gene ID');
+
+
