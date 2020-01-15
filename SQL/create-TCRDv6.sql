@@ -871,19 +871,16 @@ DROP TABLE IF EXISTS `ortholog_disease`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `ortholog_disease` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `target_id` int(11) NOT NULL,
   `protein_id` int(11) NOT NULL,
   `did` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
   `name` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
   `ortholog_id` int(11) NOT NULL,
   `score` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `ortholog_disease_idx1` (`target_id`),
-  KEY `ortholog_disease_idx2` (`protein_id`),
-  KEY `ortholog_disease_idx3` (`ortholog_id`),
-  CONSTRAINT `fk_ortholog_disease__ortholog` FOREIGN KEY (`ortholog_id`) REFERENCES `ortholog` (`id`) ON DELETE CASCADE,
+  KEY `ortholog_disease_idx1` (`protein_id`),
+  KEY `ortholog_disease_idx2` (`ortholog_id`),
   CONSTRAINT `fk_ortholog_disease__protein` FOREIGN KEY (`protein_id`) REFERENCES `protein` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_ortholog_disease__target` FOREIGN KEY (`target_id`) REFERENCES `target` (`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_ortholog_disease__ortholog` FOREIGN KEY (`ortholog_id`) REFERENCES `ortholog` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -1064,7 +1061,7 @@ CREATE TABLE `phenotype` (
   KEY `phenotype_idx1` (`ptype`),
   KEY `phenotype_idx2` (`target_id`),
   KEY `phenotype_idx3` (`protein_id`),
-  CONSTRAINT `fk_phenotype_info_type` FOREIGN KEY (`ptype`) REFERENCES `phenotype_type` (`name`),
+  CONSTRAINT `fk_phenotype__phenotype_type` FOREIGN KEY (`ptype`) REFERENCES `phenotype_type` (`name`),
   CONSTRAINT `fk_phenotype_protein` FOREIGN KEY (`protein_id`) REFERENCES `protein` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_phenotype_target` FOREIGN KEY (`target_id`) REFERENCES `target` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
@@ -1155,7 +1152,8 @@ CREATE TABLE `ppi` (
   KEY `ppi_idx2` (`protein2_id`),
   KEY `ppi_idx3` (`ppitype`),
   CONSTRAINT `fk_ppi_protein1` FOREIGN KEY (`protein1_id`) REFERENCES `protein` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_ppi_protein2` FOREIGN KEY (`protein2_id`) REFERENCES `protein` (`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_ppi_protein2` FOREIGN KEY (`protein2_id`) REFERENCES `protein` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_ppi__ppi_type` FOREIGN KEY (`ppitype`) REFERENCES `ppi_type` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
