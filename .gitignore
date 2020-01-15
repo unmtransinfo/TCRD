@@ -17,15 +17,21 @@ data/
 # log files from load scripts
 loaders/tcrd4logs/
 loaders/tcrd5logs/
+loaders/tcrd6logs/
 *.log
 
 # Database dump files
 SQL/dumps/
 SQL/dumps5/
+SQL/dumps6/
+SQL/dumps6old/
 
 webapp/
 exports/
+doc/old/
+loaders/old/
 
 # sym links
 python/slm_dataframe_functions.py
 python/slm_tcrd_functions.py
+
