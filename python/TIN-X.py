@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2018-06-11 11:17:18 smathias>
+# Time-stamp: <2019-08-22 10:54:04 smathias>
 """Generate TIN-X scores and PubMed ID rankings from Jensen lab's protein and disease mentions TSV files.
 
 Usage:
@@ -24,13 +24,13 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2016-2018, Steve Mathias"
+__copyright__ = "Copyright 2016-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.2.0"
+__version__   = "3.0.0"
 
 import os,sys,time
 from docopt import docopt
-from TCRD import DBAdaptor
+from TCRDMP import DBAdaptor
 import logging
 import urllib
 import obo
@@ -38,7 +38,7 @@ from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-VER = '5' # CHANGE THIS!!!
+VER = '6' # CHANGE THIS!!!
 LOGDIR = '../loaders/tcrd%slogs/'%VER
 LOGFILE = LOGDIR + '%s.log'%PROGRAM
 
@@ -139,10 +139,8 @@ def tinx(args):
         # prefered way, try by Ensembl xref
         targets = dba.find_targets_by_xref({'xtype': 'Ensembl', 'value': ensp})
       if not targets:
-        logger.warn("No target found for %s" % ensp)
         notfnd.add(ensp)
         continue
-      t = targets[0]
       for t in targets:
         p = t['components']['protein'][0]
         k = "%s,%s" % (p['id'], p['uniprot'])
@@ -156,12 +154,14 @@ def tinx(args):
           else:
             pmid_protein_ct[pmid] = 1.0
   pbar.finish()
+  for ensp in notfnd:
+    logger.warn("No target found for {}".format(ensp))
   print "{} lines processed.".format(ct)
   print "  Skipped {} non-ENSP lines".format(skip_ct)
   print "  Saved {} protein to PMIDs mappings".format(len(pid2pmids))
   print "  Saved {} PMID to protein count mappings".format(len(pmid_protein_ct))
   if notfnd:
-    print "WARNING: No target found for {} ENSPs. See logfile {} for details.".format(len(notfnd), logfile)
+    print "  No target found for {} ENSPs. See logfile {} for details.".format(len(notfnd), logfile)
 
   fn = JL_DOWNLOAD_DIR+DISEASE_FILE
   line_ct = slmf.wcl(fn)
@@ -305,7 +305,7 @@ if __name__ == '__main__':
   if args['--debug']:
     print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
   start_time = time.time()
-  download_do(args)
+  #download_do(args)
   download_mentions(args)
   tinx(args)
   elapsed = time.time() - start_time
