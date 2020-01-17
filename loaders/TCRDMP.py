@@ -4,7 +4,7 @@
 
   Steve Mathias
   smathias@salud.unm.edu
-  Time-stamp: <2020-01-10 13:27:53 smathias>
+  Time-stamp: <2020-01-17 13:50:54 smathias>
 '''
 from __future__ import print_function
 import sys
@@ -1240,20 +1240,23 @@ class DBAdaptor:
     return True
 
   def ins_dto(self, init, commit=True):
-    if 'id' in init and 'name' in init:
-      cols = ['id', 'name']
+    if 'dtoid' in init and 'name' in init:
+      cols = ['dtoid', 'name']
       vals = ['%s','%s']
-      params = [init['id'], init['name']]
+      params = [init['dtoid'], init['name']]
     else:
       self.warning("Invalid parameters sent to ins_dto(): ", init)
       return False
-    if 'parent' in init:
-      cols.append('parent')
-      vals.append('%s')
-      params.append(init['parent'])
+    for optcol in ['def', 'parent_id']:
+      if optcol in init:
+        cols.append(optcol)
+        vals.append('%s')
+        if optcol == 'def':
+          init[optcol] = init[optcol].encode('ascii', 'ignore').decode('ascii')
+        params.append(init[optcol])
     sql = "INSERT INTO dto (%s) VALUES (%s)" % (','.join(cols), ','.join(vals))
     self._logger.debug("SQLpat: %s"%sql)
-    self._logger.debug("SQLparams: %s"%(", ".join([str(p) for p in params])))
+    #self._logger.debug("SQLparams: %s"%(", ".join([str(p) for p in params])))
     with closing(self._conn.cursor()) as curs:
       try:
         curs.execute(sql, params)

@@ -30,6 +30,7 @@ webapp/
 exports/
 doc/old/
 loaders/old/
+loaders/omim_urls.txt
 python/old/
 
 # sym links

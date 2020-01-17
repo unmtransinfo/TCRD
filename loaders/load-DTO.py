@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2019-09-11 10:45:00 smathias>
+# Time-stamp: <2020-01-17 13:45:43 smathias>
 """Load DTO IDs and classifications into TCRD from TSV file.
 
 Usage:
@@ -24,15 +24,15 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2015-2019, Steve Mathias"
+__copyright__ = "Copyright 2015-2020, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
 __version__   = "3.0.0"
 
-import os,sys,time,re
+import os,sys,time
 from docopt import docopt
 from TCRDMP import DBAdaptor
 import csv
-import json
+import pronto
 import logging
 from progressbar import *
 import slm_tcrd_functions as slmf
@@ -40,23 +40,71 @@ import slm_tcrd_functions as slmf
 PROGRAM = os.path.basename(sys.argv[0])
 LOGDIR = 'tcrd6logs/'
 LOGFILE = LOGDIR + '%s.log'%PROGRAM
-DTO2UP_FILE = '../data/UMiami/UniPids_DTOids2.csv'
-DTO_FILE = '../data/UMiami/dto.json'
-SRC_FILES = [os.path.basename(DTO2UP_FILE),
-             os.path.basename(DTO_FILE)]
-classifications = {}
+#DTO_MAPPING_FILE = '../data/UMiami/DTO2UniProt_DTOv2.csv'
+#DTO_CLASS_FILE = '../data/UMiami/Final_ProteomeClassification_Sep232019.csv'
+DTO_OWL_FILE = '../data/UMiami/dto_proteome_classification_only.owl'
+#SRC_FILES = [os.path.basename(DTO_MAPPING_FILE), 
+#             os.path.basename(DTO_CLASS_FILE), os.path.basename(DTO_OWL_FILE)]
 
-def load(args):
-  loglevel = int(args['--loglevel'])
+def parse_dto_owl(args, fn):
+  if not args['--quiet']:
+    print "\nParsing Drug Target Ontology file {}".format(fn)
+  dto = []
+  dto_ont = pronto.Ontology(fn)
+  for term in dto_ont:
+    #if not term.id.startswith('DTO:'):
+    #  continue
+    init = {'dtoid': term.id, 'name': term.name}
+    if term.parents:
+      init['parent_id'] = term.parents[0].id
+    if term.desc:
+      defn = term.desc.decode()
+      init['def'] = defn.lstrip('[').rstrip(']')
+    dto.append(init)
+  if not args['--quiet']:
+    print "Got {} DTO terms".format(len(dto))
+  return dto
+
+def load(args, dba, logfile, dto):
+  if not args['--quiet']:
+    print "\nLoading {} Drug Target Ontology terms".format(len(dto))
+  pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
+  pbar = ProgressBar(widgets=pbar_widgets, maxval=len(dto)).start()
+  ct = 0
+  dto_ct = 0
+  dba_err_ct = 0
+  for dtod in dto:
+    ct += 1
+    rv = dba.ins_dto(dtod)
+    if rv:
+      dto_ct += 1
+    else:
+      dba_err_ct += 1
+    pbar.update(ct)
+  pbar.finish()
+  print "{} terms processed.".format(ct)
+  print "  Inserted {} new dto rows".format(dto_ct)
+  if dba_err_ct > 0:
+    print "WARNNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
+
+    
+if __name__ == '__main__':
+  print "\n%s (v%s) [%s]:\n" % (PROGRAM, __version__, time.strftime("%c"))
+  args = docopt(__doc__, version=__version__)
+  debug = int(args['--debug'])
+  if debug:
+    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
+
   if args['--logfile']:
-    logfile = args['--logfile']
+    logfile =  args['--logfile']
   else:
     logfile = LOGFILE
+  loglevel = int(args['--loglevel'])
   logger = logging.getLogger(__name__)
   logger.setLevel(loglevel)
   if not args['--debug']:
     logger.propagate = False # turns off console logging
-  fh = logging.FileHandler(logfile)
+  fh = logging.FileHandler(LOGFILE)
   fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
   fh.setFormatter(fmtr)
   logger.addHandler(fh)
@@ -66,149 +114,20 @@ def load(args):
   dbi = dba.get_dbinfo()
   logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
   if not args['--quiet']:
-    print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+    print "Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+
+  dto = parse_dto_owl(args, DTO_OWL_FILE)
+  load(args, dba, logfile, dto)
 
   # Dataset
-  dataset_id = dba.ins_dataset( {'name': 'Drug Target Ontology', 'source': 'Files %s from Schurer Group'%(", ".join(SRC_FILES)), 'app': PROGRAM, 'app_version': __version__, 'url': 'http://drugtargetontology.org/'} )
+  dataset_id = dba.ins_dataset( {'name': 'Drug Target Ontology', 'source': 'File %s from Schurer Group at UMiami'%DTO_OWL_FILE, 'app': PROGRAM, 'app_version': __version__, 'url': 'http://drugtargetontology.org/'} )
   assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
   # Provenance
-  provs = [ {'dataset_id': dataset_id, 'table_name': 'protein', 'column_name': 'dtoid'},
+  provs = [ #{'dataset_id': dataset_id, 'table_name': 'protein', 'column_name': 'dtoid'},
+            #{'dataset_id': dataset_id, 'table_name': 'protein', 'column_name': 'dtoclass'},
             {'dataset_id': dataset_id, 'table_name': 'dto'} ]
   for prov in provs:
     rv = dba.ins_provenance(prov)
     assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
-
-  pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   
-  line_ct = slmf.wcl(DTO2UP_FILE)
-  line_ct -= 1
-  if not args['--quiet']:
-    print "\nProcessing {} lines in file {}".format(line_ct, DTO2UP_FILE)
-  logger.info("Processing {} input lines in file {}".format(line_ct, DTO2UP_FILE))
-  dto2up = {}
-  up2dto = {}
-  with open(DTO2UP_FILE, 'rU') as csvfile:
-    csvreader = csv.reader(csvfile)
-    header = csvreader.next() # skip header line
-    pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
-    ct = 0
-    upd_ct = 0
-    notfnd = []
-    dba_err_ct = 0
-    for row in csvreader:
-      ct += 1
-      if row[2].endswith('gene'):
-        continue # only use DTO IDs from protein branch
-      dtoid = row[0]
-      up = row[1]
-      logger.info("Searching for UniProt: {}".format(up))
-      targets = dba.find_targets({'uniprot': up})
-      if not targets:
-        notfnd.append(up)
-        logger.warn("No target found for UniProt: {}".format(up))        
-        continue
-      t = targets[0]
-      pid = t['components']['protein'][0]['id']
-      rv = dba.upd_protein(pid, 'dtoid', dtoid)
-      if rv:
-        upd_ct += 1
-        dto2up[dtoid] = up
-        up2dto[up] = dtoid
-      else:
-        dba_err_ct += 1
-      pbar.update(ct)
-  pbar.finish()
-  print "{} lines processed.".format(ct)
-  print "  Updated {} protein.dtoid values".format(upd_ct)
-  print "{} DTO to UniProt mappings for TCRD targets".format(len(dto2up))
-  print "{} UniProt to DTO mappings for TCRD targets".format(len(up2dto))
-  if notfnd:
-    print "WARNING: No target found for {} UniProts. See logfile {} for details.".format(len(notfnd), logfile)
-  if dba_err_ct > 0:
-    print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
-
-  # Classifications
-  global classifications
-  if not args['--quiet']:
-    print "\nParsing DTO JSON file {}".format(DTO_FILE)
-  logger.info("Parsing DTO JSON file {}".format(DTO_FILE))
-  with open(DTO_FILE) as json_file:
-    jsondata = json.load(json_file)
-    # get the Protein section of DTO:
-    dtop = [d for d in jsondata['children'] if d['name'] == 'Protein'][0]
-    for fd in dtop['children']:
-      fam = "%s~%s" % (fd['id'],fd['name'])
-      walk_dto(fam, fd['children'])
-  print "Got {} classifications.".format(len(classifications))
-
-  cct = len(classifications)
-  if not args['--quiet']:
-    print "\nLoading {} classifications".format(cct)
-  logger.info("Processing {} classifications".format(cct))
-  pbar = ProgressBar(widgets=pbar_widgets, maxval=cct).start()
-  ct = 0
-  dto_mark = {}
-  dba_err_ct = 0
-  for classification,inlist in classifications.items():
-    ct += 1
-    logger.info("Processing '{}' with {} term(s)".format(classification, len(inlist)))
-    # make sure all parent terms in the classification are loaded
-    rclass = list(reversed(classification.split("|")))
-    for i,idname in enumerate(rclass):
-      [dtoid,dtoname] = idname.split("~")
-      if i == 0:
-        leaf_term_parent_id = dtoid
-      if dtoid in dto_mark:
-        # term has already been inserted
-        continue
-      # look up id of parent term, if there is one
-      parent_id = None
-      if i == len(rclass)-1:
-        lpp = ''
-      else:
-        parent_idname = rclass[i+1]
-        [parent_dtoid,parent_dtoname] = parent_idname.split("~")
-        lpp = parent_dtoid
-      logger.info("Inserting dto ({}, {}, {})".format(dtoid, dtoname, lpp))
-      rv = dba.ins_dto({'id': dtoid, 'name': dtoname, 'parent': parent_dtoid})
-      if rv:
-        dto_mark[dtoid] = True # save so we don't try to insert the same term twice
-      else:
-        dba_err_ct += 1
-    # load leaf terms
-    for idname in inlist:
-      [dtoid,dtoname] = idname.split("~")
-      rv = dba.ins_dto({'id': dtoid, 'name': dtoname, 'parent': leaf_term_parent_id})
-      if rv:
-        dto_mark[dtoid] = True
-      else:
-        dba_err_ct += 1
-    pbar.update(ct)
-  pbar.finish()
-  print "{} classifications processed.".format(ct)
-  print "Inserted {} new dto rows".format(len(dto_mark))
-  if dba_err_ct > 0:
-    print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
-
-def walk_dto(myclass, l):
-  global classifications
-  for d in l:
-    if d['children']:
-      child_class = myclass + '|' + "%s~%s"%(d['id'],d['name'])
-      walk_dto(child_class, d['children'])
-    else:
-      if myclass in classifications:
-        classifications[myclass].append("%s~%s" % (d['id'],d['name']))
-      else:
-        classifications[myclass] = ["%s~%s" % (d['id'],d['name'])]
-
-
-if __name__ == '__main__':
-  print "\n{} (v{}) [{}]:".format(PROGRAM, __version__, time.strftime("%c"))
-  args = docopt(__doc__, version=__version__)
-  if args['--debug']:
-    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
-  start_time = time.time()
-  load(args)
-  elapsed = time.time() - start_time
-  print "\n{}: Done. Elapsed time: {}\n".format(PROGRAM, slmf.secs2str(elapsed))
+  print "\n%s: Done.\n" % PROGRAM

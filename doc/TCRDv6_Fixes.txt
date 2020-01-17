@@ -269,6 +269,44 @@ mysql> update dbinfo set schema_ver = '6.2.0', data_ver = '6.3.0';
 [smathias@juniper SQL]$ mysqldump tcrd6 > dumps6/TCRDv6.3.0.sql
 
 
+#
+# Add DTO
+#
+
+mysql> drop table dto;
+mysql> CREATE TABLE `dto` (
+  `dtoid` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  `name` text COLLATE utf8_unicode_ci NOT NULL,
+  `parent_id` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `def` text COLLATE utf8_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`dtoid`),
+  KEY `dto_idx1` (`parent_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+[smathias@juniper loaders]$ ./load-DTO.py --dbname tcrd6
+
+load-DTO.py (v3.0.0) [Fri Jan 17 13:51:22 2020]:
+
+Connected to TCRD database tcrd6 (schema ver 6.3.0; data ver 6.3.1)
+
+Parsing Drug Target Ontology file ../data/UMiami/dto_proteome_classification_only.owl
+Got 17779 DTO terms
+
+Loading 17779 Drug Target Ontology terms
+Progress: 100% [#######################################################################] Time: 0:00:07
+17779 terms processed.
+  Inserted 17779 new dto rows
+
+load-DTO.py: Done.
+
+mysql> ALTER TABLE dto ADD CONSTRAINT `fk_dto_dto` FOREIGN KEY (`parent_id`) REFERENCES `dto` (`dtoid`);
+mysql> update dbinfo set schema_ver = '6.4.0', data_ver = '6.4.0';
+
+[smathias@juniper SQL]$ mysqldump tcrd6 > dumps6/TCRDv6.4.0.sql
+
+
+
+
 
 
 

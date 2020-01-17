@@ -280,15 +280,6 @@ mysql> \. InsZeroJLPMSs_TCRDv6.sql
 # NB. This must be done before loading ChEMBL or IUPHAR
 [smathias@juniper loaders]$ ./load-IDG2List.py --dbname tcrd6 
 
-load-IDG2List.py (v1.0.0) [Mon Apr  8 11:36:35 2019]:
-Traceback (most recent call last):
-  File "./load-IDG2List.py", line 132, in <module>
-    load(args)
-  File "./load-IDG2List.py", line 54, in load
-    fh = logging.FileHandler(logfile)
-UnboundLocalError: local variable 'logfile' referenced before assignment
-[smathias@juniper loaders]$ ./load-IDG2List.py --dbname tcrd6 
-
 load-IDG2List.py (v1.0.0) [Mon Apr  8 11:36:57 2019]:
 
 Connected to TCRD database tcrd6 (schema ver 6.0.0; data ver 0)
@@ -598,8 +589,6 @@ Progress: 100% [################################################################
 No target found for 166634 NCBI Gene IDs. See logfile ./tcrd6logs/load-PubTatorScores.py.log for details.
 
 Loading 18310 PubTator Score tdl_infos
-/home/app/TCRD/loaders/TCRD.py:586: Warning: Data truncated for column 'number_value' at row 1
-  curs.execute(sql, (xid, itype, value))
 18310 processed
 Inserted 18310 new PubTator PubMed Score tdl_info rows
 
