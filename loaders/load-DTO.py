@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2020-01-17 13:45:43 smathias>
+# Time-stamp: <2020-01-20 08:39:05 smathias>
 """Load DTO IDs and classifications into TCRD from TSV file.
 
 Usage:
@@ -54,7 +54,8 @@ def parse_dto_owl(args, fn):
   for term in dto_ont:
     #if not term.id.startswith('DTO:'):
     #  continue
-    init = {'dtoid': term.id, 'name': term.name}
+    dtoid = term.id.replace(':', '_') # pronto converts _ into : in the ids
+    init = {'dtoid': dtoid, 'name': term.name}
     if term.parents:
       init['parent_id'] = term.parents[0].id
     if term.desc:
