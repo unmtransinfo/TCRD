@@ -1,24 +1,25 @@
-                           __________________
+                                        __________________
 
-                            TCRD_BUILD_NOTES
+                                         TCRD_BUILD_NOTES
 
-                             Steve Mathias
-                           __________________
-
-
-
+                           These notes correspond to TCRD major version 6.
+                                        
+                                          Steve Mathias
+                                        __________________
 
 
 1 UniProt
 =========
 
-1.1 *Download Required:* Yes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1.1 *Download Required:* Yes. Download and uncompress XML files from the following URLs:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  Go to
-  [http://www.uniprot.org/uniprot/?query=reviewed:yes+AND+organism:9606]
-  and download the tab-separated version of the file. The rest of the
-  data is loaded via API.
+  [https://www.uniprot.org/uniprot/?query=reviewed:yes] AND
+  organism:"Homo sapiens (Human) [9606]"
+  [https://www.uniprot.org/uniprot/?query=organism:"Mus] musculus
+  (Mouse) [10090]"
+  [https://www.uniprot.org/uniprot/?query=organism:"Rattus] norvegicus
+  (Rat) [10116]"
 
 
 1.2 *Pre-processing required:* None
@@ -28,54 +29,25 @@
 1.3 *Manual post-processing:* Yes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-1.3.1 GPR89A/B each have two Gene IDs in UniProt. Accordnig to NCBI, GPR89B is 51463. Fix this manually:
---------------------------------------------------------------------------------------------------------
-
-  msql> UPDATE protein SET geneid = 51463 WHERE sym = 'GPR89B';
-
-
-1.3.2 Fix the Medium-wave-sensitive opsins:
--------------------------------------------
-
-  mysql> select id, name, description, sym, uniprot, geneid from protein
-  where name like 'OPSG%';
-  +-------+-------------+-------------------------------+---------+---------+--------+
-  | id    | name        | description                   | sym     | uniprot | geneid |
-  +-------+-------------+-------------------------------+---------+---------+--------+
-  | 12007 | OPSG_HUMAN  | Medium-wave-sensitive opsin 1 | OPN1MW2 | P04001  | 728458 |
-  | 12190 | OPSG2_HUMAN | Medium-wave-sensitive opsin 2 | OPN1MW2 | P0DN77  | 728458 |
-  | 12191 | OPSG3_HUMAN | Medium-wave-sensitive opsin 3 | OPN1MW2 | P0DN78  | 728458 |
-  +-------+-------------+-------------------------------+---------+---------+--------+
-  mysql> select id, name, idg2, fam, famext from target where id in
-  (12007, 12190, 12191);
-  +-------+-------------------------------+------+------+--------+
-  | id    | name                          | idg2 | fam  | famext |
-  +-------+-------------------------------+------+------+--------+
-  | 12007 | Medium-wave-sensitive opsin 1 |    0 | GPCR | GPCR   |
-  | 12190 | Medium-wave-sensitive opsin 2 |    1 | NULL | NULL   |
-  | 12191 | Medium-wave-sensitive opsin 3 |    0 | NULL | NULL   |
-  +-------+-------------------------------+------+------+--------+
+     Some UniProt records have multiple Gene IDs. The loader takes the
+  first one, but this is not always the right one. So manual fixes to
+  Gene IDs are in the file SQL/update_geneids.sql
 
 
-1.3.3 Misc other
-----------------
-
-  UPDATE protein SET geneid = 2652, sym = 'OPN1MW' WHERE id = 12007;
-  UPDATE protein set geneid = 101060233, sym = 'OPN1MW3' WHERE id =
-  12191; UPDATE target set fam = 'GPCR', famext = 'GPCR' WHERE id =
-  12007; // NB: This was WRONG!!!  UPDATE target set fam = 'GPCR',
-  famext = 'GPCR' WHERE id = 12191;
+1.4 *Approx. load time*: 30 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-1.4 *Approx. load time*: 30 hours
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+2 HGNC
+======
 
+2.1 *Download Required:* Yes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-2 IDG Phase 2 Flags
-===================
-
-2.1 *Download Required:* No
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  Download a custom TSV file from
+  [https://www.genenames.org/download/custom/] with fields: HGNC ID
+  Approved symbol, Approved name,Status,UniProt ID, NCBI Gene ID, Mouse
+  genome database ID
 
 
 2.2 *Pre-processing required:* None
@@ -86,17 +58,15 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-2.4 *Approx. load time*: < 5 minutes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+2.4 *Approx. load time*: 30 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-3 IDG2 Family Assignments
-=========================
+3 NCBI GI Numbers
+=================
 
-3.1 *Download Required:* No
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-  The required file is included in the data/ directory.
+3.1 *Download Required:* No, done by loader
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 3.2 *Pre-processing required:* None
@@ -111,11 +81,15 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-4 NCBI GI Numbers
-=================
+4 Ensembl Gene IDs
+==================
 
-4.1 *Download Required:* No, done by loader
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+4.1 *Download Required:* Yes. This uses the same XML files used for UniProt load, plus download and uncompress the following TSV files:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  [ftp://ftp.ensembl.org/pub/current_tsv/homo_sapiens/Homo_sapiens.GRCh38.94.uniprot.tsv.gz]
+  [ftp://ftp.ensembl.org/pub/current_tsv/mus_musculus/Mus_musculus.GRCm38.94.uniprot.tsv.gz]
+  [ftp://ftp.ensembl.org/pub/current_tsv/rattus_norvegicus/Rattus_norvegicus.Rnor_6.0.94.uniprot.tsv.gz]
 
 
 4.2 *Pre-processing required:* None
@@ -126,12 +100,12 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-4.4 *Approx. load time*: 4 minutes
+4.4 *Approx. load time*: 5 minutes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-5 HGNC
-======
+5 NCBI Gene
+===========
 
 5.1 *Download Required:* No. Data loaded via API.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -145,59 +119,62 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-5.4 *Approx. load time*: 30 hours
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+5.4 *Approx. load time*: 8 hours
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-6 NCBI Gene
-===========
-
-6.1 *Download Required:* No. Data loaded via API.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-6.2 *Pre-processing required:* None
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-6.3 *Manual post-processing:* None
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-6.4 *Approx. load time*: 1.3 days
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-7 STRING IDs
+6 STRING IDs
 ============
 
-7.1 *Download Required:* Yes
+6.1 *Download Required:* Yes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  The following files, or updated versions therof should be downloaded
+  The following files, or updated versions thereof should be downloaded
   and uncompressed:
 
 
-7.1.1 [http://string-db.org/mapping_files/uniprot_mappings/9606_reviewed_uniprot_2_string.04_2015.tsv.gz]
----------------------------------------------------------------------------------------------------------
+6.1.1 [http://string-db.org/mapping_files/uniprot/human.uniprot_2_string.2018.tsv.gz]
+-------------------------------------------------------------------------------------
 
 
-7.1.2 [http://string-db.org/download/protein.aliases.v10/9606.protein.aliases.v10.txt.gz]
------------------------------------------------------------------------------------------
+6.1.2 [https://stringdb-static.org/download/protein.aliases.v11.0.txt.gz]
+-------------------------------------------------------------------------
+
+
+6.2 *Pre-processing required:* Yes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  The proteinaliases file should be filtered for human entries: $ grep
+  '^9606.' protein.aliases.v11.0.txt > 9606.protein.aliases.v11.0.txt
+
+
+6.3 *Manual post-processing:* No
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+6.4 *Approx. load time*: 10 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+7 JensenLab PubMed Scores
+=========================
+
+7.1 *Download Required:* No, done by loader
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 7.2 *Pre-processing required:* None
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-7.3 *Manual post-processing:* Yes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+7.3 *Manual post-processing:* Yes, but technically optional.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  Manually add stringid for HLA-A targets: mysql> update protein set
-  stringid = 'ENSP00000366005' where sym = 'HLA-A';
+  Generate and run SQL to set missing values to zero. See file
+  doc/README_v5.txt.
 
 
-7.4 *Approx. load time*: 35 minutes
+7.4 *Approx. load time*: 10 minutes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -220,25 +197,25 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-9 JensenLab PubMed Scores
-=========================
+9 IDG Families
+==============
 
-9.1 *Download Required:* No, done by loader
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+9.1 *Download Required:* No
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  The required file is included in the data/ directory.
 
 
 9.2 *Pre-processing required:* None
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-9.3 *Manual post-processing:* Yes, but technically optional.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-  Generate and run SQL to set missing values to zero.
+9.3 *Manual post-processing:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-9.4 *Approx. load time*: 10 minutes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+9.4 *Approx. load time*: < 5 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 10 Drug Central
@@ -276,8 +253,8 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-10.4 *Approx. load time*: 5 minutes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+10.4 *Approx. load time*: 15 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 11 ChEMBL
@@ -287,7 +264,7 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   Go here [ftp://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest] and
-  get the MySQL dump tarball. E.g. chembl_22_1_mysql.tar.gz
+  get the latest MySQL dump tarball. E.g. chembl_24_1_mysql.tar.gz
 
 
 11.2 *Pre-processing required:* Yes
@@ -301,15 +278,15 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-11.4 *Approx. load time*: 15 minutes
+11.4 *Approx. load time*: 30 minutes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 12 Guide to Pharmacology (ie. IUPHAR)
 =====================================
 
-12.1 *Download Required:* No
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+12.1 *Download Required:* No, done by loader
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 12.2 *Pre-processing required:* None
@@ -324,17 +301,11 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-13 PubChem CIDs
-===============
+13 GO Experimental Leaf Term Flags
+==================================
 
-  This must be (re-)run after DrugCentral or ChEMBL are (re-)loaded.
-
-
-13.1 *Download Required:* Yes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-  The file is genemap.txt from [http://omim.org/downloads/] but access
-  requires registration to get user-specific download links.
+13.1 *Download Required:* No, done by loader
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 13.2 *Pre-processing required:* None
@@ -345,18 +316,15 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-13.4 *Approx. load time*: 5 minutes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+13.4 *Approx. load time*: 10 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-14 OMIM
+14 TDLs
 =======
 
-14.1 *Download Required:* Yes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-  The file is genemap.txt from [http://omim.org/downloads/] but access
-  requires registration to get user-specific download links.
+14.1 *Download Required:* No
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 14.2 *Pre-processing required:* None
@@ -367,12 +335,12 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-14.4 *Approx. load time*: 5 minutes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+14.4 *Approx. load time*: 10 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-15 Experimental MF/BP Leaf Term GOA
-===================================
+15 Disease Ontology
+===================
 
 15.1 *Download Required:* No, done by loader
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -386,15 +354,15 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-15.4 *Approx. load time*: 30 minutes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+15.4 *Approx. load time*: < 5 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-16 TDLs
-=======
+16 Mammalian Phenotype Ontology
+===============================
 
-16.1 *Download Required:* No
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+16.1 Download Required:* No, done by loader
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 16.2 *Pre-processing required:* None
@@ -405,697 +373,288 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-16.4 *Approx. load time*: 30 minutes
+16.4 *Approx. load time*: < 5 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+17 RGD Disease Ontology
+=======================
+
+17.1 Download Required:* No, done by loader
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+17.2 *Pre-processing required:* None
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-17 Orthologs
+17.3 *Manual post-processing:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+17.4 *Approx. load time*: < 5 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+18 Uberon Ontology
+==================
+
+18.1 Download Required:* No, done by loader
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+18.2 *Pre-processing required:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+18.3 *Manual post-processing:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+18.4 *Approx. load time*: < 5 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+19 Orthologs
 ============
 
-17.0.1 *Download Required:* No
-------------------------------
-
-
-17.0.2 *Pre-processing required:* None
---------------------------------------
-
-
-17.0.3 *Manual post-processing:* None
--------------------------------------
-
-
-17.0.4 *Approx. load time*: 20 minutes
---------------------------------------
-
-
-18 Phenotypes
-=============
-
-18.1 OMIM
-~~~~~~~~~
-
-  Done above for TDL assignments
-
-
-18.2 * GWAS Catalog
-~~~~~~~~~~~~~~~~~~~
-
-18.2.1 *Download Required:* Yes
--------------------------------
-
-  Go to [https://www.ebi.ac.uk/gwas/downloads], click on Files, then
-  download the file with description "All associations with added
-  ontology annotations".
-
-
-18.2.2 *Pre-processing required:* None
---------------------------------------
-
-
-18.2.3 *Manual post-processing:* None
--------------------------------------
-
-
-18.2.4 *Approx. load time*: 5 minutes
--------------------------------------
-
-
-18.3 * IMPC Phenotypes
-~~~~~~~~~~~~~~~~~~~~~~
-
-18.3.1 *Download Required:* Yes
--------------------------------
-
-  Get the file ALL_genotype_phenotype.csv.gz for the latest release
-  [ftp://ftp.ebi.ac.uk/pub/databases/impc/release-*.*/csv/]
-
-
-18.3.2 *Pre-processing required:* None
---------------------------------------
-
-
-18.3.3 *Manual post-processing:* None
--------------------------------------
-
-
-18.3.4 *Approx. load time*: 10 minutes
---------------------------------------
-
-
-18.4 JAX Phenotypes
-~~~~~~~~~~~~~~~~~~~
-
-18.4.1 *Download Required:* Yes
--------------------------------
-
-  Get the files HMD_HumanPhenotype.rpt and VOC_MammalianPhenotype.rpt
-  from [http://www.informatics.jax.org/downloads/reports/]
-
-
-18.4.2 *Pre-processing required:* None
---------------------------------------
-
-
-18.4.3 *Manual post-processing:* None
--------------------------------------
-
-
-18.4.4 *Approx. load time*: 5 minutes
--------------------------------------
-
-
-19 Diseases
-===========
-
-19.1 JensenLab DISEASES
-~~~~~~~~~~~~~~~~~~~~~~~
-
-19.1.1 *Download Required:* No, done by loader
+19.0.1 *Download Required:* No, done by loader
 ----------------------------------------------
 
 
-19.1.2 *Pre-processing required:* None
+19.0.2 *Pre-processing required:* None
 --------------------------------------
 
 
-19.1.3 *Manual post-processing:* None
+19.0.3 *Manual post-processing:* None
 -------------------------------------
 
 
-19.1.4 *Approx. load time*: 10 minutes
+19.0.4 *Approx. load time*: 20 minutes
 --------------------------------------
 
 
-19.2 DisGeNET
-~~~~~~~~~~~~~
+20 HomoloGene
+=============
 
-19.2.1 *Download Required:* Yes
--------------------------------
-
-  Go to [http://www.disgenet.org/web/DisGeNET/menu/downloads] and
-  download the file labelled "File with CURATED gene-disease
-  associations".
+20.0.1 *Download Required:* No, done by loader
+----------------------------------------------
 
 
-19.2.2 *Pre-processing required:* None
+20.0.2 *Pre-processing required:* None
 --------------------------------------
 
 
-19.2.3 *Manual post-processing:* None
+20.0.3 *Manual post-processing:* None
 -------------------------------------
 
 
-19.2.4 *Approx. load time*: 5 minutes
+20.0.4 *Approx. load time*: 1 hour
+----------------------------------
+
+
+21 PubTator Text-mining Scores
+==============================
+
+21.1 *Download Required:* No, done by loader
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+21.2 *Pre-processing required:* Yes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Run perl/pubtator_count.pl on the uncompressed download.
+
+
+21.3 *Manual post-processing:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+21.4 *Approx. load time*: 1 hour
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+22 JensenLab DISEASES
+=====================
+
+22.0.1 *Download Required:* No, done by loader
+----------------------------------------------
+
+
+22.0.2 *Pre-processing required:* None
+--------------------------------------
+
+
+22.0.3 *Manual post-processing:* None
 -------------------------------------
 
 
-19.3 Monarch
-~~~~~~~~~~~~
+22.0.4 *Approx. load time*: 40 minutes
+--------------------------------------
+
+
+23 DisGeNET
+===========
+
+23.0.1 *Download Required:* No, done by loader
+----------------------------------------------
+
+
+23.0.2 *Pre-processing required:* None
+--------------------------------------
+
+
+23.0.3 *Manual post-processing:* None
+-------------------------------------
+
+
+23.0.4 *Approx. load time*: < 5 minutes
+---------------------------------------
+
+
+24 Monarch Disease Associations
+===============================
 
   This one is a little special. Data is loaded from a MySQL database on
   AWS created by Schurer lab. Contact John Turner <jpt55@med.miami.edu>
   for access.
 
 
-19.3.1 *Download Required:* No
+24.0.1 *Download Required:* No
 ------------------------------
 
 
-19.3.2 *Pre-processing required:* None
+24.0.2 *Pre-processing required:* None
 --------------------------------------
 
 
-19.3.3 *Manual post-processing:* None
+24.0.3 *Manual post-processing:* None
 -------------------------------------
 
 
-19.3.4 *Approx. load time*: 5 minutes
--------------------------------------
+24.0.4 *Approx. load time*: 20 minutes
+--------------------------------------
 
 
-19.4 Monarch Ortholog Diseases
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+25 Monarch Ortholog Disease Associations
+========================================
 
   Also requires access to the Schurer lab MySQL database on AWS.
 
 
-19.4.1 *Download Required:* No
+25.0.1 *Download Required:* No
 ------------------------------
 
 
-19.4.2 *Pre-processing required:* None
+25.0.2 *Pre-processing required:* None
 --------------------------------------
 
 
-19.4.3 *Manual post-processing:* None
+25.0.3 *Manual post-processing:* None
 -------------------------------------
 
 
-19.4.4 *Approx. load time*: 15 minutes
---------------------------------------
+25.0.4 *Approx. load time*: 1.5 hours
+-------------------------------------
 
 
-19.5 Expression Atlas
-~~~~~~~~~~~~~~~~~~~~~
+26 Expression Atlas
+===================
 
-19.5.1 *Download Required:* Yes
+26.0.1 *Download Required:* Yes
 -------------------------------
 
   [ftp://ftp.ebi.ac.uk/pub/databases/microarray/data/atlas/experiments/atlas-latest-data.tar.gz]
 
 
-19.5.2 *Pre-processing required:* Yes
+26.0.2 *Pre-processing required:* Yes
 -------------------------------------
 
   Run R/exp-atlas_process.R on downloaded files.
 
 
-19.5.3 *Manual post-processing:* None
+26.0.3 *Manual post-processing:* None
 -------------------------------------
 
 
-19.5.4 *Approx. load time*: 20 minutes. Not sure of time for pre-processing.
-----------------------------------------------------------------------------
-
-
-19.6 CTD
-~~~~~~~~
-
-19.6.1 *Download Required:* No
-------------------------------
-
-
-19.6.2 *Pre-processing required:* None
---------------------------------------
-
-
-19.6.3 *Manual post-processing:* None
--------------------------------------
-
-
-19.6.4 *Approx. load time*: 5 minutes
--------------------------------------
-
-
-20 Pathways
-===========
-
-20.1 KEGG
-~~~~~~~~~
-
-20.1.1 *Download Required:* No
-------------------------------
-
-  Data loaded via API.
-
-
-20.1.2 *Pre-processing required:* None
---------------------------------------
-
-
-20.1.3 *Manual post-processing:* None
--------------------------------------
-
-
-20.1.4 *Approx. load time*: 30 minutes
---------------------------------------
-
-
-20.2 WikiPathways
-~~~~~~~~~~~~~~~~~
-
-20.2.1 *Download Required:* No
-------------------------------
-
-  Done by loader
-
-
-20.2.2 *Pre-processing required:* None
---------------------------------------
-
-
-20.2.3 *Manual post-processing:* None
--------------------------------------
-
-
-20.2.4 *Approx. load time*: < 5 minutes
+26.0.4 *Approx. load time*: 20 minutes.
 ---------------------------------------
 
 
-20.3 Reactome
-~~~~~~~~~~~~~
+27 CTD Disease Associations
+===========================
 
-20.3.1 *Download Required:* No
-------------------------------
-
-  Done by loader
-
-
-20.3.2 *Pre-processing required:* None
---------------------------------------
-
-
-20.3.3 *Manual post-processing:* None
--------------------------------------
-
-
-20.3.4 *Approx. load time*: 15 minutes
---------------------------------------
-
-
-20.4 PathwayCommons
-~~~~~~~~~~~~~~~~~~~
-
-20.4.1 *Download Required:* No
-------------------------------
-
-  Done by loader.
-
-
-20.4.2 *Pre-processing required:* None
---------------------------------------
-
-
-20.4.3 *Manual post-processing:* None
--------------------------------------
-
-
-20.4.4 *Approx. load time*: < 5 minutes
----------------------------------------
-
-
-21 PPIs
-=======
-
-21.1 Reactome PPIs
-~~~~~~~~~~~~~~~~~~
-
-21.1.1 *Download Required:* No
-------------------------------
-
-  Done by loader.
-
-
-21.1.2 *Pre-processing required:* None
---------------------------------------
-
-
-21.1.3 *Manual post-processing:* None
--------------------------------------
-
-
-21.1.4 *Approx. load time*: < 5 minutes
----------------------------------------
-
-
-21.2 BioPlex PPIs
-~~~~~~~~~~~~~~~~~
-
-21.2.1 *Download Required:* No
-------------------------------
-
-  Done by loader
-
-
-21.2.2 *Pre-processing required:* None
---------------------------------------
-
-
-21.2.3 *Manual post-processing:* None
--------------------------------------
-
-
-21.2.4 *Approx. load time*: < 5 minutes
----------------------------------------
-
-
-22 Expression
-=============
-
-22.1 JensenLab TISSUES
-~~~~~~~~~~~~~~~~~~~~~~
-
-22.1.1 *Download Required:* No
-------------------------------
-
-  Done by loader
-
-
-22.1.2 *Pre-processing required:* None
---------------------------------------
-
-
-22.1.3 *Manual post-processing:* None
--------------------------------------
-
-
-22.1.4 *Approx. load time*: 30 minutes
---------------------------------------
-
-
-22.2 GTEx
-~~~~~~~~~
-
-22.2.1 *Download Required:* Yes
--------------------------------
-
-  Register at [http://www.gtexportal.org/home/], then login and
-  download:
-
-
-* 22.2.1.1 GTEx_Data_V6_Annotations_SampleAttributesDS.txt
-
-
-* 22.2.1.2 GTEx_Data_V6_Annotations_SubjectPhenotypesDS.txt
-
-
-22.2.2 *Pre-processing required:* Yes
--------------------------------------
-
-  Run R/gtex_process.R on downloaded files.
-
-
-22.2.3 *Manual post-processing:* None
--------------------------------------
-
-
-22.2.4 *Approx. load time*: 5 hours
------------------------------------
-
-
-22.3 Human Protein Atlas
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-22.3.1 *Download Required:* Yes
--------------------------------
-
-  Go to [http://www.proteinatlas.org/about/download] and download:
-
-
-* 22.3.1.1 normal_tissue.csv.zip
-
-
-* 22.3.1.2 rna.csv.zip
-
-
-22.3.2 *Pre-processing required:* Yes
--------------------------------------
-
-  Run R/hpa_tau_prot.R and R/hpa_tau_rna.R on the downloaded files.
-
-
-22.3.3 *Manual post-processing:* None
--------------------------------------
-
-
-22.3.4 *Approx. load time*: 2 hours
------------------------------------
-
-
-22.4 Human Proteome Map
-~~~~~~~~~~~~~~~~~~~~~~~
-
-22.4.1 *Download Required:* Yes
--------------------------------
-
-  Go to [http://www.humanproteomemap.org/download.php], register and
-  then download:
-
-
-* 22.4.1.1 HPM_gene_level_epxression_matrix_Kim_et_al_052914.csv.gz
-
-
-* 22.4.1.2 HPM_protein_level_expression_matrix_Kim_et_al_052914.csv.gz
-
-
-22.4.2 *Pre-processing required:* Yes
--------------------------------------
-
-  Run R/hpm_gene.R and R/hpm_protein.R on the downloaded files.
-
-
-22.4.3 *Manual post-processing:* None
--------------------------------------
-
-
-22.4.4 *Approx. load time*: 1 hour for load. Not sure of time for pre-processing.
----------------------------------------------------------------------------------
-
-
-22.5 Consensus Expression Values
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-22.5.1 *Download Required:* No
-------------------------------
-
-
-22.5.2 *Pre-processing required:* No
-------------------------------------
-
-
-22.5.3 *Manual post-processing:* None
--------------------------------------
-
-
-22.5.4 *Approx. load time*: 30 minutes
---------------------------------------
-
-
-23 Human Cell Atlas
-===================
-
-23.1 *Download Required:* Yes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-23.1.1 File Table S1 from [http://science.sciencemag.org/content/suppl/2017/05/10/science.aal3321.DC1]
-------------------------------------------------------------------------------------------------------
-
-
-23.1.2 File Table S6 from [http://science.sciencemag.org/content/suppl/2017/05/10/science.aal3321.DC1]
-------------------------------------------------------------------------------------------------------
-
-
-23.2 *Pre-processing required:* No
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-23.3 *Manual post-processing:* None
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-23.4 *Approx. load time*: 10 minutes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-24 JensenLab COMPARTMENTS
-=========================
-
-24.1 *Download Required:* No
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-  Done by loader
-
-
-24.2 *Pre-processing required:* None
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-24.3 *Manual post-processing:* None
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-24.4 *Approx. load time*: 20 minutes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-25 TIN-X** *Download Required:* No
-==================================
-
-  Done by pre-processing code.
-
-
-25.1 *Pre-processing required:* Yes.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-  Run python/TIN-X.py
-
-
-25.2 *Manual post-processing:* None
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-25.3 *Approx. load time*: 9 hours
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-26 Disease Ontology
-===================
-
-26.1 *Download Required:* No
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-  Done by loader
-
-
-26.2 *Pre-processing required:* None
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-26.3 *Manual post-processing:* None
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-26.4 *Approx. load time*: < 5 minutes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-27 DTO
-======
-
-27.1 *Download Required:* Yes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-  dto.json
-
-
-27.2 *Pre-processing required:* None
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-27.3 *Manual post-processing:* Yes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-27.3.1 Manual database updates for root nodes:
+27.0.1 *Download Required:* No, done by loader
 ----------------------------------------------
 
-  mysql> UPDATE dto SET parent = NULL WHERE name IN ('GPCR', 'Kinase',
-  'Nuclear hormone receptor', 'Ion channel');
+
+27.0.2 *Pre-processing required:* None
+--------------------------------------
 
 
-27.3.2 Then create foreign key:
--------------------------------
-
-  mysql> ALTER TABLE dto ADD CONSTRAINT fk_dto_dto FOREIGN KEY
-  dto_idx1(parent) REFERENCES dto(id) ON DELETE RESTRICT;
+27.0.3 *Manual post-processing:* None
+-------------------------------------
 
 
-27.4 *Approx. load time*: < 5 minutes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+27.0.4 *Approx. load time*: 5 minutes
+-------------------------------------
 
 
-28 NIH Grant Info
-=================
+28 eRAM Disease Associations
+============================
 
-28.1 *Download Required:* Yes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-28.1.1 Project and abstract CSV files must be downloaded from
--------------------------------------------------------------
-
-  [https://exporter.nih.gov/ExPORTER_Catalog.aspx].  Alternatively, run
-  the scripts data/NIHExporter/get_abstracts.sh and
-  data/NIHExporter/get_projects.sh
+28.0.1 *Download Required:* No
+------------------------------
 
 
-28.1.2 Download and compile the Jensen Lag tagger from [https://bitbucket.org/larsjuhljensen/tagger]
-----------------------------------------------------------------------------------------------------
+28.0.2 *Pre-processing required:* Yes
+-------------------------------------
+
+  Run python/scrape-eRAM.py to collect data.
 
 
-28.1.3 Download and uncompress the dictionary files from [http://download.jensenlab.org/human_dictionary.tar.gz]
-----------------------------------------------------------------------------------------------------------------
+28.0.3 *Manual post-processing:* None
+-------------------------------------
 
 
-28.2 *Pre-processing required:* Yes.
+28.0.4 *Approx. load time*: 5 minutes
+-------------------------------------
+
+
+29 OMIM
+=======
+
+29.1 *Download Required:* No, done by loader
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  BUT: One must register to get OMIM downloads. This gives a
+  user-specific download link.  NB. the phenotypic series file must be
+  added to one's key's entitlements by OMIM staff.  To view a list of
+  all the data a key has access to, go to:
+  [https://omim.org/downloads/]<key>
+
+
+29.2 *Pre-processing required:* None
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-28.2.1 Project info is collected and saved:
--------------------------------------------
-
-  Run python/pickle_grant_info.py
-
-
-28.2.2 Run the JensenLab Tagger on Project and abstract files:
---------------------------------------------------------------
-
-  Run python/grant_tagger.py
-
-
-28.3 *Manual post-processing:* None
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-28.4 *Approx. load time*: 8 hours
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-29 Transcription Factor Flags
-=============================
-
-29.1 *Download Required:* No
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-  Done by loader
-
-
-29.2 *Pre-processing required:* No
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 29.3 *Manual post-processing:* None
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-29.4 *Approx. load time*: < 5 minutes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+29.4 *Approx. load time*: 5 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-30 IMPC Mice Flags
-==================
+30 GWAS Catalog
+===============
 
 30.1 *Download Required:* Yes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  Data obtained directly from IMPC.
+  Go to [https://www.ebi.ac.uk/gwas/docs/file-downloads] and get the
+  file with description "All associations with added ontology
+  annotations".
 
 
 30.2 *Pre-processing required:* None
@@ -1106,41 +665,38 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-30.4 *Approx. load time*: < 5 minutes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+30.4 *Approx. load time*: 15
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-31 Drugable Epigenome Info
-==========================
+31 IMPC Phenotypes
+==================
 
 31.1 *Download Required:* Yes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  Go to [http://www.nature.com/nrd/journal/v11/n5/suppinfo/nrd3674.html]
-  and download all the Excel files.
+  Download and uncompress the following, or latest versions, of:
+  [ftp://ftp.ebi.ac.uk/pub/databases/impc/release-9.2/csv/IMPC_genotype_phenotype.csv.gz]
+  [ftp://ftp.ebi.ac.uk/pub/databases/impc/release-9.2/csv/IMPC_ALL_statistical_results.csv.gz]
 
 
-31.2 *Pre-processing required:* Yes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-  Excel files must be converted to CSV.
+31.2 *Pre-processing required:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 31.3 *Manual post-processing:* None
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-31.4 *Approx. load time*: < 5 minutes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+31.4 *Approx. load time*: 3 hours
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-32 EBI Patent Counts
-====================
+32 JAX/MGI Mouse/Human Orthology Phenotypes
+===========================================
 
-32.1 *Download Required:* Yes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-  Data obtained directly from EBI.
+32.1 *Download Required:* No, done by loader
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 32.2 *Pre-processing required:* None
@@ -1155,33 +711,35 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-33 PubMed Abstracts
-===================
+33 RGD Phenotypes
+=================
 
-  This must be (re-)run after TIN-X is loaded.
-
-
-33.1 *Download Required:* No
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+33.1 *Download Required:* No, done by loader
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-33.2 *Pre-processing required:* None
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+33.2 *Pre-processing required:* Yes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  The input file is produced by the Rscript R/process-RGD.R
+  Details/explanation of that code are in notebooks/RGD.ipynb
 
 
 33.3 *Manual post-processing:* None
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-33.4 *Approx. load time*: 4-5 days
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+33.4 *Approx. load time*: < 5 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-34 KEGG Distances
-=================
+34 IDG Eligible Targets List
+============================
 
-34.1 *Download Required:* No
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+34.1 *Download Required:* Yes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Download latest IDG Eligible list from GitHub repo.
 
 
 34.2 *Pre-processing required:* No
@@ -1196,11 +754,11 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-35 KEGG Nearest Tclin
-=====================
+35 JensenLab TISSUES
+====================
 
-35.1 *Download Required:* No
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+35.1 *Download Required:* No, one by loader
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 35.2 *Pre-processing required:* None
@@ -1211,99 +769,113 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-35.4 *Approx. load time*: < 5 minutes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+35.4 *Approx. load time*: 6 hours
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-36 LINCS Cross References
-=========================
+36 GTEx
+=======
 
 36.1 *Download Required:* Yes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-
-36.2 *Pre-processing required:* None
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-36.3 *Manual post-processing:* Yes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-36.3.1 Manual database insert for one target:
----------------------------------------------
-
-  mysql> insert into xref (protein_id, xtype, dataset_id, value) values
-  (7573, 'L1000 ID', 20, 'UUUC11D11');
+  Input file prepared by Jeremy Yang. See
+  [https://github.com/unmtransinfo/expression-profiles] Also, a file
+  containing a manually currated dict mapping tissue names to Uberon
+  IDs. These are ones for which TCRDMP.get_uberon_id does not return a
+  uid.
 
 
-36.4 *Approx. load time*: < 5 minutes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+36.2 *Pre-processing required:* Yes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Input file prepared by Jeremy Yang. See
+  [https://github.com/unmtransinfo/expression-profiles]
 
 
-37 LocSigDB
-===========
-
-37.1 *Download Required:* No
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-  Done by loader
+36.3 *Manual post-processing:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-37.2 *Pre-processing required:* None
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-37.3 *Manual post-processing:* No
+36.4 *Approx. load time*: 3 hours
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+37 Human Protein Atlas
+======================
+
+37.1 *Download Required:* Yes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  [http://www.proteinatlas.org/download/normal_tissue.tsv.zip]
+
+
+37.2 *Pre-processing required:* Yes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  The input file is produced by the Rscript R/process-HPA.R
+  Details/explanation of that code are in notebooks/HPA.ipynb
+
+
+37.3 *Manual post-processing:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 37.4 *Approx. load time*: 15 minutes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-38 PANTHER Classes
-==================
+38 Human Proteome Map
+=====================
 
 38.1 *Download Required:* Yes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-38.1.1 [ftp://ftp.pantherdb.org//sequence_classifications/current_release/PANTHER_Sequence_Classification_files/PTHR10.0_human]
--------------------------------------------------------------------------------------------------------------------------------
+  Go to [http://www.humanproteomemap.org/download.php], register and
+  then download:
 
 
-38.1.2 [http://pantherdata.usc.edu/PANTHER10.0/ontology/Protein_Class_7.0]
---------------------------------------------------------------------------
+38.1.1 HPM_gene_level_epxression_matrix_Kim_et_al_052914.csv.gz
+---------------------------------------------------------------
 
 
-38.1.3 [http://pantherdata.usc.edu/PANTHER10.0/ontology/Protein_class_relationship]
------------------------------------------------------------------------------------
+38.1.2 HPM_protein_level_expression_matrix_Kim_et_al_052914.csv.gz
+------------------------------------------------------------------
 
 
-38.2 *Pre-processing required:* None
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+38.2 *Pre-processing required:* Yes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Run R/hpm_gene.R and R/hpm_protein.R on the downloaded files.
 
 
 38.3 *Manual post-processing:* None
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-38.4 *Approx. load time*: < 5 minutes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+38.4 *Approx. load time*: 3 hours
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-39 PubTator Scores
-==================
+39 Human Cell Atlas
+===================
 
 39.1 *Download Required:* Yes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  [ftp://ftp.ncbi.nlm.nih.gov/pub/lu/PubTator/gene2pubtator.gz]
+  Supplementary data files from original paper.
 
 
-39.2 *Pre-processing required:* Yes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+39.1.1 File Table S1 from [http://science.sciencemag.org/content/suppl/2017/05/10/science.aal3321.DC1]
+------------------------------------------------------------------------------------------------------
 
-  Run perl/pubtator_count.pl on the uncompressed download.
+
+39.1.2 File Table S6 from [http://science.sciencemag.org/content/suppl/2017/05/10/science.aal3321.DC1]
+------------------------------------------------------------------------------------------------------
+
+
+39.2 *Pre-processing required:* No
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 39.3 *Manual post-processing:* None
@@ -1314,82 +886,81 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-40 TMHMM Predictions
-====================
+40 Cell Surface Protein Atlas
+=============================
 
-40.1 *Download Required:* No
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+40.1 *Download Required:* Yes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Supplementary data files from original paper.
 
 
-40.2 *Pre-processing required:* Yes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+40.1.1 S1_File.csv
+------------------
 
-  Go to [http://www.cbs.dtu.dk/cgi-bin/nph-sw_request?tmhmm] to download
-  TMHMM software.
+
+40.2 *Pre-processing required:* No
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 40.3 *Manual post-processing:* None
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-40.4 *Approx. load time*: 1 hour
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+40.4 *Approx. load time*: < 5 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-41 GeneRIF Years
-================
+41 CCLE
+=======
 
-41.1 *Download Required:* No
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+41.1 *Download Required:* Yes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  CCLE_DepMap_18q3_RNAseq_RPKM_20180718.gct
 
 
 41.2 *Pre-processing required:* Yes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  Run python/mk-PubMed2DateMap.py
+     The input file is produced by the Rscript R/process-CCLE.R
+  Details/explanation of that code are in notebooks/CCLE.ipynb
 
 
 41.3 *Manual post-processing:* None
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-41.4 *Approx. load time*: 20 minutes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-42 Harmonizome
-==============
-
-42.1 *Download Required:* No
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-  Data loaded via API.
-
-
-42.2 *Pre-processing required:* No
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-42.3 *Manual post-processing:* Yes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-42.3.1 mysql> delete from gene_attribute_type where id not in (select distinct gat_id from gene_attribute);
------------------------------------------------------------------------------------------------------------
-
-
-42.3.2 Check log for GeneID mismatches and update accordingly
--------------------------------------------------------------
-
-
-42.4 *Approx. load time*: > 10 days
+41.4 *Approx. load time*: 3.5 hours
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-43 Harmonogram CDFs
-===================
+42 Consensus Expression Values
+==============================
+
+42.0.1 *Download Required:* No
+------------------------------
+
+
+42.0.2 *Pre-processing required:* No
+------------------------------------
+
+
+42.0.3 *Manual post-processing:* None
+-------------------------------------
+
+
+42.0.4 *Approx. load time*: 20 minutes
+--------------------------------------
+
+
+43 JensenLab COMPARTMENTS
+=========================
 
 43.1 *Download Required:* No
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Done by loader
 
 
 43.2 *Pre-processing required:* None
@@ -1400,5 +971,609 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-43.4 *Approx. load time*: 2.5 hours
+43.4 *Approx. load time*: 20 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+44 KEGG Pathways
+================
+
+44.1 *Download Required:* No
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Data loaded via API.
+
+
+44.2 *Pre-processing required:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+44.3 *Manual post-processing:* None
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+44.4 *Approx. load time*: 30 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+45 PathwayCommons
+=================
+
+45.1 *Download Required:* No, done by loader.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+45.2 *Pre-processing required:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+45.3 *Manual post-processing:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+45.4 *Approx. load time*: < 5 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+46 Reactome Pathways
+====================
+
+46.1 *Download Required:* No, done by loader
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+46.2 *Pre-processing required:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+46.3 *Manual post-processing:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+46.4 *Approx. load time*: < 5 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+47 WikiPathways
+===============
+
+47.1 *Download Required:* No, done by loader
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+47.2 *Pre-processing required:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+47.3 *Manual post-processing:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+47.4 *Approx. load time*: < 5 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+48 TIN-X
+========
+
+48.1 *Download Required:* No, done by pre-processing code
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+48.2 *Pre-processing required:* Yes.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Run python/TIN-X.py
+
+
+48.3 *Manual post-processing:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+48.4 *Approx. load time*: 10 hours
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+49 EBI Patent Counts
+====================
+
+49.1 *Download Required:* Yes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Data obtained directly from EBI.
+
+
+49.2 *Pre-processing required:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+49.3 *Manual post-processing:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+49.4 *Approx. load time*: < 5 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+50 KEGG Distances
+=================
+
+50.1 *Download Required:* No
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+50.2 *Pre-processing required:* No
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+50.3 *Manual post-processing:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+50.4 *Approx. load time*: < 5 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+51 KEGG Nearest Tclin
+=====================
+
+51.1 *Download Required:* No
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+51.2 *Pre-processing required:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+51.3 *Manual post-processing:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+51.4 *Approx. load time*: < 5 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+52 LINCS L1000 XRefs
+====================
+
+52.1 *Download Required:* Yes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+52.2 *Pre-processing required:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+52.3 *Manual post-processing:* No
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+52.4 *Approx. load time*: < 5 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+53 LocSigDB
+===========
+
+53.1 *Download Required:* No, done by loader
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+53.2 *Pre-processing required:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+53.3 *Manual post-processing:* No
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+53.4 *Approx. load time*: 5 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+54 PANTHER Classes
+==================
+
+54.1 *Download Required:* Yes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+54.1.1 [ftp://ftp.pantherdb.org/sequence_classifications/current_release/PANTHER_Sequence_Classification_files/PTHR14.1_human]_
+-------------------------------------------------------------------------------------------------------------------------------
+
+
+54.1.2 [http://data.pantherdb.org/PANTHER14.1/ontology/Protein_Class_14.0]
+--------------------------------------------------------------------------
+
+
+54.1.3 [http://data.pantherdb.org/PANTHER14.1/ontology/Protein_class_relationship]
+----------------------------------------------------------------------------------
+
+
+54.2 *Pre-processing required:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+54.3 *Manual post-processing:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+54.4 *Approx. load time*: < 5 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+55 PubChem CIDs
+===============
+
+  This must be (re-)run after DrugCentral or ChEMBL are (re-)loaded.
+
+
+55.1 *Download Required:* No, done by loader
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+55.2 *Pre-processing required:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+55.3 *Manual post-processing:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+55.4 *Approx. load time*: 5 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+56 Transcription Factor Flags
+=============================
+
+56.1 *Download Required:* No, done by loader
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+56.2 *Pre-processing required:* No
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+56.3 *Manual post-processing:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+56.4 *Approx. load time*: < 5 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+57 TMHMM Predictions
+====================
+
+57.1 *Download Required:* No
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+57.2 *Pre-processing required:* Yes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Go to [http://www.cbs.dtu.dk/cgi-bin/nph-sw_request?tmhmm] to download
+  TMHMM software.
+
+
+57.3 *Manual post-processing:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+57.4 *Approx. load time*: 35 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+58 PubMed Abstracts
+===================
+
+  This must be (re-)run after TIN-X is loaded.
+
+
+58.1 *Download Required:* No
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+58.2 *Pre-processing required:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+58.3 *Manual post-processing:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+58.4 *Approx. load time*: 40 hours
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+59 GeneRIF Years
+================
+
+59.1 *Download Required:* No
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+59.2 *Pre-processing required:* Yes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Run python/mk-PubMed2DateMap.py
+
+
+59.3 *Manual post-processing:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+59.4 *Approx. load time*: 20 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+60 DRGC Resources
+=================
+
+60.1 *Download Required:* No
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Data loaded via RSS API
+
+
+60.2 *Pre-processing required:* No
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+60.3 *Manual post-processing:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+60.4 *Approx. load time*: < 5 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+61 Harmonizome
+==============
+
+61.1 *Download Required:* No
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Data loaded via API.
+
+
+61.2 *Pre-processing required:* No
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+61.3 *Manual post-processing:* Yes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+61.3.1 mysql> delete from gene_attribute_type where id not in (select distinct gat_id from gene_attribute);
+-----------------------------------------------------------------------------------------------------------
+
+
+61.3.2 Check log for GeneID mismatches and update accordingly
+-------------------------------------------------------------
+
+
+61.4 *Approx. load time*: > 10 days
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+62 Harmonogram CDFs
+===================
+
+62.1 *Download Required:* No
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+62.2 *Pre-processing required:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+62.3 *Manual post-processing:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+62.4 *Approx. load time*: 2.5 hours
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+63 LINCS
+========
+
+63.1 *Download Required:* Yes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+63.2 *Pre-processing required:* Yes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+63.3 *Manual post-processing:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+63.4 *Approx. load time*:
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+64 IMPC Mice Clones
+===================
+
+64.1 *Download Required:* Yes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Data obtained directly from IMPC.
+
+
+64.2 *Pre-processing required:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+64.3 *Manual post-processing:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+64.4 *Approx. load time*: < 5 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+65 Reactome PPIs
+================
+
+65.1 *Download Required:* No, done by loader.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+65.2 *Pre-processing required:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+65.3 *Manual post-processing:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+65.4 *Approx. load time*: < 5 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+66 BioPlex PPIs
+===============
+
+66.1 *Download Required:* Yes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+66.1.1 [http://wren.hms.harvard.edu/bioplex/downloadInteractions.php]
+---------------------------------------------------------------------
+
+
+66.1.2 [http://bioplex.hms.harvard.edu/data/BioPlex_interactionList_v4a.tsv]
+----------------------------------------------------------------------------
+
+
+66.1.3 [http://bioplex.hms.harvard.edu/data/interactome_update_MonYYYY.tsv]
+---------------------------------------------------------------------------
+
+
+66.2 *Pre-processing required:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+66.3 *Manual post-processing:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+66.4 *Approx. load time*: < 5 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+67 STRINGDB
+===========
+
+67.1 *Download Required:* Yes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+67.1.1 Download and uncompress:
+-------------------------------
+
+  [https://stringdb-static.org/download/protein.links.v11.0/9606.protein.links.v11.0.txt.gz]
+
+
+67.2 *Pre-processing required:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+67.3 *Manual post-processing:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+67.4 *Approx. load time*: 2 hours
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+68 DTO
+======
+
+68.1 *Download Required:* Yes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  These files obtained from the Schurer Lab at UMiami.
+
+
+68.1.1 For IDs and Classifications:
+-----------------------------------
+
+* 68.1.1.1 Final_ProteomeClassification_Sep232019.csv
+
+
+* 68.1.1.2 DTO2UniProt_DTOv2.csv
+
+
+68.1.2 For term hierarchy:
+--------------------------
+
+* 68.1.2.1 dto_proteome_classification_only.owl
+
+
+68.2 *Pre-processing required:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+68.3 *Manual post-processing:* Yes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+68.3.1 Manual database updates for root nodes:
+----------------------------------------------
+
+  mysql> UPDATE dto SET parent = NULL WHERE name IN ('GPCR', 'Kinase',
+  'Nuclear hormone receptor', 'Ion channel');
+
+
+68.3.2 Then create foreign key:
+-------------------------------
+
+  mysql> ALTER TABLE dto ADD CONSTRAINT fk_dto_dto FOREIGN KEY
+  dto_idx1(parent) REFERENCES dto(id) ON DELETE RESTRICT;
+
+
+68.4 *Approx. load time*: < 5 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+69 ClinVar
+==========
+
+69.1 *Download Required:* No, done by loader
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+69.2 *Pre-processing required:* No
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+69.3 *Manual post-processing:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+69.4 *Approx. load time*: 30 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+70 IDG Eligible Target Lists
+============================
+
+70.1 *Download Required:* No
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  List exported from previous TCRD versions.
+
+
+70.2 *Pre-processing required:* Yes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  List exported from previous TCRD versions.
+
+
+70.3 *Manual post-processing:* None
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+70.4 *Approx. load time*: < 5 minutes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

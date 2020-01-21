@@ -1,5 +1,5 @@
 #+OPTIONS: toc:nil
-
+These notes correspond to TCRD major version 6.
 * UniProt
 ** *Download Required:* Yes. Download and uncompress XML files from the following URLs:
    https://www.uniprot.org/uniprot/?query=reviewed:yes AND organism:"Homo sapiens (Human) [9606]"
@@ -102,7 +102,6 @@ are in the file SQL/update_geneids.sql
 ** *Manual post-processing:* None
 ** *Approx. load time*: 10 minutes
 
-
 * Disease Ontology
 ** *Download Required:* No, done by loader
 ** *Pre-processing required:* None
@@ -124,7 +123,6 @@ are in the file SQL/update_geneids.sql
 ** *Manual post-processing:* None
 ** *Approx. load time*: < 5 minutes
 
-
 * Orthologs
 *** *Download Required:* No, done by loader
 *** *Pre-processing required:* None
@@ -137,14 +135,12 @@ are in the file SQL/update_geneids.sql
 *** *Approx. load time*: 1 hour
 
 
-
 * PubTator Text-mining Scores
 ** *Download Required:* No, done by loader
 ** *Pre-processing required:* Yes
    Run perl/pubtator_count.pl on the uncompressed download.
 ** *Manual post-processing:* None
 ** *Approx. load time*: 1 hour
-
 
 * JensenLab DISEASES
 *** *Download Required:* No, done by loader
@@ -169,7 +165,7 @@ are in the file SQL/update_geneids.sql
 *** *Download Required:* No
 *** *Pre-processing required:* None
 *** *Manual post-processing:* None
-*** *Approx. load time*: 1 hour
+*** *Approx. load time*: 1.5 hours
 * Expression Atlas
 *** *Download Required:* Yes
     ftp://ftp.ebi.ac.uk/pub/databases/microarray/data/atlas/experiments/atlas-latest-data.tar.gz
@@ -188,7 +184,6 @@ are in the file SQL/update_geneids.sql
     Run python/scrape-eRAM.py to collect data.
 *** *Manual post-processing:* None
 *** *Approx. load time*: 5 minutes
-
 
 * OMIM
 ** *Download Required:* No, done by loader
@@ -226,15 +221,12 @@ are in the file SQL/update_geneids.sql
 ** *Manual post-processing:* None
 ** *Approx. load time*: < 5 minutes
 
-
 * IDG Eligible Targets List
 ** *Download Required:* Yes
    Download latest IDG Eligible list from GitHub repo.
 ** *Pre-processing required:* No
 ** *Manual post-processing:* None
 ** *Approx. load time*: < 5 minutes
-
-
 * JensenLab TISSUES
 ** *Download Required:* No, one by loader
 ** *Pre-processing required:* None
@@ -289,13 +281,12 @@ are in the file SQL/update_geneids.sql
    The input file is produced by the Rscript R/process-CCLE.R
 Details/explanation of that code are in notebooks/CCLE.ipynb
 ** *Manual post-processing:* None
-** *Approx. load time*: 4 hours
+** *Approx. load time*: 3.5 hours
 * Consensus Expression Values
 *** *Download Required:* No
 *** *Pre-processing required:* No
 *** *Manual post-processing:* None
 *** *Approx. load time*: 20 minutes
-
 
 
 
@@ -309,102 +300,33 @@ Details/explanation of that code are in notebooks/CCLE.ipynb
 ** *Approx. load time*: 20 minutes
 
 
-
-* Pathways
-** KEGG
-*** *Download Required:* No
+* KEGG Pathways
+** *Download Required:* No
     Data loaded via API.
-*** *Pre-processing required:* None
-*** *Manual post-processing:* None
-*** *Approx. load time*: 30 minutes
-** WikiPathways
-*** *Download Required:* No
-    Done by loader
-*** *Pre-processing required:* None
-*** *Manual post-processing:* None
-*** *Approx. load time*: < 5 minutes
-** Reactome
-*** *Download Required:* No
-    Done by loader
-*** *Pre-processing required:* None
-*** *Manual post-processing:* None
-*** *Approx. load time*: 15 minutes
-** PathwayCommons
-*** *Download Required:* No
-    Done by loader.
-*** *Pre-processing required:* None
-*** *Manual post-processing:* None
-*** *Approx. load time*: < 5 minutes
-
-* PPIs
-** Reactome PPIs
-*** *Download Required:* No
-    Done by loader.
-*** *Pre-processing required:* None
-*** *Manual post-processing:* None
-*** *Approx. load time*: < 5 minutes
-** BioPlex PPIs
-*** *Download Required:* No
-    Done by loader
-*** *Pre-processing required:* None
-*** *Manual post-processing:* None
-*** *Approx. load time*: < 5 minutes
-
-
-
-
-
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. load time*: 30 minutes
+* PathwayCommons
+** *Download Required:* No, done by loader.
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. load time*: < 5 minutes
+* Reactome Pathways
+** *Download Required:* No, done by loader
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. load time*: < 5 minutes
+* WikiPathways
+** *Download Required:* No, done by loader
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. load time*: < 5 minutes
 * TIN-X
 ** *Download Required:* No, done by pre-processing code
 ** *Pre-processing required:* Yes.
    Run python/TIN-X.py
 ** *Manual post-processing:* None
-** *Approx. load time*: 9 hours
-
-
-* DTO
-** *Download Required:* Yes
-   dto.json
-** *Pre-processing required:* None
-** *Manual post-processing:* Yes
-*** Manual database updates for root nodes:
-   mysql> UPDATE dto SET parent = NULL WHERE name IN ('GPCR', 'Kinase', 'Nuclear hormone receptor', 'Ion channel');
-*** Then create foreign key:
-    mysql> ALTER TABLE dto ADD CONSTRAINT fk_dto_dto FOREIGN KEY dto_idx1(parent) REFERENCES dto(id) ON DELETE RESTRICT;
-** *Approx. load time*: < 5 minutes
-
-* PubChem CIDs
-  This must be (re-)run after DrugCentral or ChEMBL are (re-)loaded.
-** *Download Required:* Yes
-   
-** *Pre-processing required:* None
-** *Manual post-processing:* None
-** *Approx. load time*: 5 minutes
-
-
-
-* Transcription Factor Flags
-** *Download Required:* No
-   Done by loader
-** *Pre-processing required:* No
-** *Manual post-processing:* None
-** *Approx. load time*: < 5 minutes
-
-* IMPC Mice Flags
-** *Download Required:* Yes
-   Data obtained directly from IMPC.
-** *Pre-processing required:* None
-** *Manual post-processing:* None
-** *Approx. load time*: < 5 minutes
-
-* Drugable Epigenome Info
-** *Download Required:* Yes
-   Go to http://www.nature.com/nrd/journal/v11/n5/suppinfo/nrd3674.html
-   and download all the Excel files.
-** *Pre-processing required:* Yes
-   Excel files must be converted to CSV.
-** *Manual post-processing:* None
-** *Approx. load time*: < 5 minutes
+** *Approx. load time*: 10 hours
 
 * EBI Patent Counts
 ** *Download Required:* Yes
@@ -412,13 +334,6 @@ Details/explanation of that code are in notebooks/CCLE.ipynb
 ** *Pre-processing required:* None
 ** *Manual post-processing:* None
 ** *Approx. load time*: < 5 minutes
-* PubMed Abstracts
-  This must be (re-)run after TIN-X is loaded.
-** *Download Required:* No
-** *Pre-processing required:* None
-** *Manual post-processing:* None
-** *Approx. load time*: 4-5 days
-
 * KEGG Distances
 ** *Download Required:* No
 ** *Pre-processing required:* No
@@ -429,42 +344,81 @@ Details/explanation of that code are in notebooks/CCLE.ipynb
 ** *Pre-processing required:* None
 ** *Manual post-processing:* None
 ** *Approx. load time*: < 5 minutes
-
-* LINCS Cross References
+* LINCS L1000 XRefs
 ** *Download Required:* Yes
 ** *Pre-processing required:* None
-** *Manual post-processing:* Yes
-*** Manual database insert for one target:
-    mysql> insert into xref (protein_id, xtype, dataset_id, value) values (7573, 'L1000 ID', 20, 'UUUC11D11');
+** *Manual post-processing:* No
 ** *Approx. load time*: < 5 minutes
+
+
+
+
+
 * LocSigDB
-** *Download Required:* No
-   Done by loader
+** *Download Required:* No, done by loader
 ** *Pre-processing required:* None
 ** *Manual post-processing:* No
-** *Approx. load time*: 15 minutes
+** *Approx. load time*: 5 minutes
 
 * PANTHER Classes
 ** *Download Required:* Yes
-*** ftp://ftp.pantherdb.org//sequence_classifications/current_release/PANTHER_Sequence_Classification_files/PTHR10.0_human
-*** http://pantherdata.usc.edu/PANTHER10.0/ontology/Protein_Class_7.0
-*** http://pantherdata.usc.edu/PANTHER10.0/ontology/Protein_class_relationship
+*** ftp://ftp.pantherdb.org/sequence_classifications/current_release/PANTHER_Sequence_Classification_files/PTHR14.1_human_
+*** http://data.pantherdb.org/PANTHER14.1/ontology/Protein_Class_14.0
+*** http://data.pantherdb.org/PANTHER14.1/ontology/Protein_class_relationship
 ** *Pre-processing required:* None
 ** *Manual post-processing:* None
 ** *Approx. load time*: < 5 minutes
+
+
+* PubChem CIDs
+  This must be (re-)run after DrugCentral or ChEMBL are (re-)loaded.
+** *Download Required:* No, done by loader
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. load time*: 5 minutes
+
+
+
+
+
+
+
+* Transcription Factor Flags
+** *Download Required:* No, done by loader
+** *Pre-processing required:* No
+** *Manual post-processing:* None
+** *Approx. load time*: < 5 minutes
+
+
+
+
 
 * TMHMM Predictions
 ** *Download Required:* No
 ** *Pre-processing required:* Yes
    Go to http://www.cbs.dtu.dk/cgi-bin/nph-sw_request?tmhmm to download TMHMM software.
 ** *Manual post-processing:* None
-** *Approx. load time*: 1 hour
+** *Approx. load time*: 35 minutes
+* PubMed Abstracts
+  This must be (re-)run after TIN-X is loaded.
+** *Download Required:* No
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. load time*: 40 hours
 * GeneRIF Years
 ** *Download Required:* No
 ** *Pre-processing required:* Yes
    Run python/mk-PubMed2DateMap.py
 ** *Manual post-processing:* None
 ** *Approx. load time*: 20 minutes
+* DRGC Resources
+** *Download Required:* No
+   Data loaded via RSS API
+** *Pre-processing required:* No
+** *Manual post-processing:* None
+** *Approx. load time*: < 5 minutes
+
+
 * Harmonizome
 ** *Download Required:* No
    Data loaded via API.
@@ -478,3 +432,77 @@ Details/explanation of that code are in notebooks/CCLE.ipynb
 ** *Pre-processing required:* None
 ** *Manual post-processing:* None
 ** *Approx. load time*: 2.5 hours
+
+
+
+
+
+
+
+
+* LINCS
+** *Download Required:* Yes
+** *Pre-processing required:* Yes
+** *Manual post-processing:* None
+** *Approx. load time*: 
+
+* IMPC Mice Clones
+** *Download Required:* Yes
+   Data obtained directly from IMPC.
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. load time*: < 5 minutes
+
+
+
+
+
+* Reactome PPIs
+** *Download Required:* No, done by loader.
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. load time*: < 5 minutes
+* BioPlex PPIs
+** *Download Required:* Yes
+*** http://wren.hms.harvard.edu/bioplex/downloadInteractions.php
+*** http://bioplex.hms.harvard.edu/data/BioPlex_interactionList_v4a.tsv
+*** http://bioplex.hms.harvard.edu/data/interactome_update_MonYYYY.tsv
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. load time*: < 5 minutes
+* STRINGDB
+** *Download Required:* Yes
+*** Download and uncompress:
+    https://stringdb-static.org/download/protein.links.v11.0/9606.protein.links.v11.0.txt.gz
+** *Pre-processing required:* None
+** *Manual post-processing:* None
+** *Approx. load time*: 2 hours
+
+* DTO
+** *Download Required:* Yes
+   These files obtained from the Schurer Lab at UMiami.
+*** For IDs and Classifications:
+**** Final_ProteomeClassification_Sep232019.csv
+**** DTO2UniProt_DTOv2.csv
+*** For term hierarchy:
+**** dto_proteome_classification_only.owl
+** *Pre-processing required:* None
+** *Manual post-processing:* Yes
+*** Manual database updates for root nodes:
+   mysql> UPDATE dto SET parent = NULL WHERE name IN ('GPCR', 'Kinase', 'Nuclear hormone receptor', 'Ion channel');
+*** Then create foreign key:
+    mysql> ALTER TABLE dto ADD CONSTRAINT fk_dto_dto FOREIGN KEY dto_idx1(parent) REFERENCES dto(id) ON DELETE RESTRICT;
+** *Approx. load time*: < 5 minutes
+* ClinVar
+** *Download Required:* No, done by loader
+** *Pre-processing required:* No
+** *Manual post-processing:* None
+** *Approx. load time*: 30 minutes
+* IDG Eligible Target Lists
+** *Download Required:* No
+   List exported from previous TCRD versions.
+** *Pre-processing required:* Yes
+   List exported from previous TCRD versions.
+** *Manual post-processing:* None
+** *Approx. load time*: < 5 minutes
+
