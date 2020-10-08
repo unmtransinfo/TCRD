@@ -63,7 +63,7 @@ urllib, urllib2, cPickle, cStringIO, csv, KEGG_Graph, MySQLdb, networkx,
 numpy, requests, and shelve.
 
 ### Lars Jensen's Tagger
-This is available [here](https://bitbucket.org/larsjuhljensen/tagger).
+This is available [here](https://github.com/larsjuhljensen/tagger).
 
 ### R
 R and the R packages dplyr, stringr, tidyr, data.table, and Hmisc.
