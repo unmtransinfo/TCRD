@@ -42,6 +42,7 @@ create_viral_ppi_table_sql = """CREATE TABLE `viral_ppi` (
     `protein_id` INT ,
     `dataSource` VARCHAR(20) NULL,
     `finalLR` DECIMAL(20,12) NOT NULL,
+    `pdbIDs` VARCHAR(128) NULL,
     PRIMARY KEY (`id`),
     KEY `viral_protein_id_idx` (`viral_protein_id`),
     KEY `protein_id_idx` (`protein_id`),
@@ -50,7 +51,7 @@ create_viral_ppi_table_sql = """CREATE TABLE `viral_ppi` (
 
 populate_virus_table_sql = """insert into virus values (%s, %s, %s, %s, %s, %s, %s, %s, %s)"""
 populate_viral_protein_table_sql = """insert into viral_protein values (%s, %s, %s, %s)"""
-populate_viral_ppi_table_sql = """insert into viral_ppi values (NULL, %s, %s, NULL, 'P-HIPSTer', %s)"""
+populate_viral_ppi_table_sql = """insert into viral_ppi values (NULL, %s, %s, NULL, 'P-HIPSTer', %s, %s)"""
 
 set_protein_id_for_ppi_table_sql = """UPDATE viral_ppi ppi, protein p
 SET 
@@ -88,6 +89,10 @@ class vppi:  # for parsing lines of phipster_predictions into an object
         virusID, self.virusProtID = interaction.split('_id')
         self.virusID = virusID.split('tx')[1]
         self.finalLR = fields[1]
+        if(len(fields) > 2):
+            self.pdbIDs = fields[2]
+        else:
+            self.pdbIDs = None
 
 class viral_protein:
     def __init__(self, id, name, ncbi, virus_id = None):
@@ -126,7 +131,7 @@ def map_data_to_fields(line):
 def transform(protein_names, protein_ncbi, predicted_interactions):
     parent_map = {ppi.virusProtID : ppi.virusID for ppi in predicted_interactions}
     viral_protein_table = [viral_protein(id, name, protein_ncbi.get(id), parent_map.get(id)) for id, name in protein_names.items()]
-    viral_ppi_table = [(ppi.virusProtID, ppi.uniprot, ppi.finalLR) for ppi in predicted_interactions]
+    viral_ppi_table = [(ppi.virusProtID, ppi.uniprot, ppi.finalLR, ppi.pdbIDs) for ppi in predicted_interactions]
     return viral_protein_table, viral_ppi_table
 
 
