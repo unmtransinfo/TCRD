@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# Time-stamp: <2019-01-15 10:22:51 smathias>
+# Time-stamp: <2020-05-06 08:56:06 smathias>
 """TCRD with latest NCBI Gene data via EUtils.
 
 Usage:
-    load-NCBIGene.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>]
+    load-NCBIGene.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>] [--pastid=<int>]
     load-NCBIGene.py -h | --help
 
 Options:
@@ -17,6 +17,7 @@ Options:
                          20: INFO
                          10: DEBUG
                           0: NOTSET
+  -p --pastid PASTID   : TCRD target id to start at (for restarting frozen run)
   -q --quiet           : set output verbosity to minimal level
   -d --debug           : turn on debugging output
   -? --help            : print this message and exit 
@@ -24,13 +25,13 @@ Options:
 __author__ = "Steve Mathias"
 __email__ = "smathias@salud.unm.edu"
 __org__ = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2014-2019, Steve Mathias"
+__copyright__ = "Copyright 2014-2020, Steve Mathias"
 __license__ = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__ = "2.2.0"
+__version__ = "3.0.0"
 
 import os,sys,time
 from docopt import docopt
-from TCRDMP import DBAdaptor
+from TCRD7 import DBAdaptor
 import requests
 from bs4 import BeautifulSoup
 import logging
@@ -40,7 +41,7 @@ from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd6logs"
+LOGDIR = "./tcrd7logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 EFETCH_GENE_URL = "http://www.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=Gene&rettype=xml&id="
 SHELF_FILE = '%s/load-NCBIGene.db'%LOGDIR
@@ -74,6 +75,7 @@ def load(args):
     print "\nConnected to TCRD database %s (schema ver %s; data ver %s)" % (args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
     
   # Dataset
+  #dataset_id = 8
   dataset_id = dba.ins_dataset( {'name': 'NCBI Gene', 'source': 'EUtils web API at %s'%EFETCH_GENE_URL, 'app': PROGRAM, 'app_version': __version__, 'url': 'http://www.ncbi.nlm.nih.gov/gene'} )
   if not dataset_id:
     print "WARNING: Error inserting dataset See logfile %s for details." % logfile
@@ -95,17 +97,24 @@ def load(args):
   s['retries'] = {}
   s['counts'] = defaultdict(int)
   
-  tct = dba.get_target_count()
+  pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
+  ct = 0
+  skip_ct = 0
+  if args['--pastid']:
+    past_id = args['--pastid']
+    tct = dba.get_target_count(past_id=past_id)
+  else:
+    past_id = None
+    tct = dba.get_target_count()
+  pbar = ProgressBar(widgets=pbar_widgets, maxval=tct).start()  
   if not args['--quiet']:
     print "\nLoading NCBI Gene annotations for %d TCRD targets" % tct
   logger.info("Loading NCBI Gene annotations for %d TCRD targets\n" % tct)
-  pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
-  pbar = ProgressBar(widgets=pbar_widgets, maxval=tct).start()  
-  ct = 0
-  skip_ct = 0
-  for t in dba.get_targets(include_annotations=False):
-    tid = t['id']
+  for t in dba.get_targets(past_id=past_id):
     ct += 1
+    tid = t['id']
+    if tid in s['loaded']:
+      logger.info("Skipping previously loaded target %d" % tid)
     p = t['components']['protein'][0]
     pid = p['id']
     if p['geneid'] == None:

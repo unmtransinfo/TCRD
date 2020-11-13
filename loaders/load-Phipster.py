@@ -176,7 +176,7 @@ def writeToDatabase(virus_taxonomy, viral_protein_table, viral_ppi_table):
                                        user=USER,
                                        password=PWORD)
         if conn.is_connected():
-            print('Connected to MySQL database')
+            print('Connected to MySQL database %s'%DBNAME)
             cursor = conn.cursor()
 
             drop_tables(cursor)

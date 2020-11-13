@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2019-04-11 11:51:15 smathias>
+# Time-stamp: <2020-06-29 14:31:26 smathias>
 """Load ortholog data into TCRD via HGNC web API.
 
 Usage:
@@ -24,13 +24,13 @@ Options:
 __author__ = "Steve Mathias"
 __email__ = "smathias@salud.unm.edu"
 __org__ = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2017-2019, Steve Mathias"
+__copyright__ = "Copyright 2017-2020, Steve Mathias"
 __license__ = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__ = "1.4.0"
+__version__ = "2.0.0"
 
 import os,sys,time
 from docopt import docopt
-from TCRDMP import DBAdaptor
+from TCRD7 import DBAdaptor
 import logging
 import urllib
 import gzip
@@ -40,7 +40,7 @@ from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = 'tcrd6logs/'
+LOGDIR = 'tcrd7logs/'
 LOGFILE = LOGDIR + '%s.log'%PROGRAM
 DOWNLOAD_DIR = '../data/HGNC/'
 BASE_URL = 'ftp://ftp.ebi.ac.uk/pub/databases/genenames/hcop/'
@@ -85,13 +85,15 @@ def download(args):
   if not args['--quiet']:
     print "Done."
 
-def parse_hcop16(filepath, args):
+def parse_hcop16(args):
+  gzfn = DOWNLOAD_DIR + FILENAME
+  fn = gzfn.replace('.gz', '')
   orthos = list()
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
-  line_ct = slmf.wcl(filepath)
+  line_ct = slmf.wcl(fn)
   if not args['--quiet']:
-    print "\nProcessing {} lines in input file {}".format(line_ct, filepath)
-  with open(filepath, 'rU') as tsv:
+    print "\nProcessing {} lines in input file {}".format(line_ct, fn)
+  with open(fn, 'rU') as tsv:
     tsvreader = csv.DictReader(tsv, delimiter='\t')
     for d in tsvreader:
       # ortholog_species
@@ -129,47 +131,17 @@ def parse_hcop16(filepath, args):
   ortho_df = pd.DataFrame(orthos)
   return ortho_df
 
-def load(ortho_df, args):
-  loglevel = int(args['--loglevel'])
-  if args['--logfile']:
-    logfile = args['--logfile']
-  else:
-    logfile = LOGFILE
-  logger = logging.getLogger(__name__)
-  logger.setLevel(loglevel)
-  if not args['--debug']:
-    logger.propagate = False # turns off console logging
-  fh = logging.FileHandler(logfile)
-  fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-  fh.setFormatter(fmtr)
-  logger.addHandler(fh)
-  
-  dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
-  dba = DBAdaptor(dba_params)
-  dbi = dba.get_dbinfo()
-  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
-  if not args['--quiet']:
-    print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
-
-  # Dataset
-  dataset_id = dba.ins_dataset( {'name': 'Orthologs', 'source': 'File %s'%BASE_URL+FILENAME, 'app': PROGRAM, 'app_version': __version__, 'url': 'https://www.genenames.org/cgi-bin/hcop'} )
-  assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
-  # Provenance
-  provs = [ {'dataset_id': dataset_id, 'table_name': 'ortholog', 'comment': "Orthologs are majority vote from the OMA, EggNOG and InParanoid resources as per HGNC."} ]
-  for prov in provs:
-    rv = dba.ins_provenance(prov)
-    assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
-
-  pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
-
+def load(args, dba, logfile, ortho_df):
   tct = dba.get_target_count()
   if not args['--quiet']:
     print "\nLoading ortholog data for {} TCRD targets".format(tct)
   logger.info("Loading ortholog data for {} TCRD targets".format(tct))
+  pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   pbar = ProgressBar(widgets=pbar_widgets, maxval=tct).start()  
   ct = 0
   ortho_ct = 0
   tskip_ct = 0
+  bskip_ct = 0
   skip_ct = 0
   notfnd = set()
   dba_err_ct = 0
@@ -191,9 +163,12 @@ def load(ortho_df, args):
       if row['ortholog_species_symbol'] == '-' and row['ortholog_species_name'] == '-':
         skip_ct += 1
         continue
-      sp = TAXID2SP[row['ortholog_species']]
-      init = {'protein_id': p['id'], 'taxid': row['ortholog_species'],
-              'species': sp, 'sources': row['sources'],
+      os = row['ortholog_species']
+      if os not in TAXID2SP:
+        bskip_ct += 1
+        continue
+      sp = TAXID2SP[os]
+      init = {'protein_id': p['id'], 'taxid': os, 'species': sp, 'sources': row['sources'],
               'symbol': row['ortholog_species_symbol'], 'name': row['ortholog_species_name']}
       # Add MOD DB ID if it's there
       if row['ortholog_species_db_id'] != '-':
@@ -226,6 +201,7 @@ def load(ortho_df, args):
   print "Loaded {} new ortholog rows".format(ortho_ct)
   print "  Skipped {} empty ortholog entries".format(skip_ct)
   print "  Skipped {} targets with no sym/geneid".format(tskip_ct)
+  print "  Skipped {} rows with unwanted ortholog species".format(bskip_ct)
   if len(notfnd) > 0:
     print "  No orthologs found for {} targets.".format(len(notfnd))
   if dba_err_ct > 0:
@@ -233,15 +209,46 @@ def load(ortho_df, args):
 
 
 if __name__ == '__main__':
-  print "\n{} (v{}) [{}]:".format(PROGRAM, __version__, time.strftime("%c"))
+  print "\n%s (v%s) [%s]:\n" % (PROGRAM, __version__, time.strftime("%c"))
   args = docopt(__doc__, version=__version__)
-  if args['--debug']:
+  debug = int(args['--debug'])
+  if debug:
     print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
-  start_time = time.time()
+
+  if args['--logfile']:
+    logfile =  args['--logfile']
+  else:
+    logfile = LOGFILE
+  loglevel = int(args['--loglevel'])
+  logger = logging.getLogger(__name__)
+  logger.setLevel(loglevel)
+  if not args['--debug']:
+    logger.propagate = False # turns off console logging
+  fh = logging.FileHandler(LOGFILE)
+  fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+  fh.setFormatter(fmtr)
+  logger.addHandler(fh)
+
+  dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
+  dba = DBAdaptor(dba_params)
+  dbi = dba.get_dbinfo()
+  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
+  if not args['--quiet']:
+    print "Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+
   download(args)
-  fn = DOWNLOAD_DIR + FILENAME
-  fn = fn.replace('.gz', '')
-  ortho_df = parse_hcop16(fn, args)
-  load(ortho_df, args)
+  start_time = time.time()
+  ortho_df = parse_hcop16(args)
+  load(args, dba, logfile, ortho_df)
   elapsed = time.time() - start_time
+    
+  # Dataset
+  dataset_id = dba.ins_dataset( {'name': 'Orthologs', 'source': 'File %s'%BASE_URL+FILENAME, 'app': PROGRAM, 'app_version': __version__, 'url': 'https://www.genenames.org/cgi-bin/hcop', 'comments': "Orthologs are majority vote from the OMA, EggNOG and InParanoid resources as per the source file from HGNC."} )
+  assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
+  # Provenance
+  provs = [ {'dataset_id': dataset_id, 'table_name': 'ortholog', 'comment': "Orthologs are majority vote from the OMA, EggNOG and InParanoid resources as per the source file from HGNC."} ]
+  for prov in provs:
+    rv = dba.ins_provenance(prov)
+    assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
+
   print "\n{}: Done. Elapsed time: {}\n".format(PROGRAM, slmf.secs2str(elapsed))

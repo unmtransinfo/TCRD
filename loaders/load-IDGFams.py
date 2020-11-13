@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2019-04-08 11:40:11 smathias>
+# Time-stamp: <2020-05-08 12:21:24 smathias>
 """Load IDG family and extended family designations into TCRD from text file.
 
 Usage:
@@ -17,13 +17,13 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2017-2019, Steve Mathias"
+__copyright__ = "Copyright 2017-2020, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "1.3.0"
+__version__   = "2.0.0"
 
 import os,sys,time
 from docopt import docopt
-from TCRDMP import DBAdaptor
+from TCRD7 import DBAdaptor
 import csv
 from progressbar import *
 import slm_tcrd_functions as slmf
@@ -80,11 +80,11 @@ def load(args):
         notfnd.append(up)
         continue
       if len(targets) > 1:
-        mulfnd.append(upd_ct)
+        mulfnd.append(up)
         continue
       t = targets[0]
       # only update fam for non-IDG targets
-      # IDG2 target fams are set by load-IDG2List.py
+      # IDG target fams are set by load-IDGList.py
       if t['fam']:
         idg_ct += 1
         continue

@@ -599,7 +599,7 @@ load-PubTatorScores.py: Done. Elapsed time: 1:04:08.283
 
 # Fix for CD97 : obsolete sysmbol
 mysql> UPDATE protein set sym = 'ADGRE5' where id = 2322;
-# Orthologs are messed up for CD97/'ADGRE5', so redo:
+# Orthologs are messed up for CD97/ADGRE5, so redo:
 mysql> DELETE from ortholog;
 
 [smathias@juniper loaders]$ ./load-Orthologs.py --dbname tcrd6

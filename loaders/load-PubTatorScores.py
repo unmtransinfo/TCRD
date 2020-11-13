@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2019-04-11 10:08:38 smathias>
+# Time-stamp: <2020-06-30 10:48:08 smathias>
 """Load PubTator PubMed Score tdl_infos in TCRD from TSV file.
 
 Usage:
@@ -24,13 +24,13 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2016-2019, Steve Mathias"
+__copyright__ = "Copyright 2016-2020, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.2.0"
+__version__   = "3.0.0"
 
 import os,sys,time
 from docopt import docopt
-from TCRD import DBAdaptor
+from TCRD7 import DBAdaptor
 import urllib
 import csv
 import logging
@@ -38,7 +38,7 @@ from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd6logs"
+LOGDIR = "./tcrd7logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 DOWNLOAD_DIR = '../data/JensenLab/'
 BASE_URL = 'http://download.jensenlab.org/KMC/Medline/'
@@ -56,39 +56,7 @@ def download(args):
   if not args['--quiet']:
     print "Done. Elapsed time: {}".format(slmf.secs2str(elapsed))
 
-def load(args):
-  loglevel = int(args['--loglevel'])
-  if args['--logfile']:
-    logfile = args['--logfile']
-  else:
-    logfile = LOGFILE
-  logger = logging.getLogger(__name__)
-  logger.setLevel(loglevel)
-  if not args['--debug']:
-    logger.propagate = False # turns off console logging
-  fh = logging.FileHandler(logfile)
-  fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-  fh.setFormatter(fmtr)
-  logger.addHandler(fh)
-
-  dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
-  dba = DBAdaptor(dba_params)
-  dbi = dba.get_dbinfo()
-  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
-  if not args['--quiet']:
-    print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
-  
-  # Dataset
-  dataset_id = dba.ins_dataset( {'name': 'PubTator Text-mining Scores', 'source': 'File %s'%BASE_URL+FILENAME, 'app': PROGRAM, 'app_version': __version__, 'url': 'https://www.ncbi.nlm.nih.gov/CBBresearch/Lu/Demo/PubTator/', 'comments': 'PubTator data was subjected to the same counting scheme used to generate JensenLab PubMed Scores.'} )
-  assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
-  # Provenance
-  provs = [ {'dataset_id': dataset_id, 'table_name': 'ptscore'},
-            {'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': "itype = 'PubTator PubMed Score'"} ]
-  for prov in provs:
-    rv = dba.ins_provenance(prov)
-    assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
-
-  pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
+def load(args, dba, logger, logfile):
   ptscores = {} # protein.id => sum(all scores)
   pts_ct = 0
   dba_err_ct = 0
@@ -96,6 +64,7 @@ def load(args):
   line_ct = slmf.wcl(infile)
   if not args['--quiet']:
     print "\nProcessing {} lines in file {}".format(line_ct, infile)
+  pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   with open(infile, 'rU') as tsv:
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
     tsvreader = csv.reader(tsv, delimiter='\t')
@@ -164,12 +133,52 @@ def load(args):
 
 
 if __name__ == '__main__':
+  print "\n%s (v%s) [%s]:\n" % (PROGRAM, __version__, time.strftime("%c"))
+  args = docopt(__doc__, version=__version__)
+  debug = int(args['--debug'])
+  if debug:
+    print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
+
+  if args['--logfile']:
+    logfile =  args['--logfile']
+  else:
+    logfile = LOGFILE
+  loglevel = int(args['--loglevel'])
+  logger = logging.getLogger(__name__)
+  logger.setLevel(loglevel)
+  if not args['--debug']:
+    logger.propagate = False # turns off console logging
+  fh = logging.FileHandler(LOGFILE)
+  fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+  fh.setFormatter(fmtr)
+  logger.addHandler(fh)
+
+  dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
+  dba = DBAdaptor(dba_params)
+  dbi = dba.get_dbinfo()
+  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
+  if not args['--quiet']:
+    print "Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+
+  download(args)
+  start_time = time.time()
+  load(args, dba, logger, logfile)
+  elapsed = time.time() - start_time
+    
+  # Dataset
+  dataset_id = dba.ins_dataset( {'name': 'PubTator Text-mining Scores', 'source': 'File %s'%BASE_URL+FILENAME, 'app': PROGRAM, 'app_version': __version__, 'url': 'https://www.ncbi.nlm.nih.gov/CBBresearch/Lu/Demo/PubTator/', 'comments': 'PubTator data was subjected to the same counting scheme used to generate JensenLab PubMed Scores.'} )
+  assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
+  # Provenance
+  provs = [ {'dataset_id': dataset_id, 'table_name': 'ptscore'},
+            {'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': "itype = 'PubTator PubMed Score'"} ]
+  for prov in provs:
+    rv = dba.ins_provenance(prov)
+    assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
+
+  
   print "\n{} (v{}) [{}]:".format(PROGRAM, __version__, time.strftime("%c"))
   args = docopt(__doc__, version=__version__)
   if args['--debug']:
     print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
-  start_time = time.time()
-  download(args)
-  load(args)
-  elapsed = time.time() - start_time
+  
   print "\n{}: Done. Elapsed time: {}\n".format(PROGRAM, slmf.secs2str(elapsed))

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2019-01-08 15:36:31 smathias>
+# Time-stamp: <2020-05-04 13:46:24 smathias>
 """Load HGNC annotations for TCRD targets from downloaded TSV file.
 
 Usage:
@@ -24,22 +24,22 @@ Options:
 __author__ = "Steve Mathias"
 __email__ = "smathias@salud.unm.edu"
 __org__ = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2014-2019, Steve Mathias"
+__copyright__ = "Copyright 2014-2020, Steve Mathias"
 __license__ = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__ = "3.0.0"
+__version__ = "4.0.0"
 
 import os,sys,time
 from docopt import docopt
-from TCRDMP import DBAdaptor
+from TCRD7 import DBAdaptor
 import logging
 import csv
 from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd6logs"
+LOGDIR = "./tcrd7logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
-HGNC_TSV_FILE = '../data/HGNC/HGNC_20190104.tsv'
+HGNC_TSV_FILE = '../data/HGNC/HGNC_20200504.tsv'
 SHELF_FILE = '%s/load-HGNC.db' % LOGDIR
 
 def load(args):
@@ -103,22 +103,28 @@ def load(args):
       # 1: Approved symbol
       # 2: Approved name
       # 3: Status
-      # 4: UniProt ID
-      # 5: NCBI Gene ID
+      # 4: NCBI Gene ID
+      # 5: UniProt ID
       # 6: Mouse genome database ID
       ct += 1
       pbar.update(ct)
       sym = row[1]
-      geneid = row[5]
-      up = row[4]
+      if row[4] != '':
+        geneid = int(row[4])
+      else:
+        geneid = None
+      if row[5] != '':
+        up = row[5]
+      else:
+        up = None
       targets = dba.find_targets({'sym': sym})
-      if not targets:
+      if not targets and up:
+        targets = dba.find_targets({'uniprot': up})
+      if not targets and geneid:
         targets = dba.find_targets({'geneid': geneid})
       if not targets:
-        targets = dba.find_targets({'uniprot': up})
-      if not targets:
         nf_ct += 1
-        #logger.warn("No target found for {}|{}|{}".format(sym, geneid, up))
+        logger.warn("No target found for {}|{}|{}".format(sym, up, geneid))
         continue
       for t in targets:
         p = t['components']['protein'][0]
@@ -132,12 +138,13 @@ def load(args):
         else:
           db_err_ct += 1
         # MGI xref
-        rv = dba.ins_xref({'protein_id': pid, 'xtype': 'MGI ID',
-                           'dataset_id': dataset_id, 'value': row[6]})
-        if rv:
-          mgi_ct += 1
-        else:
-          db_err_ct += 1
+        if row[6] != '':
+          rv = dba.ins_xref({'protein_id': pid, 'xtype': 'MGI ID',
+                             'dataset_id': dataset_id, 'value': row[6]})
+          if rv:
+            mgi_ct += 1
+          else:
+            db_err_ct += 1
         # Add missing syms
         if p['sym'] == None:
           rv = dba.upd_protein(pid, 'sym', sym)
@@ -162,7 +169,7 @@ def load(args):
               db_err_ct += 1
           else:
             # Check for geneid discrepancies
-            if p['geneid'] != int(geneid):
+            if p['geneid'] != geneid:
               logger.warn("GeneID discrepancy: UniProt={}, HGNC={}".format(p['geneid'], geneid))
               geneiddiscr_ct += 1
   pbar.finish()

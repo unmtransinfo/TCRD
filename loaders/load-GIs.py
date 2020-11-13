@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2019-01-04 12:26:38 smathias>
+# Time-stamp: <2020-05-04 14:29:50 smathias>
 """Load NCBI gi xrefs into TCRD from UniProt ID Mapping file.
 
 Usage:
@@ -24,13 +24,13 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2016-2019, Steve Mathias"
+__copyright__ = "Copyright 2016-2020, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.2.0"
+__version__   = "3.0.0"
 
 import os,sys,time
 from docopt import docopt
-from TCRD import DBAdaptor
+from TCRD7 import DBAdaptor
 import logging
 import csv
 if sys.version_info[0] < 3:
@@ -44,7 +44,7 @@ from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd6logs"
+LOGDIR = "./tcrd7logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 DOWNLOAD_DIR = '../data/UniProt/'
 BASE_URL = 'ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/idmapping/by_organism/'

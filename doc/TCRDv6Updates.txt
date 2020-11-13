@@ -1,0 +1,75 @@
++++++++++++++++++++++
+New Additions/Updates
++++++++++++++++++++++
+
+DrugCentral
+===========
+The latest version of DrugCentral has been loaded and TDLs
+re-calculated. There are 46 new Tclin targets as a result.
+
+Phipster
+========
+Created new tables virus, viral_protein, viral_ppi and populated with
+data received from Phipster group.
+
+Rat Disease Ontology
+====================
+Added new tables rdo and rdo_xref and populated with Rat Disease
+Ontology data. RDO.obo file has DOID:xxxxxxx ids and RGO ids as
+alt_ids. TCRD uses doids in rdo and stores RGO ids as xrefs.
+
+IMPC Phenotypes
+===============
+All IMPC phenotypes have been reloaded to include all
+p-values. Previously, only phenotype associations with p-values < 0.05
+were included. This change is due to the fact that the high p-value
+associations are used as negatives when building knowledge graphs for
+MetaPathML. Not sure if this has any repercussions for Pharos.
+
+
++++++
+Fixes
++++++
+
+DisGeNET
+========
+Disease associations from DisGeNET were reloaded to fix disease names.
+
+Protein-Protein Interactions
+============================
+All data in ppi (Reactome, BioPlex and STRINGDB) table was reloaded
+removing interactions involving the same protein.
+
+DTO IDs and Classifications
+===========================
+Loaded DTO IDs into protein.dtoid.
+Added a new column, dtoclass, to the protein table and populated with
+DTO protein classifications.
+
+DrugCentral Indication diseases
+===============================
+Rows in the disease table with dtype 'DrugCentral Indication' did not
+have DOIDs in did column (where available). This has been fixed.
+
+STRINGDB ppi scores
+===================
+Rows in the ppi table with ppitype 'STRINGDB' did not have scores. This
+has been fixed.
+
+Drug Target Ontology
+====================
+The dto table has been populated with the term hierarchy from the latest
+version of DTO (corresponding to the IDs and classifications previously
+in TCRD v6).
+
+DTO
+===
+The format of the dto.parent_id column was updated to have semi-colons
+instead of underscores (ie. DTO_##### -> DTO:#####)
+
+Disease table
+=============
+The disease.pvalue column was changed from varchar to numeric. This
+affects only disease rows from Expression Atlas.
+
+

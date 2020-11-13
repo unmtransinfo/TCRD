@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2019-04-05 10:15:49 smathias>
+# Time-stamp: <2020-05-04 14:45:57 smathias>
 """Load Ensembl Gene IDs into TCRD.
 
 Usage:
@@ -24,13 +24,13 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2019, Steve Mathias"
+__copyright__ = "Copyright 2019-2020, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "1.0.0"
+__version__   = "2.0.0"
 
 import os,sys,time
 from docopt import docopt
-from TCRDMP import DBAdaptor
+from TCRD7 import DBAdaptor
 import logging
 from lxml import etree, objectify
 import csv
@@ -39,23 +39,23 @@ from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd6logs"
+LOGDIR = "./tcrd7logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
-# Download and uncompress XML files for (should already be done from UniProt load):
+# Download and uncompress UniProt XML files for (should already be done from UniProt load):
 # https://www.uniprot.org/uniprot/?query=reviewed:yes AND organism:"Homo sapiens (Human) [9606]"
 # https://www.uniprot.org/uniprot/?query=organism:"Mus musculus (Mouse) [10090]"
 # https://www.uniprot.org/uniprot/?query=organism:"Rattus norvegicus (Rat) [10116]"
 # and
-# Download and uncompress TSV files:
-# ftp://ftp.ensembl.org/pub/current_tsv/homo_sapiens/Homo_sapiens.GRCh38.94.uniprot.tsv.gz
-# ftp://ftp.ensembl.org/pub/current_tsv/mus_musculus/Mus_musculus.GRCm38.94.uniprot.tsv.gz
-# ftp://ftp.ensembl.org/pub/current_tsv/rattus_norvegicus/Rattus_norvegicus.Rnor_6.0.94.uniprot.tsv.gz
-CONFIG = {'human': {'upfile': '../data/UniProt/uniprot-reviewed-human_20190103.xml',
-                    'ensfile': '../data/Ensembl/Homo_sapiens.GRCh38.94.uniprot.tsv'},
-          'mouse': {'upfile': '../data/UniProt/uniprot-mouse_20190103.xml',
-                    'ensfile': '../data/Ensembl/Mus_musculus.GRCm38.94.uniprot.tsv'},
-          'rat': {'upfile': '../data/UniProt/uniprot-rat_20190103.xml',
-                  'ensfile': '../data/Ensembl/Rattus_norvegicus.Rnor_6.0.94.uniprot.tsv'}}
+# Download and uncompress Ensembl TSV files:
+# ftp://ftp.ensembl.org/pub/current_tsv/homo_sapiens/Homo_sapiens.GRCh38.100.uniprot.tsv.gz
+# ftp://ftp.ensembl.org/pub/current_tsv/mus_musculus/Mus_musculus.GRCm38.100.uniprot.tsv.gz
+# ftp://ftp.ensembl.org/pub/current_tsv/rattus_norvegicus/Rattus_norvegicus.Rnor_6.0.100.uniprot.tsv.gz
+CONFIG = {'human': {'upfile': '../data/UniProt/uniprot-reviewed-human_20200504.xml',
+                    'ensfile': '../data/Ensembl/Homo_sapiens.GRCh38.100.uniprot.tsv'},
+          'mouse': {'upfile': '../data/UniProt/uniprot-mouse_20200504.xml',
+                    'ensfile': '../data/Ensembl/Mus_musculus.GRCm38.100.uniprot.tsv'},
+          'rat': {'upfile': '../data/UniProt/uniprot-rat_20200504.xml',
+                  'ensfile': '../data/Ensembl/Rattus_norvegicus.Rnor_6.0.100.uniprot.tsv'}}
 NS = '{http://uniprot.org/uniprot}'
 UP_SRC_FILES = [os.path.basename(d['upfile']) for d in CONFIG.values()]
 ENS_SRC_FILES = [os.path.basename(d['ensfile']) for d in CONFIG.values()]

@@ -1,0 +1,19 @@
+# v1
+mysql> SELECT p.name, p.uniprot, p.sym, p.geneid, t.tdl FROM protein p, target t WHERE t.id = p.id INTO OUTFILE '/tmp/TCRDv1.5.8_TDLs.csv' FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n';
+
+# v2
+mysql> SELECT p.name, p.uniprot, p.sym, p.geneid, t.tdl FROM protein p, target t WHERE t.id = p.id INTO OUTFILE '/tmp/TCRDv2.4.2_TDLs.csv' FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n';
+
+# v3
+mysql> SELECT p.name, p.uniprot, p.sym, p.geneid, t.tdl FROM protein p, target t WHERE t.id = p.id INTO OUTFILE '/tmp/TCRDv3.1.5_TDLs.csv' FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n';
+
+# v4
+mysql> SELECT p.name, p.uniprot, p.sym, p.geneid, t.tdl FROM protein p, target t WHERE t.id = p.id INTO OUTFILE '/tmp/TCRDv4.1.0_TDLs.csv' FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n';
+
+# v5
+mysql> SELECT p.name, p.uniprot, p.sym, p.geneid, t.tdl FROM protein p, target t WHERE t.id = p.id INTO OUTFILE '/tmp/TCRDv5.4.4_TDLs.csv' FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n';
+
+# v6
+mysql> SELECT p.name, p.uniprot, p.sym, p.geneid, t.tdl FROM protein p, target t WHERE t.id = p.id INTO OUTFILE '/tmp/TCRDv6.4.0_TDLs.csv' FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n';
+
+

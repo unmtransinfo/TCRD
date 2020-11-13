@@ -305,7 +305,138 @@ mysql> update dbinfo set schema_ver = '6.4.0', data_ver = '6.4.0';
 [smathias@juniper SQL]$ mysqldump tcrd6 > dumps6/TCRDv6.4.0.sql
 
 
+# Reload IMPC Phenotypes to include all p-values
 
+mysql> delete from phenotype where ptype = 'IMPC';
+Query OK, 570839 rows affected (56.30 sec)
+mysql> delete from provenance where dataset_id = 35;
+Query OK, 1 row affected (0.00 sec)
+mysql> delete from dataset where id = 35;
+Query OK, 1 row affected (0.07 sec)
+
+[smathias@juniper loaders]$ ./load-IMPC-Phenotypes.py --dbname tcrd6
+
+load-IMPC-Phenotypes.py (v2.5.0) [Thu May  7 12:13:06 2020]:
+
+Connected to TCRD database tcrd6 (schema ver 6.4.0; data ver 6.4.0)
+
+Processing 28115 lines from input file ../data/IMPC/IMPC_genotype_phenotype.csv
+Progress: 100% [######################################################################] Time: 0:06:37
+28114 lines processed.
+Loaded 123440 IMPC phenotypes for 16782 nhproteins
+No nhprotein found for 50 gene symbols. See logfile ./tcrd6logs/load-IMPC-Phenotypes.py.log for details.
+Skipped 403 lines with no term_id or term_name.
+
+Processing 1867835 lines from input file ../data/IMPC/IMPC_ALL_statistical_results.csv
+Progress: 100% [######################################################################] Time: 1:23:59
+1867834 lines processed.
+Loaded 7122495 IMPC phenotypes for 27548 nhproteins
+No nhprotein found for 152 gene symbols. See logfile ./tcrd6logs/load-IMPC-Phenotypes.py.log for details.
+Skipped 84665 lines with no term_id/term_name or no p-value.
+
+load-IMPC-Phenotypes.py: Done. Elapsed time: 1:30:37.595
+
+mysql> update dbinfo set data_ver = '6.5.0';
+
+[smathias@juniper SQL]$ mysqldump tcrd6 > dumps6/TCRDv6.5.0.sql
+
+
+# DrugCentral, new version
+mysql> delete from drug_activity;
+mysql> ALTER TABLE drug_activity AUTO_INCREMENT = 1;
+mysql> delete from disease where dtype = 'DrugCentral Indication';
+mysql> delete from provenance where dataset_id = 84;
+mysql> delete from dataset where id = 84;
+
+[smathias@juniper loaders]$ ./load-DrugCentral.py --dbname tcrd6
+
+load-DrugCentral.py (v3.0.0) [Thu May 28 12:31:10 2020]:
+
+Connected to TCRD database tcrd6 (schema ver 6.4.0; data ver 6.5.0)
+
+Processing 4642 input lines in file ../data/DrugCentral/drug_name_id_05122020.tsv
+4642 input lines processed.
+Saved 4642 keys in infos map
+
+Processing 1973 input lines in file ../data/DrugCentral/drug_info_05122020.tsv
+1973 input lines processed.
+Saved 1973 keys in infos map
+
+Processing 3361 lines from DrugDB MOA activities file ../data/DrugCentral/tclin_05122020.tsv
+3361 DrugCentral Tclin rows processed.
+  Inserted 3361 new drug_activity rows
+
+Processing 643 lines from Non-MOA activities file ../data/DrugCentral/tchem_drugs_05122020.tsv
+643 DrugCentral Tchem rows processed.
+  Inserted 643 new drug_activity rows
+
+Processing 11138 lines from indications file ../data/DrugCentral/drug_indications_05122020.tsv
+11138 DrugCentral indication rows processed.
+  Inserted 12853 new disease rows
+WARNNING: 1054 drugs NOT FOUND in activity files:
+
+load-DrugCentral.py: Done. Elapsed time: 0:00:12.664
+
+[smathias@juniper loaders]$ ./load-DrugCentral.py --dbname tcrd6
+
+mysql> update dbinfo set data_ver = '6.6.0';
+
+[smathias@juniper SQL]$ mysqldump tcrd6 > dumps6/TCRDv6.6.0.sql
+
+
+# TDLs
+mysql> update target set tdl = NULL;
+mysql> delete from provenance where dataset_id = 18;
+mysql> delete from dataset where id = 18;
+
+[smathias@juniper loaders]$ ./load-TDLs.py --dbname tcrd6
+
+load-TDLs.py (v3.0.0) [Thu May 28 12:42:33 2020]:
+
+Connected to TCRD database tcrd6 (schema ver 6.4.0; data ver 6.6.0)
+
+Processing 20412 TCRD targets
+Progress: 100% [######################################################################] Time: 0:01:28
+20412 TCRD targets processed.
+Set TDL values for 20412 targets:
+  659 targets are Tclin
+  1607 targets are Tchem
+  11778 targets are Tbio - 590 bumped from Tdark
+  6368 targets are Tdark
+
+load-TDLs.py: Done. Elapsed time: 0:01:28.418
+
+[smathias@juniper SQL]$ mysqldump tcrd6 > dumps6/TCRDv6.6.0.sql
+
+
+# Add indexes for IMPC queries fo MetepML
+mysql> CREATE INDEX nhprotein_idx2  ON nhprotein(sym);
+mysql> CREATE INDEX ortholog_idx2  ON ortholog(symbol);
+mysql> UPDATE dbinfo SET schema_ver = '6.4.1', data_ver = '6.6.1';
+
+[smathias@juniper SQL]$ mysqldump tcrd6 > dumps6/TCRDv6.6.1.sql
+
+
+# Fixes for Keith's issues on github
+mysql> UPDATE dto SET parent_id = REPLACE(parent_id, '_', ':');
+mysql> UPDATE dto SET dtoid = REPLACE(dtoid, '_', ':');
+mysql> ALTER TABLE disease MODIFY pvalue DECIMAL(20,19);
+
+mysql> update dbinfo set schema_ver = '6.4.1', data_ver = '6.7.0';
+
+[smathias@juniper loaders]$ python load-Phipster.py
+Connected to MySQL database tcrd6
+creating virus table
+creating viral_protein table
+creating viral_ppi table
+done
+
+mysql> INSERT INTO dataset (name, source, app, url) VALUES ('p-hipster viral PPIs', 'Files virProtein_name.txt, virProtein_ncbi.txt, virus_taxonomy.txt received from Gorka Lasso.', 'load-Phipster.py', 'http://phipster.org/');
+mysql> INSERT INTO provenance (dataset_id, table_name) VALUES (94, 'virus');
+mysql> INSERT INTO provenance (dataset_id, table_name) VALUES (94, 'viral_protein');
+mysql> INSERT INTO provenance (dataset_id, table_name) VALUES (94, 'viral_ppi');
+
+[smathias@juniper SQL]$ mysqldump tcrd6 > dumps6/TCRDv6.7.0.sql
 
 
 

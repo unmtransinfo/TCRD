@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2019-01-29 12:43:26 smathias>
+# Time-stamp: <2020-11-12 08:49:26 smathias>
 """Load JensenLab PubMed Score tdl_infos in TCRD from TSV file.
 
 Usage:
@@ -24,13 +24,13 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2014-2019, Steve Mathias"
+__copyright__ = "Copyright 2014-2020, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.2.0"
+__version__   = "3.0.0"
 
 import os,sys,time
 from docopt import docopt
-from TCRDMP import DBAdaptor
+from TCRD7 import DBAdaptor
 import urllib
 import csv
 import logging
@@ -39,6 +39,7 @@ import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
 LOGDIR = "./tcrd6logs"
+#LOGDIR = "./tcrd7logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 DOWNLOAD_DIR = '../data/JensenLab/'
 BASE_URL = 'http://download.jensenlab.org/KMC/Medline/'
@@ -56,41 +57,7 @@ def download(args):
   if not args['--quiet']:
     print "Done. Elapsed time: {}".format(slmf.secs2str(elapsed))
 
-def load(args):
-  loglevel = int(args['--loglevel'])
-  if args['--logfile']:
-    logfile = args['--logfile']
-  else:
-    logfile = LOGFILE
-  logger = logging.getLogger(__name__)
-  logger.setLevel(loglevel)
-  if not args['--debug']:
-    logger.propagate = False # turns off console logging
-  fh = logging.FileHandler(logfile)
-  fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-  fh.setFormatter(fmtr)
-  logger.addHandler(fh)
-
-  dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
-  dba = DBAdaptor(dba_params)
-  dbi = dba.get_dbinfo()
-  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
-  if not args['--quiet']:
-    print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
-
-  # Dataset
-  dataset_id = dba.ins_dataset( {'name': 'JensenLab PubMed Text-mining Scores', 'source': 'File %s'%BASE_URL+FILENAME, 'app': PROGRAM, 'app_version': __version__, 'url': BASE_URL} )
-  if not dataset_id:
-    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
-  # Provenance
-  provs = [ {'dataset_id': dataset_id, 'table_name': 'pmscore'},
-            {'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': "itype = 'JensenLab PubMed Score'"} ]
-  for prov in provs:
-    rv = dba.ins_provenance(prov)
-    if not rv:
-      print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
-      sys.exit(1)
-  
+def load(args, dba, logfile, logger):
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   ensp2pids = {}
   pmscores = {} # protein.id => sum(all scores)
@@ -129,7 +96,7 @@ def load(args):
         pids = []
         for target in targets:
           pids.append(target['components']['protein'][0]['id'])
-          ensp2pids[ensp] = pids # save this mapping so we only lookup each target once
+        ensp2pids[ensp] = pids # save this mapping so we only lookup each target once
       for pid in pids:
         rv = dba.ins_pmscore({'protein_id': pid, 'year': row[1], 'score': row[2]} )
         if rv:
@@ -167,12 +134,48 @@ def load(args):
 
 
 if __name__ == '__main__':
-  print "\n{} (v{}) [{}]:".format(PROGRAM, __version__, time.strftime("%c"))
+  print "\n%s (v%s) [%s]:\n" % (PROGRAM, __version__, time.strftime("%c"))
+  
   args = docopt(__doc__, version=__version__)
   if args['--debug']:
     print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
+  if args['--logfile']:
+    logfile =  args['--logfile']
+  else:
+    logfile = LOGFILE
+  loglevel = int(args['--loglevel'])
+  logger = logging.getLogger(__name__)
+  logger.setLevel(loglevel)
+  if not args['--debug']:
+    logger.propagate = False # turns off console logging
+  fh = logging.FileHandler(LOGFILE)
+  fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+  fh.setFormatter(fmtr)
+  logger.addHandler(fh)
+
+  dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
+  dba = DBAdaptor(dba_params)
+  dbi = dba.get_dbinfo()
+  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
+  if not args['--quiet']:
+    print "Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+
   download(args)
   start_time = time.time()
-  load(args)
+  load(args, dba, logfile, logger)
   elapsed = time.time() - start_time
+
+  # Dataset
+  dataset_id = dba.ins_dataset( {'name': 'JensenLab PubMed Text-mining Scores', 'source': 'File %s'%BASE_URL+FILENAME, 'app': PROGRAM, 'app_version': __version__, 'url': BASE_URL} )
+  if not dataset_id:
+    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
+  # Provenance
+  provs = [ {'dataset_id': dataset_id, 'table_name': 'pmscore'},
+            {'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': "itype = 'JensenLab PubMed Score'"} ]
+  for prov in provs:
+    rv = dba.ins_provenance(prov)
+    if not rv:
+      print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
+      sys.exit(1)
+      
   print "\n{}: Done. Elapsed time: {}\n".format(PROGRAM, slmf.secs2str(elapsed))

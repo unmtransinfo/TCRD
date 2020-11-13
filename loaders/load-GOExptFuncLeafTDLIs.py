@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2019-01-18 14:25:42 smathias>
+# Time-stamp: <2020-06-25 12:48:21 smathias>
 """Load Experimental MF/BP Leaf Term GOA tdl_infos into TCRD.
 
 Usage:
@@ -24,13 +24,13 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2015-2019, Steve Mathias"
+__copyright__ = "Copyright 2015-2020, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.2.0"
+__version__   = "3.0.0"
 
 import os,sys,time,re
 from docopt import docopt
-from TCRDMP import DBAdaptor
+from TCRD7 import DBAdaptor
 from goatools.obo_parser import GODag
 import logging
 import urllib
@@ -38,7 +38,7 @@ from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd6logs"
+LOGDIR = "./tcrd7logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 # GO OBO file: http://www.geneontology.org/ontology/go.obo
 DOWNLOAD_DIR = '../data/GO/'
@@ -55,45 +55,17 @@ def download_goobo(args):
   if not args['--quiet']:
     print "Done."
 
-def load(args):
-  loglevel = int(args['--loglevel'])
-  if args['--logfile']:
-    logfile = args['--logfile']
-  else:
-    logfile = LOGFILE
-  logger = logging.getLogger(__name__)
-  logger.setLevel(loglevel)
-  if not args['--debug']:
-    logger.propagate = False # turns off console logging
-  fh = logging.FileHandler(logfile)
-  fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-  fh.setFormatter(fmtr)
-  logger.addHandler(fh)
-
-  dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
-  dba = DBAdaptor(dba_params)
-  dbi = dba.get_dbinfo()
-  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
-
-  # Dataset
-  dataset_id = dba.ins_dataset( {'name': 'GO Experimental Leaf Term Flags', 'source': 'IDG-KMC generated data by Steve Mathias at UNM.', 'app': PROGRAM, 'app_version': __version__, 'comments': 'These values are calculated by the loader app and indicate that a protein is annotated with a GO leaf term in either the Molecular Function or Biological Process branch with an experimental evidenve code.'} )
-  if not dataset_id:
-    print "WARNING: Error inserting dataset See logfile {} for details.".format(logfile)
-    sys.exit(1)
-  # Provenance
-  rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': "itype = 'Experimental MF/BP Leaf Term GOA'"})
-  if not rv:
-    print "WARNING: Error inserting provenance. See logfile {} for details.".format(logfile)
-    sys.exit(1)
-
+def load(args, dba, logfile, logger):
   gofile = DOWNLOAD_DIR + FILENAME
-  logger.info("Parsing GO OBO file: %s" % gofile)
+  if not args['--quiet']:
+    print "\nParsing GO OBO file: {}".format(gofile)
+  logger.info("Parsing GO OBO file: {}".format(gofile))
   godag = GODag(gofile)
   
-  pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   tct = dba.get_target_count(idg=False)
   if not args['--quiet']:
     print "\nProcessing {} TCRD targets".format(tct)
+  pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   pbar = ProgressBar(widgets=pbar_widgets, maxval=tct).start()
   ct = 0
   ti_ct = 0
@@ -126,7 +98,7 @@ def load(args):
     pbar.update(ct)
   pbar.finish()
   print "{} TCRD targets processed.".format(ct)
-  print "  Inserted {} new  tdl_info rows".format(ti_ct)
+  print "  Inserted {} new tdl_info rows".format(ti_ct)
   if len(notfnd.keys()) > 0:
     print "WARNING: {} GO terms not found in GODag. See logfile {} for details.".format((len(notfnd.keys()), logfile))
   if dba_err_ct > 0:
@@ -134,12 +106,46 @@ def load(args):
 
 
 if __name__ == '__main__':
-  print "\n{} (v{}) [{}]:".format(PROGRAM, __version__, time.strftime("%c"))
+  print "\n%s (v%s) [%s]:\n" % (PROGRAM, __version__, time.strftime("%c"))
+  
   args = docopt(__doc__, version=__version__)
   if args['--debug']:
     print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
+  if args['--logfile']:
+    logfile =  args['--logfile']
+  else:
+    logfile = LOGFILE
+  loglevel = int(args['--loglevel'])
+  logger = logging.getLogger(__name__)
+  logger.setLevel(loglevel)
+  if not args['--debug']:
+    logger.propagate = False # turns off console logging
+  fh = logging.FileHandler(LOGFILE)
+  fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+  fh.setFormatter(fmtr)
+  logger.addHandler(fh)
+
+  dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
+  dba = DBAdaptor(dba_params)
+  dbi = dba.get_dbinfo()
+  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
+  if not args['--quiet']:
+    print "Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+
   download_goobo(args)
   start_time = time.time()
-  load(args)
+  load(args, dba, logfile, logger)
   elapsed = time.time() - start_time
+
+  # Dataset
+  dataset_id = dba.ins_dataset( {'name': 'GO Experimental Leaf Term Flags', 'source': 'IDG-KMC generated data by Steve Mathias at UNM.', 'app': PROGRAM, 'app_version': __version__, 'comments': 'These values are calculated by the loader app and indicate that a protein is annotated with a GO leaf term in either the Molecular Function or Biological Process branch with an experimental evidenve code.'} )
+  if not dataset_id:
+    print "WARNING: Error inserting dataset See logfile {} for details.".format(logfile)
+    sys.exit(1)
+  # Provenance
+  rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': "itype = 'Experimental MF/BP Leaf Term GOA'"})
+  if not rv:
+    print "WARNING: Error inserting provenance. See logfile {} for details.".format(logfile)
+    sys.exit(1)
+
   print "\n{}: Done. Elapsed time: {}\n".format(PROGRAM, slmf.secs2str(elapsed))

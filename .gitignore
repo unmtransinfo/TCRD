@@ -15,9 +15,12 @@ __pycache__/
 data/
 
 # log files from load scripts
+loaders/credentials.py
 loaders/tcrd4logs/
 loaders/tcrd5logs/
 loaders/tcrd6logs/
+loaders/tcrd7logs/
+loaders/TCRDMP.py
 *.log
 
 # Database dump files
@@ -25,10 +28,12 @@ SQL/dumps/
 SQL/dumps5/
 SQL/dumps6/
 SQL/dumps6old/
+SQL/dumps7/
 
 webapp/
 exports/
 doc/old/
+doc/NARv6.txt
 loaders/old/
 loaders/omim_urls.txt
 python/old/

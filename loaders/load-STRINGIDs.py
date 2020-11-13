@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2019-01-28 12:13:08 smathias>
+# Time-stamp: <2020-05-06 09:07:42 smathias>
 """Load JensenLab STRING IDs (ENSPs) into TCRD protein.ensp.
 
 Usage:
@@ -24,20 +24,20 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2014-2019, Steve Mathias"
+__copyright__ = "Copyright 2014-2020, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.7.0"
+__version__   = "3.0.0"
 
 import os,sys,time
 from docopt import docopt
-from TCRDMP import DBAdaptor
+from TCRD7 import DBAdaptor
 import csv
 import logging
 from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd6logs"
+LOGDIR = "./tcrd7logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 # http://string-db.org/mapping_files/uniprot/human.uniprot_2_string.2018.tsv.gz
 INFILE1 = '../data/JensenLab/human.uniprot_2_string.2018.tsv'
@@ -45,45 +45,15 @@ INFILE1 = '../data/JensenLab/human.uniprot_2_string.2018.tsv'
 # $ grep '^9606.' protein.aliases.v11.0.txt > 9606.protein.aliases.v11.0.txt
 INFILE2 = '../data/JensenLab/9606.protein.aliases.v11.0.txt'
 
-def load(args):
-  loglevel = int(args['--loglevel'])
-  if args['--logfile']:
-    logfile = args['--logfile']
-  else:
-    logfile = LOGFILE
-  logger = logging.getLogger(__name__)
-  logger.setLevel(loglevel)
-  if not args['--debug']:
-    logger.propagate = False # turns off console logging when debug is 0
-  fh = logging.FileHandler(logfile)
-  fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-  fh.setFormatter(fmtr)
-  logger.addHandler(fh)
-
-  # DBAdaptor uses same logger as load()
-  dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
-  dba = DBAdaptor(dba_params)
-  dbi = dba.get_dbinfo()
-  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
-  if not args['--quiet']:
-    print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
-
-  # Dataset
-  dataset_id = dba.ins_dataset( {'name': 'STRING IDs', 'source': 'Files %s and %s from from http://string-db.org/'%(os.path.basename(INFILE1), os.path.basename(INFILE2)), 'app': PROGRAM, 'app_version': __version__, 'url': 'http://string-db.org/'} )
-  assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
-  # Provenance
-  rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'protein', 'column_name': 'stringid'})
-  assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
-
+def load(args, dba, logfile, logger):
   aliasmap = {}
-  
-  pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   ct = 0
   skip_ct = 0
   mult_ct = 0
   line_ct = slmf.wcl(INFILE1)
   if not args['--quiet']:
     print "\nProcessing {} input lines in file {}".format(line_ct, INFILE1)
+  pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
   with open(INFILE1, 'rU') as tsv:
     tsvreader = csv.reader(tsv, delimiter='\t')
@@ -193,9 +163,38 @@ if __name__ == '__main__':
   args = docopt(__doc__, version=__version__)
   if args['--debug']:
     print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
+  if args['--logfile']:
+    logfile =  args['--logfile']
+  else:
+    logfile = LOGFILE
+  loglevel = int(args['--loglevel'])
+  logger = logging.getLogger(__name__)
+  logger.setLevel(loglevel)
+  if not args['--debug']:
+    logger.propagate = False # turns off console logging
+  fh = logging.FileHandler(LOGFILE)
+  fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+  fh.setFormatter(fmtr)
+  logger.addHandler(fh)
+
+  dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
+  dba = DBAdaptor(dba_params)
+  dbi = dba.get_dbinfo()
+  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
+  if not args['--quiet']:
+    print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+  
   start_time = time.time()
-  load(args)
-  elapsed = time.time() - start_time
+  load(args, dba, logfile, logger)
+  
+  # Dataset
+  dataset_id = dba.ins_dataset( {'name': 'STRING IDs', 'source': 'Files %s and %s from from http://string-db.org/'%(os.path.basename(INFILE1), os.path.basename(INFILE2)), 'app': PROGRAM, 'app_version': __version__, 'url': 'http://string-db.org/'} )
+  assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
+  # Provenance
+  rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'protein', 'column_name': 'stringid'})
+  assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
+
+  elapsed = time.time() - start_time  
   print "\n{}: Done. Elapsed time: {}\n".format(PROGRAM, slmf.secs2str(elapsed))
 
 # with open(INFILE1, 'rU') as tsv:

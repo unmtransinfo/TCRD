@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2019-04-09 13:07:09 smathias>
+# Time-stamp: <2020-06-25 10:55:55 smathias>
 """Load cmpd_activity data into TCRD from Guide to Pharmacology CSV files.
 
 Usage:
@@ -24,13 +24,13 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2018-2019, Steve Mathias"
+__copyright__ = "Copyright 2018-2020, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "1.1.0"
+__version__   = "2.0.0"
 
 import os,sys,time
 from docopt import docopt
-from TCRDMP import DBAdaptor
+from TCRD7 import DBAdaptor
 import logging
 import csv
 import urllib
@@ -39,7 +39,7 @@ from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd6logs"
+LOGDIR = "./tcrd7logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 DOWNLOAD_DIR = '../data/GuideToPharmacology/'
 BASE_URL = 'http://www.guidetopharmacology.org/DATA/'
@@ -58,39 +58,7 @@ def download(args):
       print "         to ", DOWNLOAD_DIR + f
     urllib.urlretrieve(BASE_URL + f, DOWNLOAD_DIR + f)
 
-def load(args):
-  loglevel = int(args['--loglevel'])
-  if args['--logfile']:
-    logfile = args['--logfile']
-  else:
-    logfile = LOGFILE
-  logger = logging.getLogger(__name__)
-  logger.setLevel(loglevel)
-  if not args['--debug']:
-    logger.propagate = False # turns off console logging
-  fh = logging.FileHandler(logfile)
-  fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-  fh.setFormatter(fmtr)
-  logger.addHandler(fh)
-
-  dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
-  dba = DBAdaptor(dba_params)
-  dbi = dba.get_dbinfo()
-  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
-  if not args['--quiet']:
-    print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
-
-  # Dataset
-  dataset_id = dba.ins_dataset( {'name': 'Guide to Pharmacology', 'source': 'Files %s from %s'%(", ".join(SRC_FILES), BASE_URL), 'app': PROGRAM, 'app_version': __version__, 'url': 'http://www.guidetopharmacology.org/'} )
-  if not dataset_id:
-    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
-    sys.exit(1)
-  # Provenance
-  rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'cmpd_activity', 'where_clause': "ctype = 'Guide to Pharmacology'"})
-  if not rv:
-    print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
-    sys.exit(1)
-
+def load(args, dba, logfile, logger):
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
 
   fn = DOWNLOAD_DIR+L_FILE
@@ -278,12 +246,46 @@ def load(args):
   
   
 if __name__ == '__main__':
-  print "\n{} (v{}) [{}]:\n".format(PROGRAM, __version__, time.strftime("%c"))
+  print "\n%s (v%s) [%s]:\n" % (PROGRAM, __version__, time.strftime("%c"))
+  
   args = docopt(__doc__, version=__version__)
   if args['--debug']:
     print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
-  start_time = time.time()
+  if args['--logfile']:
+    logfile =  args['--logfile']
+  else:
+    logfile = LOGFILE
+  loglevel = int(args['--loglevel'])
+  logger = logging.getLogger(__name__)
+  logger.setLevel(loglevel)
+  if not args['--debug']:
+    logger.propagate = False # turns off console logging
+  fh = logging.FileHandler(LOGFILE)
+  fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+  fh.setFormatter(fmtr)
+  logger.addHandler(fh)
+
+  dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
+  dba = DBAdaptor(dba_params)
+  dbi = dba.get_dbinfo()
+  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
+  if not args['--quiet']:
+    print "Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+
   download(args)
-  load(args)
+  start_time = time.time()
+  load(args, dba, logfile, logger)
   elapsed = time.time() - start_time
+
+  # Dataset
+  dataset_id = dba.ins_dataset( {'name': 'Guide to Pharmacology', 'source': 'Files %s from %s'%(", ".join(SRC_FILES), BASE_URL), 'app': PROGRAM, 'app_version': __version__, 'url': 'http://www.guidetopharmacology.org/'} )
+  if not dataset_id:
+    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
+    sys.exit(1)
+  # Provenance
+  rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'cmpd_activity', 'where_clause': "catype = 'Guide to Pharmacology'"})
+  if not rv:
+    print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
+    sys.exit(1)
+
   print "\n{}: Done. Elapsed time: {}\n".format(PROGRAM, slmf.secs2str(elapsed))

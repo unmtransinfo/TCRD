@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2019-02-04 11:20:04 smathias>
+# Time-stamp: <2020-05-07 12:13:00 smathias>
 """Load IMPC phenotype data into TCRD from CSV file.
 
 Usage:
@@ -26,7 +26,7 @@ __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
 __copyright__ = "Copyright 2015-2019, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.4.0"
+__version__   = "2.5.0"
 
 import os,sys,time
 from docopt import docopt
@@ -39,10 +39,10 @@ import slm_tcrd_functions as slmf
 PROGRAM = os.path.basename(sys.argv[0])
 LOGDIR = "./tcrd6logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
-# Get from ftp://ftp.ebi.ac.uk/pub/databases/impc/release-*.*/csv/
-# ftp://ftp.ebi.ac.uk/pub/databases/impc/release-9.2/csv/IMPC_genotype_phenotype.csv.gz
+# Download and uncompress files from ftp://ftp.ebi.ac.uk/pub/databases/impc/release-*.*/csv/
+# ftp://ftp.ebi.ac.uk/pub/databases/impc/release-11.0/csv/IMPC_genotype_phenotype.csv.gz
 GENO_PHENO_FILE = '../data/IMPC/IMPC_genotype_phenotype.csv'
-# ftp://ftp.ebi.ac.uk/pub/databases/impc/release-9.2/csv/IMPC_ALL_statistical_results.csv.gz
+# ftp://ftp.ebi.ac.uk/pub/databases/impc/release-11.0/csv/IMPC_ALL_statistical_results.csv.gz
 STAT_RES_FILE = '../data/IMPC/IMPC_ALL_statistical_results.csv'
 
 def load(args):
@@ -68,7 +68,7 @@ def load(args):
     print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
   # Dataset
-  dataset_id = dba.ins_dataset( {'name': 'IMPC Phenotypes', 'source': "Files %s and %s from ftp://ftp.ebi.ac.uk/pub/databases/impc/release-9.2/csv/"%(GENO_PHENO_FILE, STAT_RES_FILE), 'app': PROGRAM, 'app_version': __version__} )
+  dataset_id = dba.ins_dataset( {'name': 'IMPC Phenotypes', 'source': "Files %s and %s from ftp://ftp.ebi.ac.uk/pub/databases/impc/release-11.0/csv/"%(GENO_PHENO_FILE, STAT_RES_FILE), 'app': PROGRAM, 'app_version': __version__} )
   assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
   # Provenance
   provs = [ {'dataset_id': dataset_id, 'table_name': 'phenotype', 'where_clause': "ptype = 'IMPC'"} ]
@@ -87,6 +87,7 @@ def load(args):
     ct = 0
     pt_ct = 0
     pmark = {}
+    sym2nhps = {}
     notfnd = set()
     skip_ct = 0
     dba_err_ct = 0
@@ -121,27 +122,36 @@ def load(args):
     for row in csvreader:
       ct += 1
       sym = row[1]
-      if sym in notfnd:
-        continue
       if not row[21] and not row[22]:
         # skip data with neither a term_id or term_name (IMPC has some of these)
         skip_ct += 1
         continue
-      nhps = dba.find_nhproteins({'sym': sym}, species = 'Mus musculus')
-      if not nhps:
-        notfnd.add(sym)
-        logger.warn("No nhprotein found for symbol {}".format(sym))
+      if sym in sym2nhps:
+        # we've already found it
+        nhpids = sym2nhps[sym]
+      elif sym in notfnd:
+        # we've already not found it
         continue
+      else:
+        nhps = dba.find_nhproteins({'sym': sym}, species = 'Mus musculus')
+        if not nhps:
+          notfnd.add(sym)
+          logger.warn("No nhprotein found for symbol {}".format(sym))
+          continue
+        nhpids = []
+        for nhp in nhps:
+          nhpids.append(nhp['id'])
+        sym2nhps[sym] = nhpids # save this mapping so we only lookup each nhprotein once
       pval = None
       if row[23] and row[23] != '':
         try:
           pval = float(row[23])
         except:
           logger.warn("Problem converting p_value {} for row {}".format(row[23], ct))
-      for nhp in nhps:
-        rv = dba.ins_phenotype({'nhprotein_id': nhp['id'], 'ptype': 'IMPC', 'top_level_term_id': row[19], 'top_level_term_name': row[20], 'term_id': row[21], 'term_name': row[22], 'p_value': pval, 'percentage_change': row[24], 'effect_size': row[25], 'procedure_name': row[16], 'parameter_name': row[18], 'statistical_method': row[26], 'sex': row[4], 'gp_assoc': 1})
+      for nhpid in nhpids:
+        rv = dba.ins_phenotype({'nhprotein_id': nhpid, 'ptype': 'IMPC', 'top_level_term_id': row[19], 'top_level_term_name': row[20], 'term_id': row[21], 'term_name': row[22], 'p_value': pval, 'percentage_change': row[24], 'effect_size': row[25], 'procedure_name': row[16], 'parameter_name': row[18], 'statistical_method': row[26], 'sex': row[4], 'gp_assoc': 1})
         if rv:
-          pmark[nhp['id']] = True
+          pmark[nhpid] = True
           pt_ct += 1
         else:
           dba_err_ct += 1
@@ -167,6 +177,7 @@ def load(args):
     ct = 0
     pt_ct = 0
     pmark = {}
+    sym2nhps = {}
     notfnd = set()
     skip_ct = 0
     pv_ct = 0
@@ -261,37 +272,42 @@ def load(args):
     for row in csvreader:
       ct += 1
       sym = row[41]
-      if sym in notfnd:
-        continue
       if not row[62] and not row[28]:
         # skip lines with neither a term_id or term_name
         skip_ct += 1
         continue
-      if not row[40]:
-        # skip lines with no p-value
-        skip_ct += 1
+      if sym in sym2nhps:
+        # we've already found it
+        nhpids = sym2nhps[sym]
+      elif sym in notfnd:
+        # we've already not found it
         continue
+      else:
+        nhps = dba.find_nhproteins({'sym': sym}, species = 'Mus musculus')
+        if not nhps:
+          notfnd.add(sym)
+          logger.warn("No nhprotein found for symbol {}".format(sym))
+          continue
+        nhpids = []
+        for nhp in nhps:
+          nhpids.append(nhp['id'])
+        sym2nhps[sym] = nhpids # save this mapping so we only lookup each nhprotein once
       pval = None
       if row[40] and row[40] != '':
         try:
           pval = float(row[40])
         except:
           logger.warn("Problem converting p_value {} for row {}".format(row[40], ct))
-      if not pval:
-        skip_ct += 1
-        continue
-      if pval > 0.05:
-        pv_ct += 1
-        continue
-      nhps = dba.find_nhproteins({'sym': sym}, species = 'Mus musculus')
-      if not nhps:
-        notfnd.add(sym)
-        logger.warn("No nhprotein found for symbol {}".format(sym))
-        continue
-      for nhp in nhps:
-        rv = dba.ins_phenotype({'nhprotein_id': nhp['id'], 'ptype': 'IMPC', 'top_level_term_id': row[36], 'top_level_term_name': row[56], 'term_id': row[62], 'term_name': row[28], 'p_value': pval, 'effect_size': row[72], 'procedure_name': row[34], 'parameter_name': row[16], 'statistical_method': row[65], 'sex': row[44], 'gp_assoc': 0})
+      #if not pval:
+      #  skip_ct += 1
+      #  continue
+      #if pval > 0.05:
+      #  pv_ct += 1
+      #  continue
+      for nhpid in nhpids:
+        rv = dba.ins_phenotype({'nhprotein_id': nhpid, 'ptype': 'IMPC', 'top_level_term_id': row[36], 'top_level_term_name': row[56], 'term_id': row[62], 'term_name': row[28], 'p_value': pval, 'effect_size': row[72], 'procedure_name': row[34], 'parameter_name': row[16], 'statistical_method': row[65], 'sex': row[44], 'gp_assoc': 0})
         if rv:
-          pmark[nhp['id']] = True
+          pmark[nhpid] = True
           pt_ct += 1
         else:
           dba_err_ct += 1
@@ -303,8 +319,8 @@ def load(args):
     print "No nhprotein found for {} gene symbols. See logfile {} for details.".format(len(notfnd), logfile)
   if skip_ct > 0:
     print "Skipped {} lines with no term_id/term_name or no p-value.".format(skip_ct)
-  if pv_ct > 0:
-    print "Skipped {} lines with p-value > 0.05.".format(pv_ct)
+  #if pv_ct > 0:
+  #  print "Skipped {} lines with p-value > 0.05.".format(pv_ct)
   if dba_err_ct > 0:
     print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2019-08-19 09:16:17 smathias>
+# Time-stamp: <2020-05-04 10:51:43 smathias>
 """Load protein data from UniProt.org into TCRD via the web.
 
 Usage:
@@ -24,13 +24,13 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2014-2019, Steve Mathias"
+__copyright__ = "Copyright 2014-2020, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "3.1.1"
+__version__   = "4.0.0"
 
 import os,sys,time,re
 from docopt import docopt
-from TCRDMP import DBAdaptor
+from TCRD7 import DBAdaptor
 import logging
 import obo
 from lxml import etree, objectify
@@ -40,16 +40,16 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd6logs"
+LOGDIR = "./tcrd7logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 
 # Download and uncompress XML files for:
 # https://www.uniprot.org/uniprot/?query=reviewed:yes AND organism:"Homo sapiens (Human) [9606]"
 # https://www.uniprot.org/uniprot/?query=organism:"Mus musculus (Mouse) [10090]"
 # https://www.uniprot.org/uniprot/?query=organism:"Rattus norvegicus (Rat) [10116]"
-UP_HUMAN_FILE = '../data/UniProt/uniprot-reviewed-human_20190103.xml'
-UP_MOUSE_FILE = '../data/UniProt/uniprot-mouse_20190103.xml'
-UP_RAT_FILE = '../data/UniProt/uniprot-rat_20190103.xml'
+UP_HUMAN_FILE = '../data/UniProt/uniprot-reviewed-human_20200504.xml'
+UP_MOUSE_FILE = '../data/UniProt/uniprot-mouse_20200504.xml'
+UP_RAT_FILE = '../data/UniProt/uniprot-rat_20200504.xml'
 NS = '{http://uniprot.org/uniprot}'
 ECO_OBO_FILE = '../data/eco.obo'
 

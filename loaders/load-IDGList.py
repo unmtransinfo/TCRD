@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2019-08-09 11:24:54 smathias>
+# Time-stamp: <2020-05-08 12:25:12 smathias>
 """Load IDG Phase 2 flags and families into TCRD from CSV file.
 
 Usage:
@@ -24,22 +24,22 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2019, Steve Mathias"
+__copyright__ = "Copyright 2019-2020, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.0.0"
+__version__   = "3.0.0"
 
 import os,sys,time
 from docopt import docopt
-from TCRDMP import DBAdaptor
+from TCRD7 import DBAdaptor
 import logging
 import csv
 from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd6logs"
+LOGDIR = "./tcrd7logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
-IDG_LIST_FILE = '../data/IDG_Lists/IDG_List_v3.1-QCd_6-10-2019.csv'
+IDG_LIST_FILE = '../data/IDG_Lists/IDG_List_v3.2_SLM20200508.csv'
 
 def load(args):
   loglevel = int(args['--loglevel'])

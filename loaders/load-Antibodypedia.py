@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2019-01-18 11:30:04 smathias>
+# Time-stamp: <2020-05-06 09:31:30 smathias>
 """Load antibody count and URL tdl_infos into TCRD via Antibodtpedia.com API.
 
 Usage:
@@ -24,9 +24,9 @@ Options:
 __author__ = "Steve Mathias"
 __email__ = "smathias@salud.unm.edu"
 __org__ = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2016-2019, Steve Mathias"
+__copyright__ = "Copyright 2016-2020, Steve Mathias"
 __license__ = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__ = "2.2.0"
+__version__ = "3.0.0"
 
 import os,sys,time
 from docopt import docopt
@@ -38,53 +38,16 @@ from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-LOGDIR = "./tcrd6logs"
+LOGDIR = "./tcrd7logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
 ABPC_API_URL = 'http://www.antibodypedia.com/tools/antibodies.php?uniprot='
 
-def load(args):
-  loglevel = int(args['--loglevel'])
-  if args['--logfile']:
-    logfile = args['--logfile']
-  else:
-    logfile = LOGFILE
-  logger = logging.getLogger(__name__)
-  logger.setLevel(loglevel)
-  if not args['--debug']:
-    logger.propagate = False # turns off console logging
-  fh = logging.FileHandler(logfile)
-  fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-  fh.setFormatter(fmtr)
-  logger.addHandler(fh)
-
-  # DBAdaptor uses same logger as load()
-  dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
-  dba = DBAdaptor(dba_params)
-  dbi = dba.get_dbinfo()
-  logger.info("Connected to TCRD database %s (schema ver %s; data ver %s)", args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
-  if not args['--quiet']:
-    print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
-
-  # Dataset
-  dataset_id = dba.ins_dataset( {'name': 'Aintibodypedia.com', 'source': 'Web API at %s'%ABPC_API_URL, 'app': PROGRAM, 'app_version': __version__, 'url': 'http://www.antibodypedia.com'} )
-  if not dataset_id:
-    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
-    sys.exit(1)
-  # Provenance
-  provs = [ {'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': 'itype == "Ab Count"'},
-            {'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': 'itype == "MAb Count"'},
-            {'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': 'itype == "Antibodypedia.com URL"'} ]
-  for prov in provs:
-    rv = dba.ins_provenance(prov)
-    if not rv:
-      print "WARNING: Error inserting provenance. See logfile {} for details.".format(logfile)
-      sys.exit(1)
-
-  pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
+def load(args, dba, logfile, logger):
   tct = dba.get_target_count()
   if not args['--quiet']:
     print "\nLoading Antibodypedia annotations for {} TCRD targets".format(tct)
   logger.info("Loading Antibodypedia annotations for {} TCRD targets".format(tct))
+  pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   pbar = ProgressBar(widgets=pbar_widgets, maxval=tct).start()
   ct = 0
   tiab_ct = 0
@@ -153,12 +116,50 @@ def load(args):
     print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
 
 if __name__ == '__main__':
-  print "\n%s (v%s) [%s]:" % (PROGRAM, __version__, time.strftime("%c"))
+  print "\n%s (v%s) [%s]:\n" % (PROGRAM, __version__, time.strftime("%c"))
   args = docopt(__doc__, version=__version__)
   debug = int(args['--debug'])
   if debug:
     print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
+
+  if args['--logfile']:
+    logfile =  args['--logfile']
+  else:
+    logfile = LOGFILE
+  loglevel = int(args['--loglevel'])
+  logger = logging.getLogger(__name__)
+  logger.setLevel(loglevel)
+  if not args['--debug']:
+    logger.propagate = False # turns off console logging
+  fh = logging.FileHandler(LOGFILE)
+  fmtr = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+  fh.setFormatter(fmtr)
+  logger.addHandler(fh)
+
+  dba_params = {'dbhost': args['--dbhost'], 'dbname': args['--dbname'], 'logger_name': __name__}
+  dba = DBAdaptor(dba_params)
+  dbi = dba.get_dbinfo()
+  logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
+  if not args['--quiet']:
+    print "Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+  
   start_time = time.time()
-  load(args)
+  load(args, dba, logfile, logger)
+
+  # Dataset
+  dataset_id = dba.ins_dataset( {'name': 'Aintibodypedia.com', 'source': 'Web API at %s'%ABPC_API_URL, 'app': PROGRAM, 'app_version': __version__, 'url': 'http://www.antibodypedia.com'} )
+  if not dataset_id:
+    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
+    sys.exit(1)
+  # Provenance
+  provs = [ {'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': 'itype == "Ab Count"'},
+            {'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': 'itype == "MAb Count"'},
+            {'dataset_id': dataset_id, 'table_name': 'tdl_info', 'where_clause': 'itype == "Antibodypedia.com URL"'} ]
+  for prov in provs:
+    rv = dba.ins_provenance(prov)
+    if not rv:
+      print "WARNING: Error inserting provenance. See logfile {} for details.".format(logfile)
+      sys.exit(1)
+
   elapsed = time.time() - start_time
   print "\n%s: Done. Elapsed time: %s\n" % (PROGRAM, slmf.secs2str(elapsed))

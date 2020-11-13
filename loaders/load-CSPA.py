@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-# Time-stamp: <2019-08-20 10:40:40 smathias>
+# Time-stamp: <2020-09-24 11:52:21 smathias>
 """
 Load Cell Surface Protein Atlas expression data into TCRD from CSV files.
 
 Usage:
-    load-HumanCellAtlas.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>] [--pastid=<int>]
-    load-HumanCellAtlas.py -h | --help
+    load-CSPA.py [--debug | --quiet] [--dbhost=<str>] [--dbname=<str>] [--logfile=<file>] [--loglevel=<int>] [--pastid=<int>]
+    load-CSPA.py -h | --help
 
 Options:
   -h --dbhost DBHOST   : MySQL database host name [default: localhost]
