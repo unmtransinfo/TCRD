@@ -1,0 +1,1002 @@
+#virusTaxid	nucleic1	nucleic2	order	family	subfamily	genus	specie	name
+10804	DNA	ssDNA	nan	Parvoviridae	Parvovirinae	Dependoparvovirus	Adeno-associated dependoparvovirus A	Adeno-associated virus - 2
+46350	DNA	ssDNA	nan	Parvoviridae	Parvovirinae	Dependoparvovirus	Adeno-associated dependoparvovirus A	Adeno-associated virus - 3
+57579	DNA	ssDNA	nan	Parvoviridae	Parvovirinae	Dependoparvovirus	Adeno-associated dependoparvovirus A	Adeno-associated virus - 4
+82300	DNA	ssDNA	nan	Parvoviridae	Parvovirinae	Dependoparvovirus	Adeno-associated dependoparvovirus B	Adeno-associated virus - 5
+68558	DNA	ssDNA	nan	Parvoviridae	Parvovirinae	Dependoparvovirus	Adeno-associated virus - 1	Adeno-associated virus - 6
+68742	DNA	ssDNA	nan	Parvoviridae	Parvovirinae	Dependoparvovirus	Adeno-associated virus - 3	Adeno-associated virus 3B
+335103	RNA	dsRNA	nan	Reoviridae	Sedoreovirinae	Rotavirus	Rotavirus H	Adult diarrheal rotavirus strain J19
+338079	RETRO	retro-RNA	nan	Retroviridae	Spumaretrovirinae	Spumavirus	nan	African green monkey simian foamy virus
+1313215	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Kobuvirus	Aichivirus A	Aichi virus 1
+172148	RNA	(+)ssRNA	nan	Flaviviridae	nan	Flavivirus	Kyasanur forest disease virus	Alkhumra hemorrhagic fever virus
+333767	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	nan	Alphapapillomavirus 3
+337043	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	nan	Alphapapillomavirus 4
+337042	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	nan	Alphapapillomavirus 7
+568715	RNA	(+)ssRNA	nan	Astroviridae	nan	nan	nan	Astrovirus MLB1
+858367	RNA	(+)ssRNA	nan	Astroviridae	nan	nan	Astrovirus MLB1	Astrovirus MLB1 HK05
+683172	RNA	(+)ssRNA	nan	Astroviridae	nan	nan	nan	Astrovirus MLB2
+1247114	RNA	(+)ssRNA	nan	Astroviridae	nan	nan	nan	Astrovirus MLB3
+767521	RNA	(+)ssRNA	nan	Astroviridae	nan	nan	Astrovirus VA1	Astrovirus SG
+645687	RNA	(+)ssRNA	nan	Astroviridae	nan	nan	nan	Astrovirus VA1
+683174	RNA	(+)ssRNA	nan	Astroviridae	nan	nan	nan	Astrovirus VA3
+1247113	RNA	(+)ssRNA	nan	Astroviridae	nan	nan	nan	Astrovirus VA4
+90961	RNA	(-)ssRNA	Mononegavirales	Rhabdoviridae	nan	Lyssavirus	nan	Australian bat lyssavirus
+649604	RNA	dsRNA	nan	Reoviridae	Sedoreovirinae	Seadornavirus	Banna virus	Banna virus strain JKT-6423
+11020	RNA	(+)ssRNA	nan	Togaviridae	nan	Alphavirus	nan	Barmah Forest virus
+341053	RNA	(-)ssRNA	Mononegavirales	Paramyxoviridae	Paramyxovirinae	nan	nan	Beilong virus
+1263720	RNA	(+)ssRNA	Nidovirales	Coronaviridae	Coronavirinae	Betacoronavirus	Middle East respiratory syndrome coronavirus	Betacoronavirus England 1
+10629	DNA	dsDNA	nan	Polyomaviridae	nan	Polyomavirus	nan	BK polyomavirus
+1391667	DNA	ssDNA	nan	Parvoviridae	Parvovirinae	nan	nan	Bufavirus-3
+565995	RNA	(-)ssRNA	Mononegavirales	Filoviridae	nan	Ebolavirus	nan	Bundibugyo virus
+35304	RNA	(-)ssRNA	nan	Bunyaviridae	nan	Orthobunyavirus	nan	Bunyamwera virus
+629725	RNA	(-)ssRNA	nan	Bunyaviridae	nan	Phlebovirus	nan	Candiru virus
+10317	DNA	dsDNA	Herpesvirales	Herpesviridae	Alphaherpesvirinae	Simplexvirus	nan	Cercopithecine herpesvirus 2
+50292	DNA	dsDNA	Herpesvirales	Herpesviridae	Betaherpesvirinae	Cytomegalovirus	nan	Cercopithecine herpesvirus 5
+11272	RNA	(-)ssRNA	Mononegavirales	Rhabdoviridae	nan	Vesiculovirus	nan	Chandipura virus
+499556	RNA	(-)ssRNA	nan	Arenaviridae	nan	Mammarenavirus	nan	Chapare mammarenavirus
+99565	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norwalk virus	Chiba virus
+37124	RNA	(+)ssRNA	nan	Togaviridae	nan	Alphavirus	nan	Chikungunya virus
+1346815	DNA	ssDNA	nan	nan	nan	nan	Circo-like virus-Brazil	Circo-like virus-Brazil hs1
+1346816	DNA	ssDNA	nan	nan	nan	nan	Circo-like virus-Brazil	Circo-like virus-Brazil hs2
+46839	RNA	dsRNA	nan	Reoviridae	Spinareovirinae	Coltivirus	nan	Colorado tick fever virus
+1330491	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Cosavirus	nan	Cosavirus A
+1582094	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Cosavirus	unclassified Cosavirus	Cosavirus JMY-2014
+10243	DNA	dsDNA	nan	Poxviridae	Chordopoxvirinae	Orthopoxvirus	nan	Cowpox virus
+42779	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus C	Coxsackievirus A1
+42769	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus A	Coxsackievirus A10
+42770	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus C	Coxsackievirus A11
+42771	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus A	Coxsackievirus A12
+42772	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus C	Coxsackievirus A13
+42773	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus A	Coxsackievirus A14
+42775	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus C	Coxsackievirus A17
+42776	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus C	Coxsackievirus A18
+33757	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus A	Coxsackievirus A2
+42782	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus C	Coxsackievirus A20
+42783	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus C	Coxsackievirus A22
+42785	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus A	Coxsackievirus A4
+42786	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus A	Coxsackievirus A5
+86107	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus A	Coxsackievirus A6
+42788	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus A	Coxsackievirus A8
+82639	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Coxsackievirus B2
+12073	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Coxsackievirus B4
+12074	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Coxsackievirus B5
+74561	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Coxsackievirus B6
+11593	RNA	(-)ssRNA	nan	Bunyaviridae	nan	Nairovirus	nan	Crimean-Congo hemorrhagic fever virus
+742922	DNA	ssDNA	nan	Circoviridae	nan	Cyclovirus	nan	Cyclovirus NG12
+742923	DNA	ssDNA	nan	Circoviridae	nan	Cyclovirus	nan	Cyclovirus NG14
+742915	DNA	ssDNA	nan	Circoviridae	nan	Cyclovirus	nan	Cyclovirus PK5006
+742916	DNA	ssDNA	nan	Circoviridae	nan	Cyclovirus	nan	Cyclovirus PK5034
+742917	DNA	ssDNA	nan	Circoviridae	nan	Cyclovirus	nan	Cyclovirus PK5222
+742918	DNA	ssDNA	nan	Circoviridae	nan	Cyclovirus	nan	Cyclovirus PK5510
+742919	DNA	ssDNA	nan	Circoviridae	nan	Cyclovirus	nan	Cyclovirus PK6197
+742925	DNA	ssDNA	nan	Circoviridae	nan	Cyclovirus	nan	Cyclovirus TN18
+742924	DNA	ssDNA	nan	Circoviridae	nan	Cyclovirus	nan	Cyclovirus TN25
+1348500	DNA	ssDNA	nan	Circoviridae	nan	Cyclovirus	nan	Cyclovirus VN
+12637	RNA	(+)ssRNA	nan	Flaviviridae	nan	Flavivirus	Dengue virus group	Dengue virus
+11053	RNA	(+)ssRNA	nan	Flaviviridae	nan	Flavivirus	Dengue virus	Dengue virus 1
+11060	RNA	(+)ssRNA	nan	Flaviviridae	nan	Flavivirus	Dengue virus	Dengue virus 2
+11069	RNA	(+)ssRNA	nan	Flaviviridae	nan	Flavivirus	Dengue virus	Dengue virus 3
+11070	RNA	(+)ssRNA	nan	Flaviviridae	nan	Flavivirus	Dengue virus	Dengue virus 4
+11595	RNA	(-)ssRNA	nan	Bunyaviridae	nan	Nairovirus	nan	Dugbe virus
+38767	RNA	(-)ssRNA	Mononegavirales	Rhabdoviridae	nan	Lyssavirus	nan	Duvenhage virus
+11021	RNA	(+)ssRNA	nan	Togaviridae	nan	Alphavirus	nan	Eastern equine encephalitis virus
+128952	RNA	(-)ssRNA	Mononegavirales	Filoviridae	nan	Ebolavirus	Ebola virus	Ebola virus - Mayinga, Zaire, 1976
+103914	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Echovirus E9	Echovirus 9 strain Barty
+103915	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Echovirus E9	Echovirus 9 strain Hill
+12078	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Echovirus E11
+35293	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Echovirus E12
+47501	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Echovirus E13
+47502	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Echovirus E14
+47503	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Echovirus E15
+47504	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Echovirus E16
+47505	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Echovirus E17
+47506	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Echovirus E18
+47507	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Echovirus E19
+35294	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Echovirus E2
+47508	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Echovirus E20
+47509	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Echovirus E21
+47510	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Echovirus E24
+45101	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Echovirus E25
+47511	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Echovirus E26
+45999	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Echovirus E27
+47512	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Echovirus E29
+47516	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Echovirus E3
+41846	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Echovirus E30
+47513	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Echovirus E31
+47514	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Echovirus E32
+47515	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Echovirus E33
+35295	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Echovirus E4
+40280	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Echovirus E5
+12062	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Echovirus E6
+46018	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Echovirus E7
+12060	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Echovirus E9
+1452750	DNA	dsDNA	nan	Poxviridae	Chordopoxvirinae	Orthopoxvirus	Ectromelia virus	Ectromelia virus ERPV
+12104	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Cardiovirus	Cardiovirus A	Encephalomyocarditis virus
+138948	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	nan	Enterovirus A
+1435148	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus A	Enterovirus A120
+306588	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus A	Enterovirus A76
+138949	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	nan	Enterovirus B
+1248136	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Enterovirus B106
+1442164	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	unclassified Enterovirus B	Enterovirus B111
+200154	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Enterovirus B73
+325446	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Enterovirus B97
+138950	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	nan	Enterovirus C
+1295563	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus C	Enterovirus C99
+138951	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	nan	Enterovirus D
+310907	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	nan	Enterovirus H
+57482	RNA	(-)ssRNA	Mononegavirales	Rhabdoviridae	nan	Lyssavirus	nan	European bat lyssavirus 1
+57483	RNA	(-)ssRNA	Mononegavirales	Rhabdoviridae	nan	Lyssavirus	nan	European bat lyssavirus 2
+54290	RNA	(+)ssRNA	nan	Flaviviridae	nan	Pegivirus	Pegivirus A	GB virus C
+1588764	DNA	ssDNA	nan	Mycodnaviridae	nan	Gemycircularvirus	Gemycircularvirus group	Gemycircularvirus SL1
+204269	RNA	dsRNA	nan	Reoviridae	Sedoreovirinae	Orbivirus	nan	Great Island virus
+45219	RNA	(-)ssRNA	nan	Arenaviridae	nan	Mammarenavirus	nan	Guanarito mammarenavirus
+1214955	DNA	ssDNA	nan	Circoviridae	nan	Gyrovirus	unclassified Gyrovirus	Gyrovirus 4
+1163715	DNA	ssDNA	nan	Circoviridae	nan	Gyrovirus	unclassified Gyrovirus	Gyrovirus GyV3
+1415627	DNA	ssDNA	nan	Circoviridae	nan	Gyrovirus	unclassified Gyrovirus	Gyrovirus Tu243
+1415628	DNA	ssDNA	nan	Circoviridae	nan	Gyrovirus	unclassified Gyrovirus	Gyrovirus Tu789
+11599	RNA	(-)ssRNA	nan	Bunyaviridae	nan	Hantavirus	nan	Hantaan virus
+93830	RNA	(-)ssRNA	nan	Bunyaviridae	nan	Hantavirus	unclassified Hantavirus	Hantavirus Z10
+489460	RETRO	retro-DNA	nan	Hepadnaviridae	nan	Orthohepadnavirus	Hepatitis B virus	HBV genotype B
+489466	RETRO	retro-DNA	nan	Hepadnaviridae	nan	Orthohepadnavirus	Hepatitis B virus	HBV genotype C
+489483	RETRO	retro-DNA	nan	Hepadnaviridae	nan	Orthohepadnavirus	Hepatitis B virus	HBV genotype D
+489493	RETRO	retro-DNA	nan	Hepadnaviridae	nan	Orthohepadnavirus	Hepatitis B virus	HBV genotype H
+1052603	RETRO	retro-DNA	nan	Hepadnaviridae	nan	Orthohepadnavirus	recombinant Hepatitis B virus	HBV recombinant B/C
+1052604	RETRO	retro-DNA	nan	Hepadnaviridae	nan	Orthohepadnavirus	recombinant Hepatitis B virus	HBV recombinant C/G
+1216928	RNA	(-)ssRNA	nan	Bunyaviridae	nan	Phlebovirus	unclassified Phlebovirus	Heartland virus
+63330	RNA	(-)ssRNA	Mononegavirales	Paramyxoviridae	Paramyxovirinae	Henipavirus	nan	Hendra virus
+10407	RETRO	retro-DNA	nan	Hepadnaviridae	nan	Orthohepadnavirus	nan	Hepatitis B virus
+11103	RNA	(+)ssRNA	nan	Flaviviridae	nan	Hepacivirus	nan	Hepatitis C virus
+356391	RNA	(+)ssRNA	nan	Flaviviridae	nan	Hepacivirus	Hepatitis C virus subtype 6a	Hepatitis C virus (isolate 6a33)
+40271	RNA	(+)ssRNA	nan	Flaviviridae	nan	Hepacivirus	Hepatitis C virus	Hepatitis C virus genotype 2
+356114	RNA	(+)ssRNA	nan	Flaviviridae	nan	Hepacivirus	Hepatitis C virus	Hepatitis C virus genotype 3
+33745	RNA	(+)ssRNA	nan	Flaviviridae	nan	Hepacivirus	Hepatitis C virus	Hepatitis C virus genotype 4
+33746	RNA	(+)ssRNA	nan	Flaviviridae	nan	Hepacivirus	Hepatitis C virus	Hepatitis C virus genotype 5
+42182	RNA	(+)ssRNA	nan	Flaviviridae	nan	Hepacivirus	Hepatitis C virus	Hepatitis C virus genotype 6
+31646	RNA	(+)ssRNA	nan	Flaviviridae	nan	Hepacivirus	Hepatitis C virus genotype 1	Hepatitis C virus subtype 1a
+31647	RNA	(+)ssRNA	nan	Flaviviridae	nan	Hepacivirus	Hepatitis C virus genotype 1	Hepatitis C virus subtype 1b
+484894	RNA	(+)ssRNA	nan	Flaviviridae	nan	Hepacivirus	Hepatitis C virus genotype 1	Hepatitis C virus subtype 1g
+31649	RNA	(+)ssRNA	nan	Flaviviridae	nan	Hepacivirus	Hepatitis C virus genotype 2	Hepatitis C virus subtype 2a
+31651	RNA	(+)ssRNA	nan	Flaviviridae	nan	Hepacivirus	Hepatitis C virus genotype 2	Hepatitis C virus subtype 2c
+356466	RNA	(+)ssRNA	nan	Flaviviridae	nan	Hepacivirus	Hepatitis C virus genotype 2	Hepatitis C virus subtype 2k
+1208063	RNA	(+)ssRNA	nan	Flaviviridae	nan	Hepacivirus	unclassified Hepatitis C virus	Hepatitis C virus subtype 2k/1b
+1094901	RNA	(+)ssRNA	nan	Flaviviridae	nan	Hepacivirus	Hepatitis C virus genotype 2	Hepatitis C virus subtype 2m
+356426	RNA	(+)ssRNA	nan	Flaviviridae	nan	Hepacivirus	Hepatitis C virus genotype 3	Hepatitis C virus subtype 3a
+42792	RNA	(+)ssRNA	nan	Flaviviridae	nan	Hepacivirus	Hepatitis C virus genotype 3	Hepatitis C virus subtype 3g
+1094895	RNA	(+)ssRNA	nan	Flaviviridae	nan	Hepacivirus	Hepatitis C virus genotype 3	Hepatitis C virus subtype 3i
+31653	RNA	(+)ssRNA	nan	Flaviviridae	nan	Hepacivirus	Hepatitis C virus genotype 4	Hepatitis C virus subtype 4a
+1094899	RNA	(+)ssRNA	nan	Flaviviridae	nan	Hepacivirus	Hepatitis C virus genotype 4	Hepatitis C virus subtype 4g
+1094898	RNA	(+)ssRNA	nan	Flaviviridae	nan	Hepacivirus	Hepatitis C virus genotype 4	Hepatitis C virus subtype 4L
+1094900	RNA	(+)ssRNA	nan	Flaviviridae	nan	Hepacivirus	Hepatitis C virus genotype 4	Hepatitis C virus subtype 4m
+693426	RNA	(+)ssRNA	nan	Flaviviridae	nan	Hepacivirus	Hepatitis C virus genotype 4	Hepatitis C virus subtype 4n
+745709	RNA	(+)ssRNA	nan	Flaviviridae	nan	Hepacivirus	Hepatitis C virus genotype 4	Hepatitis C virus subtype 4o
+693427	RNA	(+)ssRNA	nan	Flaviviridae	nan	Hepacivirus	Hepatitis C virus genotype 4	Hepatitis C virus subtype 4r
+1208062	RNA	(+)ssRNA	nan	Flaviviridae	nan	Hepacivirus	Hepatitis C virus genotype 4	Hepatitis C virus subtype 4v
+12461	RNA	(+)ssRNA	nan	Hepeviridae	nan	Hepevirus	nan	Hepatitis E virus
+12092	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Hepatovirus	nan	Hepatovirus A
+682382	RNA	(+)ssRNA	nan	Astroviridae	nan	Mamastrovirus	unclassified Mamastrovirus	HMO Astrovirus A
+397342	DNA	dsDNA	nan	Poxviridae	Chordopoxvirinae	Orthopoxvirus	Vaccinia virus	Horsepox virus
+10533	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus C	Human adenovirus 1
+1461395	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human adenovirus B2	Human adenovirus 11+34
+343463	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human adenovirus 11	Human adenovirus 11a
+28282	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus A	Human adenovirus 12
+10521	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human adenovirus B2	Human adenovirus 14
+31544	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human adenovirus B1	Human adenovirus 16
+46922	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus D	Human adenovirus 17
+10528	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus A	Human adenovirus 18
+28278	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus D	Human adenovirus 19
+10515	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus C	Human adenovirus 2
+32608	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human adenovirus B1	Human adenovirus 21
+1521028	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human adenovirus 21	Human adenovirus 21a
+46924	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus D	Human adenovirus 22
+46925	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus D	Human adenovirus 23
+46930	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus D	Human adenovirus 28
+260047	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus B	Human adenovirus 3+7
+10529	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus A	Human adenovirus 31
+10548	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human adenovirus B2	Human adenovirus 34
+10522	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human adenovirus B2	Human adenovirus 35
+46936	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus D	Human adenovirus 36
+10524	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus F	Human adenovirus 41
+46938	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus D	Human adenovirus 43
+46941	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus D	Human adenovirus 46
+218120	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus D	Human adenovirus 49
+28285	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus C	Human adenovirus 5
+107462	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus B	Human adenovirus 50
+332179	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus G	Human adenovirus 52
+651580	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus D	Human adenovirus 54
+714978	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus B	Human adenovirus 55
+880565	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	unclassified Human adenovirus D	Human adenovirus 56
+980087	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus D	Human adenovirus 58
+10534	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus C	Human adenovirus 6
+1069441	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus A	Human adenovirus 61
+1124795	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus D	Human adenovirus 63
+1145295	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus D	Human adenovirus 64
+1094363	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus D	Human adenovirus 65
+1337398	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	unclassified Human adenovirus B	Human adenovirus 66
+1101371	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus D	Human adenovirus 67
+1096763	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human adenovirus B1	Human adenovirus 68
+10519	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human adenovirus B1	Human adenovirus 7
+1643649	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus D	Human adenovirus 71
+326124	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human adenovirus 7	Human adenovirus 7d2
+45659	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus B	Human adenovirus B3
+1417598	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human adenovirus 48	Human adenovirus Chiba_E086/2012
+28275	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus D	Human adenovirus D10
+52275	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus D	Human adenovirus D37
+31545	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus D	Human adenovirus D8
+28280	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	Human mastadenovirus E	Human adenovirus E4
+626160	RNA	(+)ssRNA	nan	Astroviridae	nan	Mamastrovirus	Human astrovirus 1	Human astrovirus 1 Beijing/128/2005/CHN
+626164	RNA	(+)ssRNA	nan	Astroviridae	nan	Mamastrovirus	Human astrovirus 1	Human astrovirus 1 Beijing/176/2006/CHN
+626180	RNA	(+)ssRNA	nan	Astroviridae	nan	Mamastrovirus	Human astrovirus 1	Human astrovirus 1 Beijing/291/2007/CHN
+626181	RNA	(+)ssRNA	nan	Astroviridae	nan	Mamastrovirus	Human astrovirus 1	Human astrovirus 1 Beijing/293/2007/CHN
+12701	RNA	(+)ssRNA	nan	Astroviridae	nan	Mamastrovirus	Mamastrovirus 1	Human astrovirus 2
+35300	RNA	(+)ssRNA	nan	Astroviridae	nan	Mamastrovirus	Mamastrovirus 1	Human astrovirus 4
+35741	RNA	(+)ssRNA	nan	Astroviridae	nan	Mamastrovirus	Mamastrovirus 1	Human astrovirus 5
+37130	RNA	(+)ssRNA	nan	Astroviridae	nan	Mamastrovirus	Mamastrovirus 1	Human astrovirus 6
+43358	RNA	(+)ssRNA	nan	Astroviridae	nan	Mamastrovirus	Mamastrovirus 1	Human astrovirus 8
+1518575	RNA	(+)ssRNA	nan	Astroviridae	nan	Mamastrovirus	Burkina Faso astrovirus	Human astrovirus BF34
+1235996	RNA	(+)ssRNA	Nidovirales	Coronaviridae	Coronavirinae	Betacoronavirus	Middle East respiratory syndrome coronavirus	Human betacoronavirus 2c EMC/2012
+1298362	RNA	(+)ssRNA	Nidovirales	Coronaviridae	Coronavirinae	Betacoronavirus	Middle East respiratory syndrome coronavirus	Human betacoronavirus 2c England-Qatar/2012
+1306931	RNA	(+)ssRNA	Nidovirales	Coronaviridae	Coronavirinae	Betacoronavirus	Middle East respiratory syndrome coronavirus	Human betacoronavirus 2c Jordan-N3/2012
+329641	DNA	ssDNA	nan	Parvoviridae	Parvovirinae	Bocaparvovirus	unclassified Bocaparvovirus	Human bocavirus
+689403	DNA	ssDNA	nan	Parvoviridae	Parvovirinae	Bocaparvovirus	Primate bocaparvovirus 1	Human bocavirus 1
+573977	DNA	ssDNA	nan	Parvoviridae	Parvovirinae	Bocaparvovirus	unclassified Bocaparvovirus	Human bocavirus 2
+1511882	DNA	ssDNA	nan	Parvoviridae	Parvovirinae	Bocaparvovirus	Primate bocaparvovirus 2	Human bocavirus 2c PK
+638313	DNA	ssDNA	nan	Parvoviridae	Parvovirinae	Bocaparvovirus	Primate bocaparvovirus 1	Human bocavirus 3
+1511883	DNA	ssDNA	nan	Parvoviridae	Parvovirinae	Bocaparvovirus	Primate bocaparvovirus 2	Human bocavirus 4 NI
+1108925	DNA	ssDNA	nan	Parvoviridae	Parvovirinae	Bocaparvovirus	Human bocavirus	Human bocavirus isolate SH1
+1108926	DNA	ssDNA	nan	Parvoviridae	Parvovirinae	Bocaparvovirus	Human bocavirus	Human bocavirus isolate SH2
+1108927	DNA	ssDNA	nan	Parvoviridae	Parvovirinae	Bocaparvovirus	Human bocavirus 2	Human bocavirus isolate SH3
+394504	DNA	ssDNA	nan	Parvoviridae	Parvovirinae	Bocaparvovirus	Human bocavirus	Human bocavirus WLL-1
+430048	DNA	ssDNA	nan	Parvoviridae	Parvovirinae	Bocaparvovirus	Human bocavirus	Human bocavirus WLL-2
+444473	DNA	ssDNA	nan	Parvoviridae	Parvovirinae	Bocaparvovirus	Human bocavirus	Human bocavirus WLL-3
+158465	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Human calicivirus Hu/NLV/GII/MD145-12/1987/US
+258453	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Human calicivirus NLV/GII/Langen1061/2002/DE
+1525173	DNA	ssDNA	nan	Circoviridae	nan	Circovirus	unclassified Circovirus	Human circovirus VS6600022
+11137	RNA	(+)ssRNA	Nidovirales	Coronaviridae	Coronavirinae	Alphacoronavirus	nan	Human coronavirus 229E
+290028	RNA	(+)ssRNA	Nidovirales	Coronaviridae	Coronavirinae	Betacoronavirus	nan	Human coronavirus HKU1
+277944	RNA	(+)ssRNA	Nidovirales	Coronaviridae	Coronavirinae	Alphacoronavirus	nan	Human coronavirus NL63
+31631	RNA	(+)ssRNA	Nidovirales	Coronaviridae	Coronavirinae	Betacoronavirus	Betacoronavirus 1	Human coronavirus OC43
+1233383	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Cosavirus	unclassified Cosavirus	Human cosavirus
+586420	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Cosavirus	unclassified Cosavirus	Human cosavirus B
+586422	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Cosavirus	unclassified Cosavirus	Human cosavirus D
+586423	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Cosavirus	unclassified Cosavirus	Human cosavirus E
+1455626	DNA	ssDNA	nan	Circoviridae	nan	Cyclovirus	nan	Human cyclovirus
+1345637	DNA	ssDNA	nan	Circoviridae	nan	Cyclovirus	nan	Human cyclovirus VS5700009
+166124	RNA	(+)ssRNA	Nidovirales	Coronaviridae	Coronavirinae	Betacoronavirus	Bovine coronavirus	Human enteric coronavirus 4408
+627439	RNA	(+)ssRNA	Nidovirales	Coronaviridae	Coronavirinae	Betacoronavirus	Human enteric coronavirus 4408	Human enteric coronavirus strain 4408
+1006008	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus A71	Human enterovirus 71 HZ08/Hangzhou/2008
+318562	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus B	Human enterovirus 79
+318572	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus D	Human enterovirus 94
+460162	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	unclassified Human enterovirus C	Human enterovirus C102
+650039	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus C	Human enterovirus C104
+861519	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus C	Human enterovirus C109
+1230646	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	unclassified Human enterovirus C	Human enterovirus C117
+1247477	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	unclassified Human enterovirus C	Human enterovirus C118
+310756	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Coxsackievirus A24	Human enterovirus Hangzhou13-02
+310755	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Coxsackievirus A24	Human enterovirus Ningbo3-02
+72197	DNA	ssDNA	nan	Parvoviridae	Parvovirinae	Erythroparvovirus	unclassified Erythrovirus	Human erythrovirus V9
+11641	RETRO	retro-RNA	nan	Retroviridae	Spumaretrovirinae	Spumavirus	Simian foamy virus	Human foamy virus
+1488574	DNA	ssDNA	nan	Genomoviridae	nan	Gemygorvirus	nan	Human genital-associated circular DNA virus-1
+270642	RNA	(+)ssRNA	Nidovirales	Coronaviridae	Coronavirinae	Alphacoronavirus	Human coronavirus NL63	Human group 1 coronavirus associated with pneumonia
+988776	DNA	ssDNA	nan	Circoviridae	nan	Gyrovirus	unclassified Gyrovirus	Human gyrovirus 1
+10298	DNA	dsDNA	Herpesvirales	Herpesviridae	Alphaherpesvirinae	Simplexvirus	nan	Human herpesvirus 1
+10310	DNA	dsDNA	Herpesvirales	Herpesviridae	Alphaherpesvirinae	Simplexvirus	nan	Human herpesvirus 2
+10335	DNA	dsDNA	Herpesvirales	Herpesviridae	Alphaherpesvirinae	Varicellovirus	nan	Human herpesvirus 3
+10338	DNA	dsDNA	Herpesvirales	Herpesviridae	Alphaherpesvirinae	Varicellovirus	Human herpesvirus 3	Human herpesvirus 3 strain Dumas
+10376	DNA	dsDNA	Herpesvirales	Herpesviridae	Gammaherpesvirinae	Lymphocryptovirus	nan	Human herpesvirus 4
+12509	DNA	dsDNA	Herpesvirales	Herpesviridae	Gammaherpesvirinae	Lymphocryptovirus	Human herpesvirus 4	Human herpesvirus 4 type 2
+10359	DNA	dsDNA	Herpesvirales	Herpesviridae	Betaherpesvirinae	Cytomegalovirus	nan	Human herpesvirus 5
+10368	DNA	dsDNA	Herpesvirales	Herpesviridae	Betaherpesvirinae	Roseolovirus	unclassified Roseolovirus	Human herpesvirus 6
+32603	DNA	dsDNA	Herpesvirales	Herpesviridae	Betaherpesvirinae	Roseolovirus	nan	Human herpesvirus 6A
+32604	DNA	dsDNA	Herpesvirales	Herpesviridae	Betaherpesvirinae	Roseolovirus	nan	Human herpesvirus 6B
+10372	DNA	dsDNA	Herpesvirales	Herpesviridae	Betaherpesvirinae	Roseolovirus	nan	Human herpesvirus 7
+37296	DNA	dsDNA	Herpesvirales	Herpesviridae	Gammaherpesvirinae	Rhadinovirus	nan	Human herpesvirus 8
+12721	RETRO	retro-RNA	nan	Retroviridae	Orthoretrovirinae	Lentivirus	unclassified Primate lentivirus group	Human immunodeficiency virus
+11676	RETRO	retro-RNA	nan	Retroviridae	Orthoretrovirinae	Lentivirus	Primate lentivirus group	Human immunodeficiency virus 1
+11709	RETRO	retro-RNA	nan	Retroviridae	Orthoretrovirinae	Lentivirus	Primate lentivirus group	Human immunodeficiency virus 2
+129875	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	nan	Human mastadenovirus A
+108098	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	nan	Human mastadenovirus B
+129951	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	nan	Human mastadenovirus C
+130310	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	nan	Human mastadenovirus D
+130308	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	nan	Human mastadenovirus E
+130309	DNA	dsDNA	nan	Adenoviridae	nan	Mastadenovirus	nan	Human mastadenovirus F
+162145	RNA	(-)ssRNA	Mononegavirales	Pneumoviridae	nan	Metapneumovirus	nan	Human metapneumovirus
+10566	DNA	dsDNA	nan	Papillomaviridae	nan	nan	Human papillomavirus types	Human papillomavirus
+915428	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Gammapapillomavirus 9	Human papillomavirus 116
+563190	DNA	dsDNA	nan	Papillomaviridae	nan	Betapapillomavirus	Human papillomavirus type 104	Human papillomavirus FA75/KI88-03
+1647924	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	unclassified Gammapapillomavirus	Human papillomavirus KC5
+333759	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 2	Human papillomavirus type 10
+587349	DNA	dsDNA	nan	Papillomaviridae	nan	Betapapillomavirus	Betapapillomavirus 2	Human papillomavirus type 100
+915425	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Gammapapillomavirus 6	Human papillomavirus type 101
+338327	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 3	Human papillomavirus type 102
+338323	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Gammapapillomavirus 6	Human papillomavirus type 103
+518628	DNA	dsDNA	nan	Papillomaviridae	nan	Betapapillomavirus	Betapapillomavirus 2	Human papillomavirus type 104
+587350	DNA	dsDNA	nan	Papillomaviridae	nan	Betapapillomavirus	Betapapillomavirus 1	Human papillomavirus type 105
+338326	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 14	Human papillomavirus type 106
+427343	DNA	dsDNA	nan	Papillomaviridae	nan	Betapapillomavirus	Betapapillomavirus 2	Human papillomavirus type 107
+565537	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Gammapapillomavirus 6	Human papillomavirus type 108
+915426	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Gammapapillomavirus 7	Human papillomavirus type 109
+518629	DNA	dsDNA	nan	Papillomaviridae	nan	Betapapillomavirus	Betapapillomavirus 2	Human papillomavirus type 110
+518630	DNA	dsDNA	nan	Papillomaviridae	nan	Betapapillomavirus	Betapapillomavirus 2	Human papillomavirus type 111
+915427	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Gammapapillomavirus 8	Human papillomavirus type 112
+587351	DNA	dsDNA	nan	Papillomaviridae	nan	Betapapillomavirus	Betapapillomavirus 2	Human papillomavirus type 113
+735496	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 3	Human papillomavirus type 114
+696746	DNA	dsDNA	nan	Papillomaviridae	nan	Betapapillomavirus	Betapapillomavirus 3	Human papillomavirus type 115
+720708	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 2	Human papillomavirus type 117
+927771	DNA	dsDNA	nan	Papillomaviridae	nan	Betapapillomavirus	Betapapillomavirus 1	Human papillomavirus type 118
+765051	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Gammapapillomavirus 8	Human papillomavirus type 119
+10604	DNA	dsDNA	nan	Papillomaviridae	nan	Betapapillomavirus	Betapapillomavirus 1	Human papillomavirus type 12
+765052	DNA	dsDNA	nan	Papillomaviridae	nan	Betapapillomavirus	Betapapillomavirus 2	Human papillomavirus type 120
+915429	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Gammapapillomavirus 10	Human papillomavirus type 121
+765054	DNA	dsDNA	nan	Papillomaviridae	nan	Betapapillomavirus	Betapapillomavirus 2	Human papillomavirus type 122
+765055	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Gammapapillomavirus 7	Human papillomavirus type 123
+765056	DNA	dsDNA	nan	Papillomaviridae	nan	Betapapillomavirus	Betapapillomavirus 1	Human papillomavirus type 124
+673323	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 2	Human papillomavirus type 125
+1055684	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Gammapapillomavirus 11	Human papillomavirus type 126
+746832	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Gammapapillomavirus 12	Human papillomavirus type 127
+931209	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Gammapapillomavirus 13	Human papillomavirus type 128
+931210	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	unclassified Gammapapillomavirus	Human papillomavirus type 129
+10573	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 10	Human papillomavirus type 13
+909329	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Gammapapillomavirus 10	Human papillomavirus type 130
+909330	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Gammapapillomavirus 14	Human papillomavirus type 131
+909331	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Human papillomavirus 132-like 	Human papillomavirus type 132
+909332	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Gammapapillomavirus 10	Human papillomavirus type 133
+909333	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	unclassified Gammapapillomavirus	Human papillomavirus type 134
+1070408	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Gammapapillomavirus 15	Human papillomavirus type 135
+1070409	DNA	dsDNA	nan	Papillomaviridae	nan	nan	Human papillomavirus types	Human papillomavirus type 136
+1070410	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Gammapapillomavirus 16	Human papillomavirus type 137
+1070411	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Gammapapillomavirus 7	Human papillomavirus type 138
+1070412	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Gammapapillomavirus 7	Human papillomavirus type 139
+1070413	DNA	dsDNA	nan	Papillomaviridae	nan	nan	Human papillomavirus types	Human papillomavirus type 140
+1070414	DNA	dsDNA	nan	Papillomaviridae	nan	nan	Human papillomavirus types	Human papillomavirus type 141
+1070415	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Gammapapillomavirus 10	Human papillomavirus type 142
+1070416	DNA	dsDNA	nan	Papillomaviridae	nan	nan	Human papillomavirus types	Human papillomavirus type 143
+1070417	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Gammapapillomavirus 17	Human papillomavirus type 144
+1070418	DNA	dsDNA	nan	Papillomaviridae	nan	nan	Human papillomavirus types	Human papillomavirus type 145
+1070419	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Gammapapillomavirus 15	Human papillomavirus type 146
+1070420	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Gammapapillomavirus 8	Human papillomavirus type 147
+942038	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Human papillomavirus 132-like 	Human papillomavirus type 148
+909328	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Gammapapillomavirus 7	Human papillomavirus type 149
+31546	DNA	dsDNA	nan	Papillomaviridae	nan	Betapapillomavirus	Human papillomavirus type 14	Human papillomavirus type 14D
+10606	DNA	dsDNA	nan	Papillomaviridae	nan	Betapapillomavirus	Betapapillomavirus 2	Human papillomavirus type 15
+743811	DNA	dsDNA	nan	Papillomaviridae	nan	Betapapillomavirus	Betapapillomavirus 5	Human papillomavirus type 150
+743812	DNA	dsDNA	nan	Papillomaviridae	nan	Betapapillomavirus	Betapapillomavirus 2	Human papillomavirus type 151
+990302	DNA	dsDNA	nan	Papillomaviridae	nan	Betapapillomavirus	Betapapillomavirus 1	Human papillomavirus type 152
+1110710	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	unclassified Gammapapillomavirus	Human papillomavirus type 153
+1195796	DNA	dsDNA	nan	Papillomaviridae	nan	nan	Human papillomavirus types	Human papillomavirus type 154
+1165934	DNA	dsDNA	nan	Papillomaviridae	nan	nan	Human papillomavirus types	Human papillomavirus type 155
+1248396	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Gammapapillomavirus 18	Human papillomavirus type 156
+1209820	DNA	dsDNA	nan	Papillomaviridae	nan	Betapapillomavirus	Betapapillomavirus 2	Human papillomavirus type 159
+333760	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 9	Human papillomavirus type 16
+1315262	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Gammapapillomavirus 20	Human papillomavirus type 163
+1315259	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Gammapapillomavirus 19	Human papillomavirus type 166
+1420545	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	unclassified Gammapapillomavirus	Human papillomavirus type 167
+10607	DNA	dsDNA	nan	Papillomaviridae	nan	Betapapillomavirus	Betapapillomavirus 2	Human papillomavirus type 17
+1434986	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	unclassified Gammapapillomavirus	Human papillomavirus type 171
+1434987	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	unclassified Gammapapillomavirus	Human papillomavirus type 172
+1434988	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	unclassified Gammapapillomavirus	Human papillomavirus type 173
+1478160	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	unclassified Gammapapillomavirus	Human papillomavirus type 178
+1472342	DNA	dsDNA	nan	Papillomaviridae	nan	nan	Human papillomavirus types	Human papillomavirus type 179
+333761	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 7	Human papillomavirus type 18
+10608	DNA	dsDNA	nan	Papillomaviridae	nan	Betapapillomavirus	Betapapillomavirus 1	Human papillomavirus type 19
+1542134	DNA	dsDNA	nan	Papillomaviridae	nan	nan	Human papillomavirus types	Human papillomavirus type 197
+333751	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 4	Human papillomavirus type 2
+1682340	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	unclassified Gammapapillomavirus	Human papillomavirus type 201
+10609	DNA	dsDNA	nan	Papillomaviridae	nan	Betapapillomavirus	Betapapillomavirus 1	Human papillomavirus type 25
+333762	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 5	Human papillomavirus type 26
+333752	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 4	Human papillomavirus type 27
+325568	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Human papillomavirus type 27	Human papillomavirus type 27b
+10614	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 2	Human papillomavirus type 3
+10611	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 6	Human papillomavirus type 30
+333763	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 1	Human papillomavirus type 32
+333764	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 11	Human papillomavirus type 34
+334514	DNA	dsDNA	nan	Papillomaviridae	nan	Betapapillomavirus	Human papillomavirus type 38	Human papillomavirus type 38b
+10588	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 7	Human papillomavirus type 39
+10617	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Gammapapillomavirus 1	Human papillomavirus type 4
+10615	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 8	Human papillomavirus type 40
+10589	DNA	dsDNA	nan	Papillomaviridae	nan	Nupapillomavirus	Nupapillomavirus 1	Human papillomavirus type 41
+10591	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 8	Human papillomavirus type 43
+10593	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 7	Human papillomavirus type 45
+40538	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Gammapapillomavirus 2	Human papillomavirus type 48
+10616	DNA	dsDNA	nan	Papillomaviridae	nan	Betapapillomavirus	Betapapillomavirus 3	Human papillomavirus type 49
+333923	DNA	dsDNA	nan	Papillomaviridae	nan	Betapapillomavirus	Betapapillomavirus 1	Human papillomavirus type 5
+40539	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Gammapapillomavirus 3	Human papillomavirus type 50
+10618	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 9	Human papillomavirus type 52
+333765	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 6	Human papillomavirus type 53
+1671798	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 13	Human papillomavirus type 54
+10596	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 6	Human papillomavirus type 56
+333753	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 4	Human papillomavirus type 57
+471358	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Human papillomavirus type 57	Human papillomavirus type 57c
+37115	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 7	Human papillomavirus type 59
+31552	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 10	Human papillomavirus type 6
+40540	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Gammapapillomavirus 4	Human papillomavirus type 60
+334210	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 3	Human papillomavirus type 62
+28311	DNA	dsDNA	nan	Papillomaviridae	nan	Mupapillomavirus	Mupapillomavirus 2	Human papillomavirus type 63
+28312	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Gammapapillomavirus 1	Human papillomavirus type 65
+37120	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 9	Human papillomavirus type 67
+45240	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 7	Human papillomavirus type 68
+338322	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Human papillomavirus type 68	Human papillomavirus type 68a
+940838	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Human papillomavirus type 68	Human papillomavirus type 68b
+37121	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 5	Human papillomavirus type 69
+10600	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 10	Human papillomavirus type 6b
+10620	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 8	Human papillomavirus type 7
+1484958	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Human papillomavirus type 72	Human papillomavirus type 72b
+1297549	DNA	dsDNA	nan	Papillomaviridae	nan	nan	Human papillomavirus types	Human papillomavirus type 78
+333771	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 3	Human papillomavirus type 81
+129724	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 5	Human papillomavirus type 82
+333772	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 3	Human papillomavirus type 83
+150546	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 3	Human papillomavirus type 84
+171370	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 3	Human papillomavirus type 86
+120381	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 3	Human papillomavirus type 87
+337054	DNA	dsDNA	nan	Papillomaviridae	nan	Gammapapillomavirus	Gammapapillomavirus 5	Human papillomavirus type 88
+10621	DNA	dsDNA	nan	Papillomaviridae	nan	Betapapillomavirus	Betapapillomavirus 2	Human papillomavirus type 9
+333769	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 14	Human papillomavirus type 90
+211787	DNA	dsDNA	nan	Papillomaviridae	nan	Betapapillomavirus	Betapapillomavirus 4	Human papillomavirus type 92
+260717	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 2	Human papillomavirus type 94
+247269	DNA	dsDNA	nan	Papillomaviridae	nan	Betapapillomavirus	Betapapillomavirus 5	Human papillomavirus type 96
+338324	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 7	Human papillomavirus type 97
+587347	DNA	dsDNA	nan	Papillomaviridae	nan	Betapapillomavirus	Betapapillomavirus 1	Human papillomavirus type 98
+587348	DNA	dsDNA	nan	Papillomaviridae	nan	Betapapillomavirus	Betapapillomavirus 1	Human papillomavirus type 99
+1288116	DNA	dsDNA	nan	Papillomaviridae	nan	Alphapapillomavirus	Alphapapillomavirus 2	Human papillomavirus type XS2
+12730	RNA	(-)ssRNA	Mononegavirales	Paramyxoviridae	Paramyxovirinae	Respirovirus	nan	Human parainfluenza virus 1
+188538	RNA	(-)ssRNA	Mononegavirales	Paramyxoviridae	Paramyxovirinae	Respirovirus	Human parainfluenza virus 1	Human parainfluenza virus 1 strain Washington/1964
+11212	RNA	(-)ssRNA	Mononegavirales	Paramyxoviridae	Paramyxovirinae	Rubulavirus	nan	Human parainfluenza virus 2
+11216	RNA	(-)ssRNA	Mononegavirales	Paramyxoviridae	Paramyxovirinae	Respirovirus	nan	Human parainfluenza virus 3
+11224	RNA	(-)ssRNA	Mononegavirales	Paramyxoviridae	Paramyxovirinae	Rubulavirus	Human parainfluenza virus 4	Human parainfluenza virus 4a
+11226	RNA	(-)ssRNA	Mononegavirales	Paramyxoviridae	Paramyxovirinae	Rubulavirus	Human parainfluenza virus 4	Human parainfluenza virus 4b
+195054	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Parechovirus	unclassified Parechovirus	Human parechovirus
+12063	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Parechovirus	Human parechovirus	Human parechovirus 1
+39085	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Parechovirus	Human parechovirus	Human parechovirus 2
+195055	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Parechovirus	Human parechovirus	Human parechovirus 3
+362784	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Parechovirus	Human parechovirus	Human parechovirus 4
+376148	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Parechovirus	Human parechovirus	Human parechovirus 5
+411152	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Parechovirus	Human parechovirus	Human parechovirus 6
+602074	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Parechovirus	Human parechovirus	Human parechovirus 8
+289365	DNA	ssDNA	nan	Parvoviridae	Parvovirinae	Tetraparvovirus	Primate tetraparvovirus 1	Human parvovirus 4
+1511919	DNA	ssDNA	nan	Parvoviridae	Parvovirinae	Tetraparvovirus	Primate tetraparvovirus 1	Human parvovirus 4 G1
+10798	DNA	ssDNA	nan	Parvoviridae	Parvovirinae	Erythroparvovirus	Primate erythroparvovirus 1	Human parvovirus B19
+1729141	RNA	(+)ssRNA	nan	Flaviviridae	nan	Pegivirus	unclassified Pegivirus	Human pegivirus 2
+145856	RNA	dsRNA	nan	Picobirnaviridae	nan	Picobirnavirus	nan	Human picobirnavirus
+1707330	DNA	ssDNA	nan	Mycodnaviridae	nan	Gemycircularvirus	Gemycircularvirus group	Human plasma-associated gemycircularvirus
+12080	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus C	Human poliovirus 1
+12081	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Human poliovirus 1	Human poliovirus 1 Mahoney
+12086	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Enterovirus C	Human poliovirus 3
+1208309	DNA	dsDNA	nan	Polyomaviridae	nan	Polyomavirus	MW polyomavirus	Human polyomavirus 10
+1303334	DNA	dsDNA	nan	Polyomaviridae	nan	Polyomavirus	unclassified Polyomavirus	Human polyomavirus 12
+746830	DNA	dsDNA	nan	Polyomaviridae	nan	Polyomavirus	unclassified Polyomavirus	Human polyomavirus 6
+746831	DNA	dsDNA	nan	Polyomaviridae	nan	Polyomavirus	unclassified Polyomavirus	Human polyomavirus 7
+943908	DNA	dsDNA	nan	Polyomaviridae	nan	Polyomavirus	unclassified Polyomavirus	Human polyomavirus 9
+988774	DNA	dsDNA	nan	Polyomaviridae	nan	Polyomavirus	Human polyomavirus 9	Human polyomavirus IPPyV
+11250	RNA	(-)ssRNA	Mononegavirales	Pneumoviridae	nan	Orthopneumovirus	nan	Human respiratory syncytial virus
+253182	RNA	(-)ssRNA	Mononegavirales	Pneumoviridae	nan	Orthopneumovirus	Human respiratory syncytial virus B	Human Respiratory syncytial virus 9320
+573824	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A1
+185892	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A10
+185946	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A100
+39767	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A11
+147684	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A12
+185893	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A13
+185894	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A15
+147674	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A18
+185895	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A19
+147675	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A20
+44128	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A21
+185896	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A22
+12135	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A23
+185897	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A24
+185898	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A25
+147672	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A28
+44129	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A29
+185901	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A30
+185902	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A31
+185903	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A32
+185904	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A33
+185905	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A34
+147673	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A36
+185906	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A38
+185907	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A39
+185908	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A40
+185909	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A41
+167321	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A43
+185910	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A44
+147676	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A45
+167324	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A46
+185911	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A47
+44131	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A49
+44132	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A50
+185912	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A51
+185913	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A53
+185914	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A54
+185915	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A55
+185916	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A56
+185917	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A57
+44133	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A58
+185918	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A59
+185919	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A60
+185920	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A61
+44134	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A62
+185921	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A63
+185922	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A64
+44135	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A65
+185923	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A66
+185924	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A67
+185925	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A68
+44136	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A7
+185927	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A71
+185928	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A73
+185929	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A74
+185930	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A75
+185931	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A76
+185932	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A77
+147685	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A78
+185890	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A8
+185934	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A80
+185935	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A81
+167322	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A82
+185937	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A85
+185939	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A88
+12132	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A89
+185891	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A9
+185940	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A90
+185941	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A94
+185942	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A95
+185943	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A96
+185944	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus A	Human rhinovirus A98
+12131	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus B	Human rhinovirus B14
+150904	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus B	Human rhinovirus B17
+185899	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus B	Human rhinovirus B26
+185900	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus B	Human rhinovirus B27
+44130	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus B	Human rhinovirus B3
+167329	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus B	Human rhinovirus B35
+147680	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus B	Human rhinovirus B37
+185889	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus B	Human rhinovirus B4
+147683	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus B	Human rhinovirus B42
+147679	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus B	Human rhinovirus B48
+147714	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus B	Human rhinovirus B5
+147677	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus B	Human rhinovirus B52
+147681	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus B	Human rhinovirus B6
+147678	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus B	Human rhinovirus B69
+185926	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus B	Human rhinovirus B70
+44137	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus B	Human rhinovirus B72
+185933	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus B	Human rhinovirus B79
+185936	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus B	Human rhinovirus B83
+167328	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus B	Human rhinovirus B84
+185938	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus B	Human rhinovirus B86
+167325	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus B	Human rhinovirus B91
+167326	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus B	Human rhinovirus B92
+167327	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus B	Human rhinovirus B93
+167330	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus B	Human rhinovirus B97
+185945	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Rhinovirus B	Human rhinovirus B99
+655428	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	Human rhinovirus C10	Human rhinovirus QCE
+10942	RNA	dsRNA	nan	Reoviridae	Sedoreovirinae	Rotavirus	Rotavirus B	Human rotavirus B
+743300	DNA	ssDNA	nan	Circoviridae	nan	Cyclovirus	nan	Human stool-associated circular virus NG13
+36368	RETRO	retro-RNA	nan	Retroviridae	Orthoretrovirinae	Deltaretrovirus	Human T-lymphotropic virus 2	Human T-cell lymphotropic virus type 2b
+11908	RETRO	retro-RNA	nan	Retroviridae	Orthoretrovirinae	Deltaretrovirus	Primate T-lymphotropic virus 1	Human T-lymphotropic virus 1
+11909	RETRO	retro-RNA	nan	Retroviridae	Orthoretrovirinae	Deltaretrovirus	Primate T-lymphotropic virus 2	Human T-lymphotropic virus 2
+28332	RETRO	retro-RNA	nan	Retroviridae	Orthoretrovirinae	Deltaretrovirus	Primate T-lymphotropic virus 3	Human T-lymphotropic virus 3
+318279	RETRO	retro-RNA	nan	Retroviridae	Orthoretrovirinae	Deltaretrovirus	unclassified Deltaretrovirus	Human T-lymphotropic virus 4
+511755	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Cardiovirus	Theilovirus	Human TMEV-like cardiovirus
+79899	RNA	(+)ssRNA	nan	Togaviridae	nan	Alphavirus	O'nyong-nyong virus	Igbo Ora virus
+59563	RNA	(+)ssRNA	nan	Flaviviridae	nan	Flavivirus	nan	Ilheus virus
+641501	RNA	(-)ssRNA	nan	Orthomyxoviridae	nan	Influenzavirus A	nan	Influenza A virus (A/California/04/2009(H1N1))
+641809	RNA	(-)ssRNA	nan	Orthomyxoviridae	nan	Influenzavirus A	nan	Influenza A virus (A/California/07/2009(H1N1))
+93838	RNA	(-)ssRNA	nan	Orthomyxoviridae	nan	Influenzavirus A	nan	Influenza A virus (A/goose/Guangdong/1/1996(H5N1))
+130760	RNA	(-)ssRNA	nan	Orthomyxoviridae	nan	Influenzavirus A	nan	Influenza A virus (A/Hong Kong/1073/99(H9N2))
+488241	RNA	(-)ssRNA	nan	Orthomyxoviridae	nan	Influenzavirus A	nan	Influenza A virus (A/Korea/426/1968(H2N2))
+335341	RNA	(-)ssRNA	nan	Orthomyxoviridae	nan	Influenzavirus A	nan	Influenza A virus (A/New York/392/2004(H3N2))
+370519	RNA	(-)ssRNA	nan	Orthomyxoviridae	nan	Influenzavirus A	nan	Influenza A virus (A/New York/599/1996(H3N2))
+370522	RNA	(-)ssRNA	nan	Orthomyxoviridae	nan	Influenzavirus A	nan	Influenza A virus (A/New York/602/1996(H3N2))
+370128	RNA	(-)ssRNA	nan	Orthomyxoviridae	nan	Influenzavirus A	nan	Influenza A virus (A/Northern Territory/60/1968(H3N2))
+211044	RNA	(-)ssRNA	nan	Orthomyxoviridae	nan	Influenzavirus A	nan	Influenza A virus (A/Puerto Rico/8/1934(H1N1))
+1332244	RNA	(-)ssRNA	nan	Orthomyxoviridae	nan	Influenzavirus A	nan	Influenza A virus (A/Shanghai/02/2013(H7N9))
+11520	RNA	(-)ssRNA	nan	Orthomyxoviridae	nan	Influenzavirus B	nan	Influenza B virus
+98832	RNA	(-)ssRNA	nan	Orthomyxoviridae	nan	Influenzavirus B	Influenza B virus	Influenza B virus (B/Memphis/12/97)
+11553	RNA	(-)ssRNA	nan	Orthomyxoviridae	nan	Influenzavirus C	Influenza C virus	Influenza C virus (C/Ann Arbor/1/50)
+290008	RNA	(-)ssRNA	Mononegavirales	Rhabdoviridae	nan	Vesiculovirus	nan	Isfahan virus
+11072	RNA	(+)ssRNA	nan	Flaviviridae	nan	Flavivirus	Japanese encephalitis virus group	Japanese encephalitis virus
+10632	DNA	dsDNA	nan	Polyomaviridae	nan	Polyomavirus	nan	JC polyomavirus
+11619	RNA	(-)ssRNA	nan	Arenaviridae	nan	Mammarenavirus	nan	Junin mammarenavirus
+864699	RNA	(-)ssRNA	Mononegavirales	Rhabdoviridae	nan	Vesiculovirus	unclassified Vesiculovirus	Jurona virus
+64287	RNA	(+)ssRNA	nan	Flaviviridae	nan	Flavivirus	Royal Farm virus	Karshi virus
+423445	DNA	dsDNA	nan	Polyomaviridae	nan	Polyomavirus	unclassified Polyomavirus	KI polyomavirus
+423447	DNA	dsDNA	nan	Polyomaviridae	nan	Polyomavirus	KI polyomavirus	KI polyomavirus Stockholm 350
+33743	RNA	(+)ssRNA	nan	Flaviviridae	nan	Flavivirus	tick-borne encephalitis virus group	Kyasanur forest disease virus
+11577	RNA	(-)ssRNA	nan	Bunyaviridae	nan	Orthobunyavirus	California encephalitis virus	La Crosse virus
+38766	RNA	(-)ssRNA	Mononegavirales	Rhabdoviridae	nan	Lyssavirus	nan	Lagos bat virus
+378830	RNA	(-)ssRNA	Mononegavirales	Filoviridae	nan	Marburgvirus	Marburg marburgvirus	Lake Victoria marburgvirus - Angola2005
+378831	RNA	(-)ssRNA	Mononegavirales	Filoviridae	nan	Marburgvirus	Marburg marburgvirus	Lake Victoria marburgvirus - DRC1999
+1126254	RNA	(-)ssRNA	Mononegavirales	Filoviridae	nan	Marburgvirus	Marburg marburgvirus	Lake Victoria marburgvirus - Leiden
+11085	RNA	(+)ssRNA	nan	Flaviviridae	nan	Flavivirus	tick-borne encephalitis virus group	Langat virus
+11620	RNA	(-)ssRNA	nan	Arenaviridae	nan	Mammarenavirus	nan	Lassa mammarenavirus
+82658	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII	Lordsdale virus
+11086	RNA	(+)ssRNA	nan	Flaviviridae	nan	Flavivirus	tick-borne encephalitis virus group	Louping ill virus
+649188	RNA	(-)ssRNA	nan	Arenaviridae	nan	Mammarenavirus	nan	Lujo mammarenavirus
+11623	RNA	(-)ssRNA	nan	Arenaviridae	nan	Mammarenavirus	nan	Lymphocytic choriomeningitis mammarenavirus
+642022	RNA	(-)ssRNA	Mononegavirales	Rhabdoviridae	nan	Lyssavirus	unclassified Lyssavirus	Lyssavirus Ozernoe
+10325	DNA	dsDNA	Herpesvirales	Herpesviridae	Alphaherpesvirinae	Simplexvirus	nan	Macacine herpesvirus 1
+338478	RETRO	retro-RNA	nan	Retroviridae	Spumaretrovirinae	Spumavirus	nan	Macaque simian foamy virus
+11628	RNA	(-)ssRNA	nan	Arenaviridae	nan	Mammarenavirus	nan	Machupo mammarenavirus
+1239565	RNA	(+)ssRNA	nan	Astroviridae	nan	Mamastrovirus	nan	Mamastrovirus 1
+1046251	RNA	(-)ssRNA	Mononegavirales	Rhabdoviridae	nan	Vesiculovirus	nan	Maraba virus
+11269	RNA	(-)ssRNA	Mononegavirales	Filoviridae	nan	Marburgvirus	nan	Marburg marburgvirus
+33727	RNA	(-)ssRNA	Mononegavirales	Filoviridae	nan	Marburgvirus	Marburg marburgvirus	Marburg virus - Musoke, Kenya, 1980
+59301	RNA	(+)ssRNA	nan	Togaviridae	nan	Alphavirus	nan	Mayaro virus
+11234	RNA	(-)ssRNA	Mononegavirales	Paramyxoviridae	Paramyxovirinae	Morbillivirus	nan	Measles virus
+170525	RNA	(-)ssRNA	Mononegavirales	Paramyxoviridae	Paramyxovirinae	Morbillivirus	Measles virus genotypes and isolates	Measles virus genotype D4
+170528	RNA	(-)ssRNA	Mononegavirales	Paramyxoviridae	Paramyxovirinae	Morbillivirus	Measles virus genotypes and isolates	Measles virus genotype D8
+1056492	RNA	(-)ssRNA	Mononegavirales	Paramyxoviridae	Paramyxovirinae	Morbillivirus	Measles virus genotypes and isolates	Measles virus genotype G3
+70149	RNA	(-)ssRNA	Mononegavirales	Paramyxoviridae	Paramyxovirinae	Morbillivirus	Measles virus strain Edmonston	Measles virus strain Edmonston-Zagreb
+884096	RNA	(-)ssRNA	Mononegavirales	Paramyxoviridae	Paramyxovirinae	Morbillivirus	Measles virus genotypes and isolates	Measles virus strain MVi/Arizona.USA/11.08/2
+884100	RNA	(-)ssRNA	Mononegavirales	Paramyxoviridae	Paramyxovirinae	Morbillivirus	Measles virus genotypes and isolates	Measles virus strain MVi/California.USA/16.03
+884099	RNA	(-)ssRNA	Mononegavirales	Paramyxoviridae	Paramyxovirinae	Morbillivirus	Measles virus genotypes and isolates	Measles virus strain MVi/California.USA/8.04
+884094	RNA	(-)ssRNA	Mononegavirales	Paramyxoviridae	Paramyxovirinae	Morbillivirus	Measles virus genotypes and isolates	Measles virus strain MVi/Florida.USA/19.09
+884098	RNA	(-)ssRNA	Mononegavirales	Paramyxoviridae	Paramyxovirinae	Morbillivirus	Measles virus genotypes and isolates	Measles virus strain MVi/New Jersey.USA/45.05
+884093	RNA	(-)ssRNA	Mononegavirales	Paramyxoviridae	Paramyxovirinae	Morbillivirus	Measles virus genotypes and isolates	Measles virus strain MVi/New York.USA/26.09/3
+884101	RNA	(-)ssRNA	Mononegavirales	Paramyxoviridae	Paramyxovirinae	Morbillivirus	Measles virus genotypes and isolates	Measles virus strain MVi/Pennsylvania.USA/20.09
+884097	RNA	(-)ssRNA	Mononegavirales	Paramyxoviridae	Paramyxovirinae	Morbillivirus	Measles virus genotypes and isolates	Measles virus strain MVi/Texas.USA/4.07
+884095	RNA	(-)ssRNA	Mononegavirales	Paramyxoviridae	Paramyxovirinae	Morbillivirus	Measles virus genotypes and isolates	Measles virus strain MVi/Virginia.USA/15.09
+1089795	RNA	(-)ssRNA	Mononegavirales	Paramyxoviridae	Paramyxovirinae	Morbillivirus	Measles virus genotypes and isolates	Measles virus strain MVi/Washington.USA/18.08/1
+419697	RNA	dsRNA	nan	Reoviridae	Spinareovirinae	Orthoreovirus	Pteropine orthoreovirus	Melaka orthoreovirus
+152219	RNA	(-)ssRNA	Mononegavirales	Paramyxoviridae	Paramyxovirinae	Rubulavirus	unclassified Rubulavirus	Menangle virus
+12107	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Cardiovirus	Encephalomyocarditis virus	Mengo virus
+493803	DNA	dsDNA	nan	Polyomaviridae	nan	Polyomavirus	unclassified Polyomavirus	Merkel cell polyomavirus
+1335626	RNA	(+)ssRNA	Nidovirales	Coronaviridae	Coronavirinae	Betacoronavirus	unclassified Betacoronavirus	Middle East respiratory syndrome coronavirus
+64300	RNA	(+)ssRNA	nan	Flaviviridae	nan	Flavivirus	Modoc virus group	Modoc virus
+12538	RNA	(-)ssRNA	Mononegavirales	Rhabdoviridae	nan	Lyssavirus	nan	Mokola virus
+10280	DNA	dsDNA	nan	Poxviridae	Chordopoxvirinae	Molluscipoxvirus	Molluscum contagiosum virus	Molluscum contagiosum virus subtype 1
+10244	DNA	dsDNA	nan	Poxviridae	Chordopoxvirinae	Orthopoxvirus	nan	Monkeypox virus
+619591	DNA	dsDNA	nan	Poxviridae	Chordopoxvirinae	Orthopoxvirus	Monkeypox virus	Monkeypox virus Zaire-96-I-16
+1516081	DNA	ssDNA	nan	Genomoviridae	nan	Gemykibivirus	nan	MSSI2.225 virus
+11161	RNA	(-)ssRNA	Mononegavirales	Paramyxoviridae	Paramyxovirinae	Rubulavirus	nan	Mumps virus
+1384672	RNA	(-)ssRNA	Mononegavirales	Paramyxoviridae	Paramyxovirinae	Rubulavirus	Mumps virus	Mumps virus genotype G
+11168	RNA	(-)ssRNA	Mononegavirales	Paramyxoviridae	Paramyxovirinae	Rubulavirus	Mumps virus genotype A	Mumps virus strain Jeryl Lynn
+334203	DNA	dsDNA	nan	Papillomaviridae	nan	Mupapillomavirus	nan	Mupapillomavirus 1
+11079	RNA	(+)ssRNA	nan	Flaviviridae	nan	Flavivirus	Japanese encephalitis virus group	Murray Valley encephalitis virus
+1203539	DNA	dsDNA	nan	Polyomaviridae	nan	Polyomavirus	unclassified Polyomavirus	MW polyomavirus
+1231709	DNA	dsDNA	nan	Polyomaviridae	nan	Polyomavirus	unclassified Polyomavirus	MX polyomavirus
+1497391	DNA	dsDNA	nan	Polyomaviridae	nan	Polyomavirus	unclassified Polyomavirus	New Jersey polyomavirus-2013
+121791	RNA	(-)ssRNA	Mononegavirales	Paramyxoviridae	Paramyxovirinae	Henipavirus	nan	Nipah virus
+122928	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norwalk virus	Norovirus GI
+1529909	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus genogroup 1 isolates	Norovirus GI/Hu/JP/2007/GI.P3_GI.3/Shimizu/KK2866
+1529910	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus genogroup 1 isolates	Norovirus GI/Hu/JP/2007/GI.P8_GI.8/Nagoya/KY531
+552592	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII	Norovirus GII.17
+1514999	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus GII/Hu/HKG/2013/GII.4/CUHK-NS-141
+1529911	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus GII/Hu/JP/2000/GII.P12_GII.12/Saitama/KU16
+1529912	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus GII/Hu/JP/2001/GII.P12_GII.12/Saitama/T15
+1529913	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus GII/Hu/JP/2001/GII.P12_GII.12/Saitama/T18
+1529914	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus GII/Hu/JP/2001/GII.P22_GII.5/Saitama/T49
+1529915	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus GII/Hu/JP/2002/GII.P12_GII.13/Saitama/T80
+1529916	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus GII/Hu/JP/2002/GII.P16_GII.17/Saitama/T87
+1529917	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus GII/Hu/JP/2002/GII.P5_GII.5/Saitama/T52
+1529918	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus GII/Hu/JP/2007/GII.P15_GII.15/Sapporo/HK299
+1529919	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus GII/Hu/JP/2007/GII.P21_GII.21/Kawasaki/YO284
+1529920	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus GII/Hu/JP/2007/GII.P7_GII.14/Fukuoka/KK282
+1529921	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus GII/Hu/JP/2007/GII.P7_GII.14/Sendai/YG99
+1529922	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus GII/Hu/JP/2010/GII.P4_GII.4/Shimada/ASC96
+1529923	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus GII/Hu/JP/2010/GII.P7_GII.7/Musashimurayama/TAKAsanKimchi
+1529924	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus GII/Hu/JP/2011/GII/Yuzawa/Gira2HS
+1529925	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus GII/Hu/JP/2012/GII.Pe_GII.4_Sydney2012/Fukuyama/1
+1529926	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus GII/Hu/JP/2012/GII.Pe_GII.4_Sydney2012/Fukuyama/2
+1529927	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus GII/Hu/JP/2012/GII.Pe_GII.4_Sydney2012/Fukuyama/3
+1529928	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus GII/Hu/JP/2012/GII.Pe_GII.4_Sydney2012/Fukuyama/5
+1529929	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus GII/Hu/TW/2012/GII.Pe_GII.4_Sydney2012/Taipei/105
+1529930	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus GII/Hu/TW/2012/GII.Pe_GII.4_Sydney2012/Taipei/106
+1529931	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus GII/Hu/TW/2012/GII.Pe_GII.4_Sydney2012/Taipei/108
+1529932	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus GII/Hu/TW/2012/GII.Pe_GII.4_Sydney2012/Taipei/109
+262897	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norwalk virus	Norovirus GIV
+1383577	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GI.1	Norovirus Hu/GI.1/8CKIIIc/1974/USA
+1184498	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GI.1	Norovirus Hu/GI.1/8FIIa/1968/USA
+1383578	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GI.1	Norovirus Hu/GI.1/8K/1979/USA
+1383579	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GI.1	Norovirus Hu/GI.1/8MC/1978/USA
+1383580	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GI.1	Norovirus Hu/GI.1/8McIII/1973/USA
+1383581	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GI.1	Norovirus Hu/GI.1/8MoIIIL/1972/USA
+1383582	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GI.1	Norovirus Hu/GI.1/8UIIIf/1973/USA
+1383583	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GI.1	Norovirus Hu/GI.1/8W/1968/USA
+1406147	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GI.2	Norovirus Hu/GI.2/Jingzhou/2013401/CHN
+658397	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GI.2	Norovirus Hu/GI.2/Leuven/2003/BEL
+1173217	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GI.6	Norovirus Hu/GI.6/Kingston/ACT160D/2010/AU
+1175308	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus genogroup 1 isolates	Norovirus Hu/GI/10360/2010/VNM
+1184496	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII-4/CBNU2/2007/KR
+1195613	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII-4/CGMH01/2006/TW
+1195614	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII-4/CGMH02/2006/TW
+1195615	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII-4/CGMH03/2006/TW
+1195616	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII-4/CGMH04/2006/TW
+1195617	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII-4/CGMH05/2006/TW
+1195618	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII-4/CGMH06/2006/TW
+1195619	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII-4/CGMH07/2006/TW
+1195620	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII-4/CGMH08/2006/TW
+1195621	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII-4/CGMH09/2006/TW
+1195622	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII-4/CGMH10/2006/TW
+1195623	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII-4/CGMH11/2006/TW
+1195624	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII-4/CGMH12/2007/TW
+1195625	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII-4/CGMH13/2007/TW
+1195626	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII-4/CGMH14/2007/TW
+1195627	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII-4/CGMH15/2007/TW
+1195628	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII-4/CGMH16/2007/TW
+1195629	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII-4/CGMH17/2007/TW
+1195630	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII-4/CGMH18/2008/TW
+1195631	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII-4/CGMH19/2009/TW
+1195632	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII-4/CGMH20/2009/TW
+1195633	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII-4/CGMH21/2010/TW
+1195634	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII-4/CGMH22/2010/TW
+1195635	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII-4/CGMH23/2010/TW
+1195636	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII-4/CGMH24/2010/TW
+1195637	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII-4/CGMH25/2010/TW
+1195638	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII-4/CGMH26/2010/TW
+1195639	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII-4/CGMH27/2010/TW
+1195640	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII-4/CGMH28/2010/TW
+587432	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII-4/CUK-3/2008/KR
+1380573	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.12	Norovirus Hu/GII.12/CGMH38/2010/TW
+1380574	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.12	Norovirus Hu/GII.12/CGMH39/2010/TW
+1380575	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.12	Norovirus Hu/GII.12/CGMH40/2010/TW
+1380576	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.12	Norovirus Hu/GII.12/CGMH41/2010/TW
+1380577	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.12	Norovirus Hu/GII.12/CGMH42/2010/TW
+1046049	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.12	Norovirus Hu/GII.12/HS206/2010/USA
+934293	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.12	Norovirus Hu/GII.12/HS210/2010/USA
+748172	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.14	Norovirus Hu/GII.14/8610/Saga/2008/JPN
+1458701	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.2	Norovirus Hu/GII.2/HS255/2011/USA
+863240	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.3	Norovirus Hu/GII.3/CBNU1/2006/KOR
+1260941	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.3	Norovirus Hu/GII.3/HK71/1978/CHN
+1406148	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.3	Norovirus Hu/GII.3/Jingzhou/2013402/CHN
+1325533	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/20199/2009/VNM
+1195791	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/5M/USA/2004
+1241966	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/Berowra/NSW767L/2012/AU
+1241967	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/Caringbah/NSW409G/2011/AU
+660656	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/CHDC2094/1974/US
+660657	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/CHDC3967/1988/US
+660658	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/CHDC4108/1987/US
+660659	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/CHDC4871/1977/US
+1184497	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/CHDC5191/1974/USA
+1241968	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/Doonside/NSW536I/2011/AU
+1566828	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/gg-12-08-04/2012/KR
+1379486	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/Guangzhou/GZ2010-L88/CHN/2011
+1379487	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/Guangzhou/GZ2010-L91/CHN/2011
+1282423	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/GZ2010-L26/Guangzhou/CHN/2010
+1282425	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/GZ2010-L87/Guangzhou/CHN/2011
+1262401	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/Hong Kong/CUHK3630/2012/CHN
+1337425	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/Hong Kong/CUHK6080/2012/CHN
+1268361	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/HS191/2004/USA
+1458702	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/HS288/2012/USA
+1458703	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/HS292/2012/USA
+1458704	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/HS66/2001/USA
+1241969	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/Jannali/NSW774M/2011/AU
+880562	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/JB-15/KOR/2008
+1432852	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/Jiangsu1/2011/CHN
+1432853	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/Jiangsu2/2012/CHN
+1406149	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/Jingzhou/2013403/CHN
+392172	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/MD-2004/2004/US
+1241970	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/Miranda/NSW850K/2011/AU
+1133122	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/New Orleans/2010/USA
+1383602	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/NIHIC1.13/2012/USA
+1406809	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/NIHIC1.16/2012/USA
+1406799	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/NIHIC11.3/2013/USA
+1383591	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/NIHIC13/2011/USA
+1383599	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/NIHIC17.1/2012/USA
+1383601	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/NIHIC17.5/2012/USA
+1406805	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/NIHIC17.6/2012/USA
+1406801	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/NIHIC17.8/2013/USA
+1406802	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/NIHIC17.9/2013/USA
+1383590	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/NIHIC18.1/2012/USA
+1406797	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/NIHIC2.2/2010/USA
+1406798	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/NIHIC2.3/2010/USA
+1383596	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/NIHIC27.1/2012/USA
+1406800	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/NIHIC27.2/2012/USA
+1383609	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/NIHIC28.4/2012/USA
+1383606	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/NIHIC28.5/2012/USA
+1406796	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/NIHIC35/2013/USA
+1316726	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/Ohio/684/USA
+1221622	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/Ohio/7G/2012/USA
+1221623	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/Ohio/7I/2012/USA
+1241971	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/Randwick/NSW882J/2011/AU
+1241972	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/Randwick/NSW938K/2011/AU
+1183312	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/Rockdale/NSW006D/2009/AU
+1312076	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/Seoul/1071/2010/KOR
+1498296	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/SGU-110421/KOR/2011
+1241973	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/Sydney/NSW0514/2012/AU
+1241974	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.4	Norovirus Hu/GII.4/Woonona/NSW3309/2012/AU
+1260944	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.9	Norovirus Hu/GII.6/CHDC4073/1984/USA
+1282430	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.6	Norovirus Hu/GII.6/GZ2010-L96/Guangzhou/CHN/2011
+1458705	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII.6	Norovirus Hu/GII.6/HS245/2010/USA
+1183319	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus Hu/GII.g-GII.12/Gunnedah/NSW895P/2010/AU
+1183320	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus Hu/GII.g-GII.12/Wahroonga/NSW004P/2009/AU
+1175309	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus Hu/GII/10002/2009/VNM
+1175310	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus Hu/GII/10003/2009/VNM
+1175311	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus Hu/GII/10012/2009/VNM
+1175312	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus Hu/GII/10037/2009/VNM
+1291872	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus Hu/GII/20469/2010/VNM
+1291873	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus Hu/GII/20477/2010/VNM
+1486684	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus Hu/GII/BG1C0004/2010/BGD
+1486685	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus Hu/GII/BG1C0066/2011/BGD
+1486687	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus Hu/GII/BG1C0204/2011/BGD
+1486689	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus Hu/GII/BG1C0241-33/2011/BGD
+1486691	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus Hu/GII/BG1C0270/2011/BGD
+1486692	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus Hu/GII/BG1C0282/2011/BGD
+1486694	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus Hu/GII/BG1C0317/2011/BGD
+1486697	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus Hu/GII/BG1C0405/2012/BGD
+1336082	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus Hu/GII/Seoul1055/KOR/2010
+1336084	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus Hu/GII/Seoul1072/KOR/2010
+1336095	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus Hu/GII/Seoul1282/KOR/2010
+1336100	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus Hu/GII/Seoul1367/KOR/2010
+1336131	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus Hu/GII/Seoul1488/KOR/2011
+756495	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII isolates	Norovirus Hu/GII/Shanghai/SH2/2008/CHN
+1338688	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GIV.1	Norovirus Hu/GIV.1/CCDC GR1113-59/CHN/2011
+1183318	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GIV.1	Norovirus Hu/GIV.1/LakeMacquarie/NSW268O/2010/AU
+1261195	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10034/2009/VNM
+1261196	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10051/2009/VNM
+1261197	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10054/2009/VNM
+1261198	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10062/2009/VNM
+1261199	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10074/2009/VNM
+1261200	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10075/2009/VNM
+1261201	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10078/2009/VNM
+1261202	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10079/2009/VNM
+1261203	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10110/2009/VNM
+1261204	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10114/2009/VNM
+1261205	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10116/2009/VNM
+1261206	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10129/2009/VNM
+1261207	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10136/2009/VNM
+1261208	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10137/2009/VNM
+1261209	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10145/2009/VNM
+1261210	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10148/2009/VNM
+1261211	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10158/2009/VNM
+1261212	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10160/2009/VNM
+1261213	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10162/2009/VNM
+1261214	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10163/2009/VNM
+1261215	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10169/2009/VNM
+1261216	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10173/2009/VNM
+1261217	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10176/2009/VNM
+1261218	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10177/2009/VNM
+1261219	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10179/2009/VNM
+1261220	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10182/2009/VNM
+1261221	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10183/2009/VNM
+1261222	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10194/2009/VNM
+1261223	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10199/2009/VNM
+1261224	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10203/2009/VNM
+1261225	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10204/2009/VNM
+1261226	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10222/2009/VNM
+1261227	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10223/2009/VNM
+1261228	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10235/2009/VNM
+1261229	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10236/2009/VNM
+1261230	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10238/2009/VNM
+1261231	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10247/2009/VNM
+1261232	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10255/2009/VNM
+1261233	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10285/2010/VNM
+1261234	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10296/2010/VNM
+1261235	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10313/2010/VNM
+1261236	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10325/2010/VNM
+1261237	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10328/2010/VNM
+1261238	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10368/2010/VNM
+1261239	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10378/2010/VNM
+1261240	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/10386/2010/VNM
+1261241	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/20008/2009/VNM
+1261242	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/20010/2009/VNM
+1261243	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/20014/2009/VNM
+1261244	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/20016/2009/VNM
+1261245	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/20019/2009/VNM
+1261246	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/20033/2009/VNM
+1261247	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/20035/2009/VNM
+1261248	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/20044/2009/VNM
+1261249	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/20047/2009/VNM
+1261250	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/20066/2009/VNM
+1261251	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/20067/2009/VNM
+1261252	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/20069/2009/VNM
+1261253	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/20092/2009/VNM
+1261254	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/20093/2009/VNM
+1261255	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/20094/2009/VNM
+1261256	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/20118/2009/VNM
+1261257	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/20122/2009/VNM
+1261258	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/20123/2009/VNM
+1261259	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/20128/2009/VNM
+1261260	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/20135/2009/VNM
+1261261	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/20139/2009/VNM
+1261262	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/20140/2009/VNM
+1261263	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Norwalk/20142/2009/VNM
+756497	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Shanghai/SH312/2009/CHN
+756496	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus isolates	Norovirus Hu/Shanghai/SH5/2009/CHN
+95340	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norwalk virus	Norwalk-like virus
+64292	RNA	(+)ssRNA	nan	Flaviviridae	nan	Flavivirus	Ntaya virus group	Ntaya virus
+11027	RNA	(+)ssRNA	nan	Togaviridae	nan	Alphavirus	nan	O'nyong-nyong virus
+12542	RNA	(+)ssRNA	nan	Flaviviridae	nan	Flavivirus	tick-borne encephalitis virus group	Omsk hemorrhagic fever virus
+10258	DNA	dsDNA	nan	Poxviridae	Chordopoxvirinae	Parapoxvirus	nan	Orf virus
+118655	RNA	(-)ssRNA	nan	Bunyaviridae	nan	Orthobunyavirus	nan	Oropouche virus
+340907	DNA	dsDNA	Herpesvirales	Herpesviridae	Alphaherpesvirinae	Simplexvirus	nan	Papiine herpesvirus 2
+11207	RNA	(-)ssRNA	Mononegavirales	Paramyxoviridae	Paramyxovirinae	Rubulavirus	nan	Parainfluenza virus 5
+1341019	DNA	ssDNA	nan	Parvoviridae	Parvovirinae	nan	nan	Parvovirus NIH-CQV
+11630	RNA	(-)ssRNA	nan	Arenaviridae	nan	Mammarenavirus	nan	Pichinde mammarenavirus
+11083	RNA	(+)ssRNA	nan	Flaviviridae	nan	Flavivirus	tick-borne encephalitis virus group	Powassan virus
+11587	RNA	(-)ssRNA	nan	Bunyaviridae	nan	Phlebovirus	nan	Punta Toro virus
+11604	RNA	(-)ssRNA	nan	Bunyaviridae	nan	Hantavirus	nan	Puumala virus
+11292	RNA	(-)ssRNA	Mononegavirales	Rhabdoviridae	nan	Lyssavirus	nan	Rabies virus
+378809	RNA	(-)ssRNA	Mononegavirales	Filoviridae	nan	Marburgvirus	Marburg marburgvirus	Ravn virus - Ravn, Kenya, 1987
+12814	RNA	(-)ssRNA	Mononegavirales	Pneumoviridae	nan	Pneumovirus	unclassified Pneumovirus	Respiratory syncytial virus
+1439707	RNA	(-)ssRNA	Mononegavirales	Pneumoviridae	nan	Pneumovirus	Respiratory syncytial virus	Respiratory syncytial virus type A
+186539	RNA	(-)ssRNA	Mononegavirales	Filoviridae	nan	Ebolavirus	nan	Reston ebolavirus
+129003	RNA	(-)ssRNA	Mononegavirales	Filoviridae	nan	Ebolavirus	Reston ebolavirus	Reston ebolavirus - Reston
+147711	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	nan	Rhinovirus A
+147712	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	nan	Rhinovirus B
+463676	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Enterovirus	nan	Rhinovirus C
+11588	RNA	(-)ssRNA	nan	Bunyaviridae	nan	Phlebovirus	nan	Rift Valley fever virus
+64285	RNA	(+)ssRNA	nan	Flaviviridae	nan	Flavivirus	Rio Bravo virus group	Rio Bravo virus
+1511807	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Rosavirus	Rosavirus A	Rosavirus A2
+11029	RNA	(+)ssRNA	nan	Togaviridae	nan	Alphavirus	nan	Ross River virus
+28875	RNA	dsRNA	nan	Reoviridae	Sedoreovirinae	Rotavirus	nan	Rotavirus A
+36427	RNA	dsRNA	nan	Reoviridae	Sedoreovirinae	Rotavirus	nan	Rotavirus C
+11041	RNA	(+)ssRNA	nan	Togaviridae	nan	Rubivirus	nan	Rubella virus
+45709	RNA	(-)ssRNA	nan	Arenaviridae	nan	Mammarenavirus	nan	Sabia mammarenavirus
+434309	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Cardiovirus	Theilovirus	Saffold virus
+59303	RNA	(+)ssRNA	nan	Togaviridae	nan	Alphavirus	Getah virus	Sagiyama virus
+1330524	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Salivirus	nan	Salivirus A
+1547495	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Salivirus	unclassified Salivirus	Salivirus FHB
+651733	RNA	(+)ssRNA	Picornavirales	Picornaviridae	nan	Salivirus	Salivirus A	Salivirus NG-J1
+206160	RNA	(-)ssRNA	nan	Bunyaviridae	nan	Phlebovirus	nan	Sandfly fever Naples virus
+688699	RNA	(-)ssRNA	nan	Bunyaviridae	nan	Phlebovirus	Sandfly fever Sicilian virus	Sandfly fever Turkey virus
+290314	RNA	(+)ssRNA	nan	Caliciviridae	nan	Sapovirus	Sapovirus GII	Sapovirus C12
+291175	RNA	(+)ssRNA	nan	Caliciviridae	nan	Sapovirus	Sapovirus isolates	Sapovirus Hu/Dresden/pJG-Sap01/DE
+1346530	RNA	(+)ssRNA	nan	Caliciviridae	nan	Sapovirus	Sapovirus GI	Sapovirus Hu/G1/BE-HPI01/DE/2012
+985691	RNA	(+)ssRNA	nan	Caliciviridae	nan	Sapovirus	Sapovirus GI.2	Sapovirus Hu/GI.2/BR-DF01/BRA/2009
+758863	RNA	(+)ssRNA	nan	Caliciviridae	nan	Sapovirus	Sapovirus GI	Sapovirus Hu/GI/Sapporo/MT-2010/1982
+1280920	RNA	(+)ssRNA	nan	Caliciviridae	nan	Sapovirus	Sapovirus isolates	Sapovirus Hu/Nagoya/NGY-1/2012/JPN
+234601	RNA	(+)ssRNA	nan	Caliciviridae	nan	Sapovirus	Sapovirus GII	Sapovirus Mc10
+227859	RNA	(+)ssRNA	Nidovirales	Coronaviridae	Coronavirinae	Betacoronavirus	Severe acute respiratory syndrome-related coronavirus	SARS coronavirus
+627442	RNA	(+)ssRNA	Nidovirales	Coronaviridae	Coronavirinae	Betacoronavirus	SARS coronavirus	SARS coronavirus P2
+227984	RNA	(+)ssRNA	Nidovirales	Coronaviridae	Coronavirinae	Betacoronavirus	SARS coronavirus	SARS coronavirus Tor2
+11033	RNA	(+)ssRNA	nan	Togaviridae	nan	Alphavirus	nan	Semliki Forest virus
+11608	RNA	(-)ssRNA	nan	Bunyaviridae	nan	Hantavirus	nan	Seoul virus
+12557	RNA	(-)ssRNA	nan	Bunyaviridae	nan	Hantavirus	Seoul virus	Seoul virus 80-39
+992212	RNA	(-)ssRNA	nan	Bunyaviridae	nan	Phlebovirus	Severe fever with thrombocytopenia syndrome virus	SFTS virus HB29
+11642	RETRO	retro-RNA	nan	Retroviridae	Spumaretrovirinae	Spumavirus	nan	Simian foamy virus
+37705	RNA	(-)ssRNA	nan	Bunyaviridae	nan	Hantavirus	nan	Sin Nombre virus
+11034	RNA	(+)ssRNA	nan	Togaviridae	nan	Alphavirus	nan	Sindbis virus
+289366	DNA	ssDNA	nan	Anelloviridae	nan	nan	Small anellovirus	Small anellovirus 1
+289367	DNA	ssDNA	nan	Anelloviridae	nan	nan	Small anellovirus	Small anellovirus 2
+52276	RNA	(+)ssRNA	nan	Caliciviridae	nan	Norovirus	Norovirus GII	Snow Mountain virus
+1452514	RNA	(-)ssRNA	Mononegavirales	Paramyxoviridae	Paramyxovirinae	Rubulavirus	unclassified Rubulavirus	Sosuga virus
+11080	RNA	(+)ssRNA	nan	Flaviviridae	nan	Flavivirus	Japanese encephalitis virus group	St. Louis encephalitis virus
+1277649	DNA	dsDNA	nan	Polyomaviridae	nan	Polyomavirus	unclassified Polyomavirus	STL polyomavirus
+186540	RNA	(-)ssRNA	Mononegavirales	Filoviridae	nan	Ebolavirus	nan	Sudan ebolavirus
+1216927	RNA	(-)ssRNA	Mononegavirales	Filoviridae	nan	Ebolavirus	Sudan ebolavirus	Sudan ebolavirus - Nakisamata
+186541	RNA	(-)ssRNA	Mononegavirales	Filoviridae	nan	Ebolavirus	nan	Tai Forest ebolavirus
+994672	DNA	dsDNA	nan	Adenoviridae	nan	nan	nan	Titi monkey adenovirus ECC-2011
+687379	DNA	ssDNA	nan	Anelloviridae	nan	Gammatorquevirus	nan	Torque teno midi virus 1
+687380	DNA	ssDNA	nan	Anelloviridae	nan	Gammatorquevirus	nan	Torque teno midi virus 2
+687369	DNA	ssDNA	nan	Anelloviridae	nan	Betatorquevirus	nan	Torque teno mini virus 1
+1859149	DNA	ssDNA	nan	Anelloviridae	nan	Betatorquevirus	unclassified Betatorquevirus	Torque teno mini virus 18
+687370	DNA	ssDNA	nan	Anelloviridae	nan	Betatorquevirus	nan	Torque teno mini virus 2
+687371	DNA	ssDNA	nan	Anelloviridae	nan	Betatorquevirus	nan	Torque teno mini virus 3
+687373	DNA	ssDNA	nan	Anelloviridae	nan	Betatorquevirus	nan	Torque teno mini virus 5
+687374	DNA	ssDNA	nan	Anelloviridae	nan	Betatorquevirus	nan	Torque teno mini virus 6
+687375	DNA	ssDNA	nan	Anelloviridae	nan	Betatorquevirus	nan	Torque teno mini virus 7
+687376	DNA	ssDNA	nan	Anelloviridae	nan	Betatorquevirus	nan	Torque teno mini virus 8
+687377	DNA	ssDNA	nan	Anelloviridae	nan	Betatorquevirus	nan	Torque teno mini virus 9
+1535290	DNA	ssDNA	nan	Anelloviridae	nan	Betatorquevirus	unclassified Betatorquevirus	Torque teno mini virus ALA22
+1535291	DNA	ssDNA	nan	Anelloviridae	nan	Betatorquevirus	unclassified Betatorquevirus	Torque teno mini virus ALH8
+687340	DNA	ssDNA	nan	Anelloviridae	nan	Alphatorquevirus	nan	Torque teno virus 1
+687349	DNA	ssDNA	nan	Anelloviridae	nan	Alphatorquevirus	nan	Torque teno virus 10
+687351	DNA	ssDNA	nan	Anelloviridae	nan	Alphatorquevirus	nan	Torque teno virus 12
+687364	DNA	ssDNA	nan	Anelloviridae	nan	Alphatorquevirus	nan	Torque teno virus 25
+687366	DNA	ssDNA	nan	Anelloviridae	nan	Alphatorquevirus	nan	Torque teno virus 27
+687367	DNA	ssDNA	nan	Anelloviridae	nan	Alphatorquevirus	nan	Torque teno virus 28
+687342	DNA	ssDNA	nan	Anelloviridae	nan	Alphatorquevirus	nan	Torque teno virus 3
+687345	DNA	ssDNA	nan	Anelloviridae	nan	Alphatorquevirus	nan	Torque teno virus 6
+687346	DNA	ssDNA	nan	Anelloviridae	nan	Alphatorquevirus	nan	Torque teno virus 7
+687347	DNA	ssDNA	nan	Anelloviridae	nan	Alphatorquevirus	nan	Torque teno virus 8
+862909	DNA	dsDNA	nan	Polyomaviridae	nan	Polyomavirus	unclassified Polyomavirus	Trichodysplasia spinulosa-associated polyomavirus
+93678	DNA	ssDNA	nan	Anelloviridae	nan	nan	nan	TTV-like mini virus
+37133	RNA	(-)ssRNA	nan	Bunyaviridae	nan	Hantavirus	nan	Tula virus
+11591	RNA	(-)ssRNA	nan	Bunyaviridae	nan	Phlebovirus	nan	Uukuniemi virus
+10245	DNA	dsDNA	nan	Poxviridae	Chordopoxvirinae	Orthopoxvirus	nan	Vaccinia virus
+126794	DNA	dsDNA	nan	Poxviridae	Chordopoxvirinae	Orthopoxvirus	Vaccinia virus	Vaccinia virus Ankara
+10255	DNA	dsDNA	nan	Poxviridae	Chordopoxvirinae	Orthopoxvirus	nan	Variola virus
+11036	RNA	(+)ssRNA	nan	Togaviridae	nan	Alphavirus	nan	Venezuelan equine encephalitis virus
+11277	RNA	(-)ssRNA	Mononegavirales	Rhabdoviridae	nan	Vesiculovirus	nan	Vesicular stomatitis Indiana virus
+164416	RNA	(+)ssRNA	nan	Flaviviridae	nan	Flavivirus	Yellow fever virus group	Wesselsbron virus
+11082_1	RNA	(+)ssRNA	nan	Flaviviridae	nan	Flavivirus	Japanese encephalitis virus group	West Nile virus lineage 1
+11082_2	RNA	(+)ssRNA	nan	Flaviviridae	nan	Flavivirus	Japanese encephalitis virus group	West Nile virus lineage 2
+449280	RNA	(+)ssRNA	nan	Flaviviridae	nan	Flavivirus	West Nile virus	West Nile virus H442
+449279	RNA	(+)ssRNA	nan	Flaviviridae	nan	Flavivirus	West Nile virus	West Nile virus SA381/00
+449277	RNA	(+)ssRNA	nan	Flaviviridae	nan	Flavivirus	West Nile virus	West Nile virus SA93/01
+449278	RNA	(+)ssRNA	nan	Flaviviridae	nan	Flavivirus	West Nile virus	West Nile virus SPU116/89
+11039	RNA	(+)ssRNA	nan	Togaviridae	nan	Alphavirus	nan	Western equine encephalitis virus
+440266	DNA	dsDNA	nan	Polyomaviridae	nan	Polyomavirus	unclassified Polyomavirus	WU Polyomavirus
+38804	DNA	dsDNA	nan	Poxviridae	Chordopoxvirinae	Yatapoxvirus	nan	Yaba monkey tumor virus
+132475	DNA	dsDNA	nan	Poxviridae	Chordopoxvirinae	Yatapoxvirus	Tanapox virus	Yaba-like disease virus
+11089	RNA	(+)ssRNA	nan	Flaviviridae	nan	Flavivirus	Yellow fever virus group	Yellow fever virus
+186538	RNA	(-)ssRNA	Mononegavirales	Filoviridae	nan	Ebolavirus	nan	Zaire ebolavirus
+64320	RNA	(+)ssRNA	nan	Flaviviridae	nan	Flavivirus	nan	Zika virus
