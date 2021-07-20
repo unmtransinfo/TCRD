@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2019-08-22 10:54:04 smathias>
+# Time-stamp: <2020-12-04 10:32:13 smathias>
 """Generate TIN-X scores and PubMed ID rankings from Jensen lab's protein and disease mentions TSV files.
 
 Usage:
@@ -38,7 +38,7 @@ from progressbar import *
 import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
-VER = '6' # CHANGE THIS!!!
+TCRD_VER = '6' # CHANGE THIS!!!
 LOGDIR = '../loaders/tcrd%slogs/'%VER
 LOGFILE = LOGDIR + '%s.log'%PROGRAM
 

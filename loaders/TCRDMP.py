@@ -4,7 +4,7 @@
 
   Steve Mathias
   smathias@salud.unm.edu
-  Time-stamp: <2020-01-17 13:50:54 smathias>
+  Time-stamp: <2021-01-11 13:38:29 smathias>
 '''
 from __future__ import print_function
 import sys
@@ -134,7 +134,7 @@ class DBAdaptor:
   #
   def ins_target(self, init):
     '''
-    Function  : Insert a target and all associated data
+    Function  : Insert a target and all associated data provided
     Arguments : Dictionary containing target data.
     Returns   : Integer containing target.id
     Example   : tid = dba->ins_target(init) ;

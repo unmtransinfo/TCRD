@@ -409,7 +409,7 @@ load-TDLs.py: Done. Elapsed time: 0:01:28.418
 [smathias@juniper SQL]$ mysqldump tcrd6 > dumps6/TCRDv6.6.0.sql
 
 
-# Add indexes for IMPC queries fo MetepML
+# Add indexes for IMPC queries for MetepML
 mysql> CREATE INDEX nhprotein_idx2  ON nhprotein(sym);
 mysql> CREATE INDEX ortholog_idx2  ON ortholog(symbol);
 mysql> UPDATE dbinfo SET schema_ver = '6.4.1', data_ver = '6.6.1';
@@ -438,6 +438,706 @@ mysql> INSERT INTO provenance (dataset_id, table_name) VALUES (94, 'viral_ppi');
 
 [smathias@juniper SQL]$ mysqldump tcrd6 > dumps6/TCRDv6.7.0.sql
 
+# 6.8
+mysql> delete from provenance where dataset_id = 10;
+mysql> delete from dataset where id = 10;
+mysql> delete from pmscore;
+mysql> ALTER TABLE pmscore AUTO_INCREMENT = 1;
+
+[smathias@juniper loaders]$ ./load-JensenLabPubMedScores.py --dbname tcrd6
+
+load-JensenLabPubMedScores.py (v3.0.0) [Thu Nov 12 08:49:41 2020]:
+
+Connected to TCRD database tcrd6 (schema ver 6.4.1; data ver 6.7.0)
+
+Downloading  http://download.jensenlab.org/KMC/Medline/protein_counts.tsv
+         to  ../data/JensenLab/protein_counts.tsv
+Done. Elapsed time: 0:00:03.459
+
+Processing 389136 input lines in file ../data/JensenLab/protein_counts.tsv
+Progress: 100% [###############################################################] Time: 0:09:37
+389136 input lines processed.
+  Inserted 390341 new pmscore rows for 18045 targets
+No target found for 234 STRING IDs. See logfile ./tcrd6logs/load-JensenLabPubMedScores.py.log for details.
+
+Loading 18045 JensenLab PubMed Score tdl_infos
+18045 processed
+  Inserted 18045 new JensenLab PubMed Score tdl_info rows
+
+load-JensenLabPubMedScores.py: Done. Elapsed time: 0:09:56.008
+
+[smathias@juniper SQL]$ mysqldump tcrd6 > dumps6/TCRDv6.8.0.sql
+
+mysql> delete from provenance where dataset_id = 93;
+mysql> delete from dataset where id = 93;
+mysql> select tdl, count(*) from target group by tdl;
+mysql> UPDATE target SET tdl = NULL;
+
+[smathias@juniper loaders]$ ./load-TDLs.py --dbname tcrd6
+
+load-TDLs.py (v3.0.0) [Thu Nov 12 10:00:03 2020]:
+
+Connected to TCRD database tcrd6 (schema ver 6.4.1; data ver 6.7.0)
+
+Processing 20412 TCRD targets
+Progress: 100% [##############################################################] Time: 0:02:36
+20412 TCRD targets processed.
+Set TDL values for 20412 targets:
+  659 targets are Tclin
+  1607 targets are Tchem
+  11778 targets are Tbio - 590 bumped from Tdark
+  6368 targets are Tdark
+
+load-TDLs.py: Done. Elapsed time: 0:02:36.66
+
+[smathias@juniper SQL]$ mysqldump tcrd6 > dumps6/TCRDv6.8.0.sql
+
+[smathias@juniper loaders]$ python load-Phipster.py 
+Connected to MySQL database tcrd6
+creating virus table
+creating viral_protein table
+creating viral_ppi table
+done
+
+[smathias@juniper SQL]$ mysqldump tcrd6 > dumps6/TCRDv6.8.0.sql
+
+
+# TIGA
+mysql> CREATE TABLE tiga (
+  id int(11) NOT NULL AUTO_INCREMENT,
+  protein_id INT(11) NOT NULL,
+  ensg VARCHAR(15) COLLATE utf8_unicode_ci NOT NULL,
+  efoid VARCHAR(15) NOT NULL,
+  trait VARCHAR(255) COLLATE utf8_unicode_ci NOT NULL,
+  n_study INT(2) NULL,
+  n_snp INT(2) NULL,
+  n_snpw DECIMAL(5,3) NULL,
+  geneNtrait INT(2) NULL,
+  geneNstudy INT(2) NULL,
+  traitNgene INT(2) NULL,
+  traitNstudy INT(2) NULL,
+  pvalue_mlog_median DECIMAL(7,3) NULL,
+  pvalue_mlog_max DECIMAL(8,3) NULL,
+  or_median DECIMAL(8,3) NULL,
+  n_beta INT(2) NULL,
+  study_N_mean INT(2) NULL,
+  rcras DECIMAL(5,3) NULL,
+  meanRank DECIMAL(18,12) NULL,
+  meanRankScore  DECIMAL(18,14) NULL,
+  PRIMARY KEY (id),
+  KEY tiga_idx1 (protein_id),
+  CONSTRAINT fk_tiga_protein FOREIGN KEY (protein_id) REFERENCES protein (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+mysql> CREATE TABLE tiga_provenance (
+  id INT(11) NOT NULL AUTO_INCREMENT,
+  ensg VARCHAR(15) COLLATE utf8_unicode_ci NOT NULL,
+  efoid VARCHAR(15) NOT NULL,
+  study_acc VARCHAR(20) NOT NULL,
+  pubmedid INT(11) NOT NULL,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+[smathias@juniper loaders]$ ./load-TIGA.py --dbname tcrd6
+
+load-TIGA.py (v1.0.0) [Thu Dec  3 15:53:40 2020]:
+
+Connected to TCRD database tcrd6 (schema ver 6.4.3; data ver 6.8.1)
+
+Processing 101763 lines in TIGA file ../data/TIGA/tiga_gene-trait_stats.tsv
+Progress: 100% [###################################################################] Time: 0:16:24
+Processed 101763 lines
+  Inserted 102407 new tiga rows for 11765 proteins
+
+Processing 167812 lines in TIGA provenance file ../data/TIGA/tiga_gene-trait_provenance.tsv
+Progress: 100% [###################################################################] Time: 0:02:30
+Processed 167812 lines
+  Inserted 167811 new tiga rows
+
+load-TIGA.py: Done. Elapsed time: 0:18:54.995
+
+mysql> update dbinfo set schema_ver = '6.5.0', data_ver = '6.8.2';
+
+[smathias@juniper SQL]$ mysqldump tcrd6 > dumps6/TCRDv6.8.2.sql
+
+
+# New IMPC Phenotypes
+mysql> delete from phenotype where ptype = 'IMPC';
+mysql> delete from provenance where dataset_id = 91;
+mysql> delete from dataset where id = 91;
+
+(venv) [smathias@juniper python]$ ./load-IMPC-Phenotypes.py --dbname tcrd6
+
+load-IMPC-Phenotypes.py (v3.0.0) [Mon Jan 11 08:06:36 2021]:
+
+Connected to TCRD database tcrd6 (schema ver 6.5.0; data ver 6.8.2)
+
+Downloading ftp://ftp.ebi.ac.uk/pub/databases/impc/all-data-releases/latest/results/genotype-phenotype-assertions-IMPC.csv.gz
+         to genotype-phenotype-assertions-IMPC.csv.gz
+Uncompressing ../data/IMPC/genotype-phenotype-assertions-IMPC.csv.gz
+
+Downloading ftp://ftp.ebi.ac.uk/pub/databases/impc/all-data-releases/latest/results/statistical-results-ALL.csv.gz
+         to statistical-results-ALL.csv.gz
+Uncompressing ../data/IMPC/statistical-results-ALL.csv.gz
+
+Processing 42531 lines in input file ../data/IMPC/genotype-phenotype-assertions-IMPC.csv
+Progress: [##################################################] 100.0% Done.
+42531 lines processed.
+Loaded 182397 IMPC phenotypes for 24546 nhproteins
+No nhprotein found for 151 gene symbols. See logfile ../log/tcrd6logs/load-IMPC-Phenotypes.py.log for details.
+
+Processing 2117224 lines from input file ../data/IMPC/statistical-results-ALL.csv
+Progress: [##################################################] 100.0% Done.
+2117224 lines processed.
+Loaded 168620 IMPC phenotypes for 25754 nhproteins
+No nhprotein found for 158 gene symbols. See logfile ../log/tcrd6logs/load-IMPC-Phenotypes.py.log for details.
+Skipped 2078173 lines with no term_id or term_name.
+
+load-IMPC-Phenotypes.py: Done. Elapsed time: 0:15:24.829
+
+mysql> update dbinfo set data_ver = '6.8.3';
+
+[smathias@juniper SQL]$ mysqldump tcrd6 > dumps6/TCRDv6.8.3.sql
+
+
+# IDG List
+v6.8.3:
+mysql> select fam, count(*) from target where idg group by fam;
++--------+----------+
+| fam    | count(*) |
++--------+----------+
+| GPCR   |      117 |
+| IC     |       62 |
+| Kinase |      150 |
++--------+----------+
+mysql> UPDATE target SET idg = 0;
+
+In new file:
+(venv) [smathias@juniper python]$ grep -c GPCR ../data/IDG_Lists/IDG_List_20210120_forv6.csv
+116
+(venv) [smathias@juniper python]$ grep -c IonChannel ../data/IDG_Lists/IDG_List_20210120_forv6.csv 
+63
+(venv) [smathias@juniper python]$ grep -c Kinase ../data/IDG_Lists/IDG_List_20210120_forv6.csv
+144
+
+# NB. Load script run with dataset/provenance commented out
+(venv) [smathias@juniper python]$ ./load-IDGList.py --dbname tcrd6
+
+load-IDGList.py (v4.0.0) [Thu Jan 21 11:22:50 2021]:
+
+Connected to TCRD database tcrd6 (schema ver 6.5.0; data ver 6.8.3)
+
+Processing 324 lines in file ../data/IDG_Lists/IDG_List_20210120_forv6.csv
+Progress: [##################################################] 100.0% Done.
+324 lines processed
+323 target rows updated with IDG flags
+323 target rows updated with fams
+
+load-IDGList.py: Done. Elapsed time: 0:00:03.039
+
+mysql> UPDATE dataset SET source = 'IDG generated data in file IDG_List_20210120_forv6.csv', app_version = '3.0.0', datetime = '2021-01-21 11:22:50' WHERE id = 38;
+mysql> UPDATE dbinfo SET data_ver = '6.8.4';
+
+v6.8.4:
+mysql> select fam, count(*) from target where idg group by fam;
++--------+----------+
+| fam    | count(*) |
++--------+----------+
+| GPCR   |      116 |
+| IC     |       63 |
+| Kinase |      144 |
++--------+----------+
+
+
+# DRGC Resources
+mysql> DROP TABLE drgc_resources;
+mysql> CREATE TABLE `drgc_resource` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `rssid` text NOT NULL,
+  `resource_type` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  `target_id` int(11) NOT NULL,
+  `json` text COLLATE utf8_unicode_ci NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `drgc_resource_idx1` (`target_id`),
+  CONSTRAINT `fk_drgc_resource__target` FOREIGN KEY (`target_id`) REFERENCES `target` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+mysql> delete from provenance where dataset_id = 71;
+mysql> delete from dataset where id = 71;
+
+(venv) [smathias@juniper python]$ ./load-DRGC_Resources.py --dbname tcrd6 2> xxx
+
+load-DRGC_Resources.py (v4.0.0) [Thu Jan 21 12:00:45 2021]:
+
+Connected to TCRD database tcrd6 (schema ver 6.5.0; data ver 6.8.4)
+
+Getting target resource data from RSS...
+Processing 804 target resource records...
+Progress: [##################################################] 100.0% Done.
+804 RSS target resource records processed.
+  Skipped 484 non-pharosReady resources.
+Inserted 320 new drgc_resource rows for 149 targets
+
+load-DRGC_Resources.py: Done. Elapsed time: 0:01:39.336
+
+
+[smathias@juniper SQL]$ mysqldump tcrd6 > dumps6/TCRDv6.8.4.sql
+
+
+### "Auto Update" TIN-X
+(venv) [smathias@juniper python]$ ./tin-x.py --dbname tcrd6
+
+tin-x.py (v4.0.3) [Mon Mar 15 17:38:53 2021]:
+
+Connected to TCRD database tcrd6 (schema ver 6.5.1; data ver 6.9.0)
+
+Downloading http://download.jensenlab.org/disease_textmining_mentions.tsv
+         to ../data/JensenLab/disease_textmining_mentions.tsv
+
+Downloading http://download.jensenlab.org/human_textmining_mentions.tsv
+         to ../data/JensenLab/human_textmining_mentions.tsv
+
+Parsing Disease Ontology file ../data/DiseaseOntology/doid.obo
+  Got 13109 Disease Ontology terms
+
+Generating TIN-X TSV files. See logfile ../log/tcrd6logs/tin-x.py.log for details.
+
+Protein mappings: 18982 protein to PMIDs ; 5629238 PMID to protein counts. Elapsed time: 0:03:27.682
+Disease mappings: 8960 disease to PMIDs ; 11988736 PMID to disease counts. Elapsed time: 0:02:09.391
+Wrote 18983 lines to file ../data/TIN-X/TCRDv6/ProteinNovelty.tsv. Elapsed time: 0:00:09.521
+Wrote 8961 lines to file ../data/TIN-X/TCRDv6/DiseaseNovelty.tsv. Elapsed time: 0:00:52.832
+Wrote 13800891 lines to file ../data/TIN-X/TCRDv6/Importance.tsv. Elapsed time: 0:30:49.986
+Wrote 418949227 lines (3318131 total TIN-x PMIDs) to file ../data/TIN-X/TCRDv6/PMIDRanking.tsv. Elapsed time: 0:48:25.428
+Fetching pubmed data for 11158 new TIN-X PMIDs
+11108 lines written to file ../data/TIN-X/TCRDv6/TINX_Pubmed.tsv. Elapsed time: 0:04:47.331
+
+tin-x.py: Done. Total time: 1:32:56.907
+
+
+(venv) [smathias@juniper python]$ ./load-TIN-X.py --dbname tcrd6
+
+load-TIN-X.py (v4.1.0) [Tue Mar 16 10:08:54 2021]:
+
+Connected to TCRD database tcrd6
+
+Deleting old dataset/provenance (if any): Done.
+
+Dropping old tinx tables: Done.
+
+Creating new tinx tables: Done.
+
+Loading tinx tables...
+  Loading tinx_novelty: OK - (18982 rows).  Elapsed time: 0:00:00.367
+  Loading tinx_disease: OK - (8960 rows).  Elapsed time: 0:00:00.211
+  Loading tinx_importance: OK - (13800890 rows).  Elapsed time: 0:15:13.936
+  Loading tinx_articlerank: OK - (418949226 rows).  Elapsed time: 12:07:35.445
+Done.
+
+Loading TIN-X pubmeds from ../data/TIN-X/TCRDv6/TINX_Pubmed.tsv...
+Progress: [##################################################] 99.5% 
+  Processed 11058 lines. Inserted 11015 pubmed rows. Elapsed time: 0:00:09.514
+  WARNING: 42 errors occurred. See logfile ../log/tcrd6logs/load-TIN-X.py.log for details.
+Done.
+
+Loading dataset and provenance: Done.
+
+load-TIN-X.py: Done. Total time: 12:23:01.835
+
+mysql> UPDATE dbinfo SET schema_ver = '6.5.1', data_ver = '6.9.0';
+
+[smathias@juniper SQL]$ mysqldump tcrd6 > dumps6/TCRDv6.9.0.sql
+
+
+# GlyGen extlinks
+
+CREATE TABLE `extlink` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `protein_id` int(11) NOT NULL,
+  `source` enum('GlyGen', 'Prokino', 'Dark Kinome', 'Reactome', 'ClinGen', 'GENEVA', 'TIGA') COLLATE utf8_unicode_ci NOT NULL,
+  `url` text COLLATE utf8_unicode_ci NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `extlink_idx1` (`protein_id`),
+  CONSTRAINT `fk_extlink_protein` FOREIGN KEY (`protein_id`) REFERENCES `protein` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+
+(venv) [smathias@juniper python]$ ./load-ExtLinks.py --dbname tcrd6 --loglevel 20 2> ../log/tcrd6logs/extlink_xx
+
+load-ExtLinks.py (v1.1.0) [Fri Mar 19 14:45:34 2021]:
+
+Connected to TCRD database tcrd6 (schema ver 6.5.1; data ver 6.9.0)
+
+Checking/Loading GlyGen ExtLinks for 20412 TCRD proteins
+Progress: [##################################################] 100.0% Done.
+Processed 20412 TCRD proteins.
+Inserted 20225 new GlyGen extlink rows.
+No GlyGen record found for 187 TCRD UniProts. See logfile ../log/tcrd6logs//load-ExtLinks.py.log for details.
+
+load-ExtLinks.py: Done. Elapsed time: 4:20:34.396
+
+
+mysql> UPDATE dbinfo SET schema_ver = '6.6.0', data_ver = '6.9.1';
+
+[smathias@juniper SQL]$ mysqldump tcrd6 > dumps6/TCRDv6.9.1.sql
+
+
+## Fix TIGA
+## Files used previously (in ~/TCRD/data/TIGA/bad-old-files/) are junk
+
+mysql> delete from provenance where dataset_id = (select id from dataset where name = 'TIGA');
+Query OK, 2 rows affected (0.01 sec)
+mysql> delete from dataset where name = 'TIGA';
+Query OK, 1 row affected (0.04 sec)
+
+mysql> delete from tiga_provenance;
+Query OK, 167811 rows affected (0.39 sec)
+mysql> delete from tiga;
+Query OK, 102407 rows affected (0.45 sec)
+
+mysql> alter table tiga AUTO_INCREMENT = 1;
+mysql> alter table tiga_provenance AUTO_INCREMENT = 1;
+
+(venv) [smathias@juniper python]$ ./load-TIGA.py --dbname tcrd6
+
+load-TIGA.py (v2.0.0) [Thu Apr  1 16:50:28 2021]:
+
+Connected to TCRD database tcrd6 (schema ver 6.6.0; data ver 6.9.1)
+
+Downloading https://unmtid-shinyapps.net/download/TIGA/tiga_gene-trait_stats.tsv
+         to ../data/TIGA/tiga_gene-trait_stats.tsv
+
+Downloading https://unmtid-shinyapps.net/download/TIGA/tiga_gene-trait_provenance.tsv
+         to ../data/TIGA/tiga_gene-trait_provenance.tsv
+
+Processing 55463 lines in TIGA file ../data/TIGA/tiga_gene-trait_stats.tsv
+Progress: [##################################################] 100.0% Done.
+Processed 55463 lines
+  Inserted 171464 new tiga rows for 9615 proteins
+
+Processing 78517 lines in TIGA provenance file ../data/TIGA/tiga_gene-trait_provenance.tsv
+Progress: [##################################################] 100.0% Done.
+Processed 78517 lines
+  Inserted 78516 new tiga_provenance rows
+
+load-TIGA.py: Done. Elapsed time: 0:04:42.187
+
+# Add TIGA extinks (not re-doing GlyGen ones) #
+# output not shown #
+
+mysql> UPDATE dbinfo SET schema_ver = '6.6.1', data_ver = '6.9.2';
+
+[smathias@juniper SQL]$ mysqldump tcrd6 > dumps6/TCRDv6.9.2.sql
+
+
+
+
+### "Auto Update" Jensen Lab Resources ###
+
+mysql> update dataset set name = 'JensenLab DISEASES' where name = 'Jensen Lab DISEASES';
+mysql> update dataset set name = 'JensenLab TISSUES' where name = 'Jensen Lab TISSUES';
+mysql> update dataset set name = 'JensenLab COMPARTMENTS' where name = 'Jensen Lab COMPARTMENTS';
+mysql> INSERT INTO disease_type (name, description) VALUES ('JensenLab Knowledge AmyCo', 'JensenLab Knowledge channel using AmyCo');
+
+(venv) [smathias@juniper python]$ ./update-JensenLab.py --dbname tcrd6
+
+update-JensenLab.py (v1.0.0) [Tue Apr 13 12:47:48 2021]:
+
+Connected to TCRD database tcrd6 (schema ver 6.6.1; data ver 6.9.2)
+
+Downloading new JensenLab files...
+Downloading http://download.jensenlab.org/KMC/protein_counts.tsv
+         to ../data/JensenLab/protein_counts.tsv
+Downloading http://download.jensenlab.org/human_disease_knowledge_filtered.tsv
+         to ../data/JensenLab/human_disease_knowledge_filtered.tsv
+Downloading http://download.jensenlab.org/human_disease_experiments_filtered.tsv
+         to ../data/JensenLab/human_disease_experiments_filtered.tsv
+Downloading http://download.jensenlab.org/human_disease_textmining_filtered.tsv
+         to ../data/JensenLab/human_disease_textmining_filtered.tsv
+
+Updating JensenLab PubMed Text-mining Scores...
+  Deleted 415210 rows from pmscore
+  Reset 18982 'JensenLab PubMed Score' tdl_info values to zero.
+Processing 414728 lines in file ../data/JensenLab/protein_counts.tsv
+Progress: [##################################################] 100.0% Done.
+414728 input lines processed.
+  Inserted 415210 new pmscore rows for 18982 proteins
+  No protein found for 309 STRING IDs. See logfile ../log/tcrd6logs//update-JensenLab.py.log for details.
+Loading 18982 JensenLab PubMed Score tdl_infos
+  Inserted 18982 new JensenLab PubMed Score tdl_info rows
+
+Updating JensenLab DISEASES...
+  Deleted 12465 JensenLab rows from disease
+Processing 7526 lines in DISEASES Knowledge file ../data/JensenLab/human_disease_knowledge_filtered.tsv
+Progress: [##################################################] 100.0% Done.
+7526 lines processed.
+  Inserted 8020 new disease rows for 3805 proteins
+  Skipped 38 rows w/o ENSP
+  No target found for 10 stringids/symbols. See logfile ../log/tcrd6logs//update-JensenLab.py.log for details.
+Processing 24102 lines in DISEASES Experiment file ../data/JensenLab/human_disease_experiments_filtered.tsv
+Progress: [##################################################] 100.0% Done.
+24102 lines processed.
+  Inserted 17412 new disease rows for 11268 proteins
+  No target found for 49 stringids/symbols. See logfile ../log/tcrd6logs//update-JensenLab.py.log for details.
+WARNING: 7846 DB errors occurred. See logfile ../log/tcrd6logs//update-JensenLab.py.log for details.
+Processing 179269 lines in DISEASES Textmining file ../data/JensenLab/human_disease_textmining_filtered.tsv
+Progress: [##################################################] 100.0% Done.
+179269 lines processed.
+  Inserted 4432 new disease rows for 2211 proteins
+  Skipped 174924 rows w/o ENSP or with confidence < 3
+  No target found for 14 stringids/symbols. See logfile ../log/tcrd6logs//update-JensenLab.py.log for details.
+
+update-JensenLab.py: Done. Elapsed time: 0:12:55.122
+
+
+# TDLs
+(venv) [smathias@juniper python]$ ./load-TDLs.py --dbname tcrd6
+
+load-TDLs.py (v4.0.0) [Tue Apr 13 13:12:24 2021]:
+
+Connected to TCRD database tcrd6 (schema ver 6.6.1; data ver 6.9.2)
+
+Set target.tdl to NULL for 20412 rows
+
+Deleted previous 'TDLs' dataset
+
+Calculating/Loading TDLs for 20412 TCRD targets
+Progress: [##################################################] 100.0% Done.
+20412 TCRD targets processed.
+Set TDL value for 20412 targets:
+  659 targets are Tclin
+  1607 targets are Tchem
+  9938 targets are Tbio - 1211 bumped from Tdark
+  8208 targets are Tdark
+
+load-TDLs.py: Done. Elapsed time: 0:02:10.582
+
+mysql> UPDATE dbinfo SET schema_ver = '6.6.2', data_ver = '6.10.0';
+
+[smathias@juniper SQL]$ mysqldump tcrd6 > dumps6/TCRDv6.10.0.sql
+
+# New TDLs for this version, so export mapping file for UniProt
+(venv) [smathias@juniper python]$ ./exp-UniProts.py 
+
+exp-UniProts.py (v1.1.0) [Tue Apr 13 13:52:20 2021]:
+
+Connected to TCRD database tcrd6 (schema ver 6.6.2; data ver 6.10.0)
+
+Exporting UniProts/TDLs for 20412 TCRD targets
+Progress: [##################################################] 100.0% Done.
+Wrote 20412 lines to file /usr/local/apache2/htdocs/tcrd/download/PharosTCRD_UniProt_Mapping.tsv
+
+exp-UniProts.py: Done. Elapsed time: 0:00:00.603
+
+
+mysql> use tcrd
+mysql> delete from tdl_info where itype = 'JensenLab PubMed Score' and number_value = 0.0;
+Query OK, 57439 rows affected (4.77 sec)
+
+mysql> select id from protein where id not in (select distinct protein_id from tdl_info where itype = 'JensenLab PubMed Score') INTO OUTFILE '/home/data/mysqlfiles/nojlpms.csv' FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n';
+
+Edit that to create InsMissingJLPMSs_TCRDv6.10.sql:
+[smathias@juniper SQL]$ perl -ne '/^(\d+)/ && print "INSERT INTO tdl_info (protein_id, itype, number_value) VALUES ($1, 'JLPMS', 0);\n"' /home/data/mysqlfiles/nojlpms.csv > InsZeroJLPMSs_TCRDv6.10.sql
+Edit InsZeroJLPMSs_TCRDv6.10.sql: s/JLPMS/'JensenLab PubMed Score'/
+mysql> \. InsZeroJLPMSs_TCRDv6.10.sql
+
+(venv) [smathias@juniper python]$ ./load-TDLs.py --dbname tcrd
+
+load-TDLs.py (v4.0.0) [Thu Apr 22 12:17:02 2021]:
+
+Connected to TCRD database tcrd (schema ver 6.6.2; data ver 6.10.0)
+
+Set target.tdl to NULL for 20412 rows
+
+Deleted previous 'TDLs' dataset
+
+Calculating/Loading TDLs for 20412 TCRD targets
+Progress: [##################################################] 100.0% Done.
+20412 TCRD targets processed.
+Set TDL value for 20412 targets:
+  659 targets are Tclin
+  1607 targets are Tchem
+  12139 targets are Tbio - 491 bumped from Tdark
+  6007 targets are Tdark
+
+load-TDLs.py: Done. Elapsed time: 0:02:07.935
+
+
+mysql> UPDATE dbinfo SET data_ver = '6.11.0';
+
+[smathias@juniper SQL]$ mysqldump tcrd > dumps6/TCRDv6.11.0.sql
+
+
+# ChEMBL 28
+
+(venv) [smathias@juniper python]$ ./load-ChEMBL.py --dbname tcrd6
+
+load-ChEMBL.py (v6.0.0) [Tue Apr 27 13:32:52 2021]:
+
+Connected to TCRD database tcrd6 (schema ver 6.6.2; data ver 6.11.0)
+Connected to ChEMBL database chembl_28
+
+Deleting existing ChEMBL data...
+  Deleted 489802 ChEMBL cmpd_activity rows
+  Deleted 1791 'ChEMBL First Reference Year' tdl_info rows
+  Deleted 755 'ChEMBL Selective Compound' tdl_info rows
+  
+Downloading ftp://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/chembl_uniprot_mapping.txt
+         to ../data/ChEMBL/chembl_uniprot_mapping.txt
+
+Processing 12936 input lines in mapping file ../data/ChEMBL/chembl_uniprot_mapping.txt
+Progress: [##################################################] 100.0% Done.
+  Got 8520 UniProt to ChEMBL 'SINGLE PROTEIN' mappings
+
+Processing 8520 UniProt accessions in up2chembl
+Progress: [##################################################] 100.0% Done.
+8520 UniProt accessions processed.
+  No TCRD target found for 4588 UniProt accessions. See logfile ../log/tcrd6logs/load-ChEMBL.py.log for details.
+  1829 targets have no qualifying activities in ChEMBL
+Inserted 536695 new cmpd_activity rows
+Inserted 2024 new 'ChEMBL First Reference Year' tdl_info rows
+
+Running selective compound analysis...
+  Found 20244 selective compounds
+Inserted 896 new 'ChEMBL Selective Compound' tdl_info rows
+
+load-ChEMBL.py: Done. Elapsed time: 0:19:37.262
+
+# TDLs
+(venv) [smathias@juniper python]$ ./load-TDLs.py --dbname tcrd6
+
+load-TDLs.py (v4.1.0) [Tue Apr 27 15:16:34 2021]:
+
+Connected to TCRD database tcrd6 (schema ver 6.6.2; data ver 6.11.0)
+
+Set tdl to NULL for 0 target rows
+
+Deleted previous 'TDLs' dataset
+
+Calculating/Loading TDLs for 20412 TCRD targets
+Progress: [##################################################] 100.0% Done.
+20412 TCRD targets processed.
+Set TDL value for 20412 targets:
+  659 targets are Tclin
+  1850 targets are Tchem
+  11911 targets are Tbio - 486 bumped from Tdark
+  5992 targets are Tdark
+
+load-TDLs.py: Done. Elapsed time: 0:02:01.736
+
+
+
+
+(venv) [smathias@juniper python]$ ./load-ChEMBL.py --dbname tcrd6
+
+load-ChEMBL.py (v6.1.0) [Thu May  6 12:19:44 2021]:
+
+Connected to TCRD database tcrd6 (schema ver 6.6.2; data ver 6.12.0)
+Connected to ChEMBL database chembl_28
+
+Deleting existing ChEMBL data...
+  Deleted 0 'ChEMBL' cmpd_activity rows
+  Deleted 0 'ChEMBL First Reference Year' tdl_info rows
+  Deleted 0 'ChEMBL Selective Compound' tdl_info rows
+
+Processing 12936 input lines in mapping file ../data/ChEMBL/chembl_uniprot_mapping.txt
+Progress: [##################################################] 100.0% Done.
+  Got 8520 UniProt to ChEMBL 'SINGLE PROTEIN' mappings
+
+Processing 8520 UniProt accessions in up2chembl
+Progress: [##################################################] 100.0% Done.
+8520 UniProt accessions processed.
+  No TCRD target found for 4588 UniProt accessions. See logfile ../log/tcrd6logs/load-ChEMBL.py.log for details.
+  1771 targets have no qualifying activities in ChEMBL
+Inserted 594355 new cmpd_activity rows
+Inserted 2061 new 'ChEMBL First Reference Year' tdl_info rows
+
+Running selective compound analysis...
+  Found 23225 selective compounds
+Inserted 930 new 'ChEMBL Selective Compound' tdl_info rows
+
+load-ChEMBL.py: Done. Elapsed time: 0:28:07.730
+
+
+(venv) [smathias@juniper python]$ ./load-TDLs.py --dbname tcrd6
+
+load-TDLs.py (v4.2.0) [Thu May  6 13:51:20 2021]:
+
+Connected to TCRD database tcrd6 (schema ver 6.6.2; data ver 6.12.0)
+
+Set tdl to NULL for 20412 target rows
+
+Deleted previous 'TDLs' dataset
+
+Calculating/Loading TDLs for 20412 TCRD targets
+Progress: [##################################################] 100.0% Done.
+20412 TCRD targets processed.
+Set TDL value for 20412 targets:
+  659 targets are Tclin
+  1883 targets are Tchem
+  11878 targets are Tbio - 486 bumped from Tdark
+  5992 targets are Tdark
+
+Exporting UniProts/TDLs for 20412 TCRD targets
+Progress: [##################################################] 100.0% Done.
+Wrote 20412 lines to file /usr/local/apache2/htdocs/tcrd/download/old_versions/PharosTCRDv6.12_UniProt_Mapping.tsv
+
+load-TDLs.py: Done. Elapsed time: 0:02:05.856
+
+mysql> UPDATE dbinfo SET data_ver = '6.12.0';
+
+[smathias@juniper SQL]$ mysqldump tcrd6 > dumps6/TCRDv6.12.0.sql
+
+
+
+# Ontologies
+
+DROP TABLE mpo;
+CREATE TABLE `mpo` (
+  `mpoid` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+  `name` text COLLATE utf8_unicode_ci NOT NULL,
+  `def` text COLLATE utf8_unicode_ci,
+  `comment` text COLLATE utf8_unicode_ci,
+  PRIMARY KEY (`mpoid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+CREATE TABLE `mpo_parent` (
+  `mpoid` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+  `parentid` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+  KEY `mpo_parent_idx1` (`mpoid`),
+  CONSTRAINT `fk_mpo_parent__mpo` FOREIGN KEY (`mpoid`) REFERENCES `mpo` (`mpoid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+CREATE TABLE `mpo_xref` (
+  `mpoid` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+  `db` varchar(24) COLLATE utf8_unicode_ci NOT NULL,
+  `value` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  PRIMARY KEY (`mpoid`,`db`,`value`),
+  KEY `mpo_xref_idx1` (`mpoid`),
+  CONSTRAINT `fk_mpo_xref__mpo` FOREIGN KEY (`mpoid`) REFERENCES `mpo` (`mpoid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+CREATE TABLE `mondo` (
+  `mondoid` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+  `name` text COLLATE utf8_unicode_ci NOT NULL,
+  `def` text COLLATE utf8_unicode_ci,
+  `comment` text COLLATE utf8_unicode_ci,
+  PRIMARY KEY (`mondoid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+CREATE TABLE `mondo_parent` (
+  `mondoid` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+  `parentid` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+  KEY `mondo_parent_idx1` (`mondoid`),
+  CONSTRAINT `fk_mondo_parent__mondo` FOREIGN KEY (`mondoid`) REFERENCES `mondo` (`mondoid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+CREATE TABLE `mondo_xref` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `mondoid` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+  `db` varchar(24) COLLATE utf8_unicode_ci NOT NULL,
+  `value` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  `source_info` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `mondo_xref_idx1` (`mondoid`),
+  -- UNIQUE KEY `mondo_xref_idx2` (`mondoid`,`db`,`value`),
+  CONSTRAINT `fk_mondo_xref__mondo` FOREIGN KEY (`mondoid`) REFERENCES `mondo` (`mondoid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
 

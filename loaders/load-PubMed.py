@@ -124,8 +124,7 @@ def load(args):
       pmas = soup.find('PubmedArticleSet')
       for pma in pmas.findAll('PubmedArticle'):
         pmid = pma.find('PMID').text
-        if pmid not in s['pmids']:
-          # only store each pubmed once
+        if pmid not in s['pmids']: # only store each pubmed once
           logger.debug("  parsing XML for PMID: %s" % pmid)
           init = parse_pubmed_article(pma)
           rv = dba.ins_pubmed(init)

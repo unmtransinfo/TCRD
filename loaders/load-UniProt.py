@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2020-05-04 10:51:43 smathias>
+# Time-stamp: <2020-12-01 11:05:30 smathias>
 """Load protein data from UniProt.org into TCRD via the web.
 
 Usage:
@@ -142,7 +142,7 @@ def load(args):
 
   # Mouse and Rat loaded into nhprotein
   dataset_id = dba.ins_dataset( {'name': 'UniProt Mouse Proteins', 'source': 'XML file downloaded from from UniProt query organism: "Mus musculus (Mouse) [10090]"', 'app': PROGRAM, 'app_version': __version__, 'url': 'https://www.uniprot.org/uniprot'} )
-  assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
+  assert dataset_id, "Error inserting dataset. See logfile {} for details.".format(logfile)
   rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'nhprotein', 'where_clause': "taxid = 10090"})
   assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
   # Rat

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2020-05-07 12:13:00 smathias>
+# Time-stamp: <2021-01-10 10:39:21 smathias>
 """Load IMPC phenotype data into TCRD from CSV file.
 
 Usage:
@@ -39,11 +39,15 @@ import slm_tcrd_functions as slmf
 PROGRAM = os.path.basename(sys.argv[0])
 LOGDIR = "./tcrd6logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
-# Download and uncompress files from ftp://ftp.ebi.ac.uk/pub/databases/impc/release-*.*/csv/
-# ftp://ftp.ebi.ac.uk/pub/databases/impc/release-11.0/csv/IMPC_genotype_phenotype.csv.gz
-GENO_PHENO_FILE = '../data/IMPC/IMPC_genotype_phenotype.csv'
-# ftp://ftp.ebi.ac.uk/pub/databases/impc/release-11.0/csv/IMPC_ALL_statistical_results.csv.gz
-STAT_RES_FILE = '../data/IMPC/IMPC_ALL_statistical_results.csv'
+# # Download and uncompress files from ftp://ftp.ebi.ac.uk/pub/databases/impc/all-data-releases/release-*/results/
+# # ftp://ftp.ebi.ac.uk//pub/databases/impc/all-data-releases/release-13.0/results/genotype-phenotype-assertions-IMPC.csv.gz
+# GENO_PHENO_FILE = '../data/IMPC/genotype-phenotype-assertions-IMPC.csv'
+# # ftp://ftp.ebi.ac.uk//pub/databases/impc/all-data-releases/release-13.0/results/statistical-results-ALL.csv.gz
+# STAT_RES_FILE = '../data/IMPC/statistical-results-ALL.csv'
+DOWNLOAD_DIR = '../data/IMPC/'
+BASE_URL = 'ftp://ftp.ebi.ac.uk/pub/databases/impc/all-data-releases/latest/results/'
+GENO_PHENO_FILE = 'genotype-phenotype-assertions-IMPC.csv.gz'
+STAT_RES_FILE = 'statistical-results-ALL.csv.gz'
 
 def load(args):
   loglevel = int(args['--loglevel'])
@@ -68,19 +72,20 @@ def load(args):
     print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
   # Dataset
-  dataset_id = dba.ins_dataset( {'name': 'IMPC Phenotypes', 'source': "Files %s and %s from ftp://ftp.ebi.ac.uk/pub/databases/impc/release-11.0/csv/"%(GENO_PHENO_FILE, STAT_RES_FILE), 'app': PROGRAM, 'app_version': __version__} )
+  dataset_id = dba.ins_dataset( {'name': 'IMPC Phenotypes', 'source': "Files %s and %s from ftp://ftp.ebi.ac.uk/pub/databases/impc/all-data-releases/latest/results/"%(os.path.basename(GENO_PHENO_FILE), os.path.basename(STAT_RES_FILE)), 'app': PROGRAM, 'app_version': __version__} )
   assert dataset_id, "Error inserting dataset See logfile {} for details.".format(logfile)
   # Provenance
   provs = [ {'dataset_id': dataset_id, 'table_name': 'phenotype', 'where_clause': "ptype = 'IMPC'"} ]
   for prov in provs:
     rv = dba.ins_provenance(prov)
     assert rv, "Error inserting provenance. See logfile {} for details.".format(logfile)
-  
-  line_ct = slmf.wcl(GENO_PHENO_FILE)
+
+  fn = DOWNLOAD_DIR + GENO_PHENO_FILE.replace('.gz', '')
+  line_ct = slmf.wcl(fn)
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   if not args['--quiet']:
-    print "\nProcessing {} lines from input file {}".format(line_ct, GENO_PHENO_FILE)
-  with open(GENO_PHENO_FILE, 'rU') as csvfile:
+    print "\nProcessing {} lines from input file {}".format(line_ct, fn)
+  with open(fn, 'rU') as csvfile:
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
     csvreader = csv.reader(csvfile)
     header = csvreader.next() # skip header line
@@ -166,11 +171,12 @@ def load(args):
   if dba_err_ct > 0:
     print "WARNING: {} DB errors occurred. See logfile {} for details.".format(dba_err_ct, logfile)
 
-  line_ct = slmf.wcl(STAT_RES_FILE)
+  fn = DOWNLOAD_DIR + STAT_RES_FILE.replace('.gz', '')
+  line_ct = slmf.wcl(fn)
   pbar_widgets = ['Progress: ',Percentage(),' ',Bar(marker='#',left='[',right=']'),' ',ETA()]
   if not args['--quiet']:
-    print "\nProcessing {} lines from input file {}".format(line_ct, STAT_RES_FILE)
-  with open(STAT_RES_FILE, 'rU') as csvfile:
+    print "\nProcessing {} lines from input file {}".format(line_ct, fn)
+  with open(fn, 'rU') as csvfile:
     pbar = ProgressBar(widgets=pbar_widgets, maxval=line_ct).start() 
     csvreader = csv.reader(csvfile)
     header = csvreader.next() # skip header line

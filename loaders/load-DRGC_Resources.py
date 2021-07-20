@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Time-stamp: <2019-08-30 12:41:29 smathias>
+# Time-stamp: <2020-11-23 12:18:13 smathias>
 """Load DRGC resource data into TCRD via RSS API.
 
 Usage:
@@ -24,13 +24,13 @@ Options:
 __author__    = "Steve Mathias"
 __email__     = "smathias @salud.unm.edu"
 __org__       = "Translational Informatics Division, UNM School of Medicine"
-__copyright__ = "Copyright 2019, Steve Mathias"
+__copyright__ = "Copyright 2019-2020, Steve Mathias"
 __license__   = "Creative Commons Attribution-NonCommercial (CC BY-NC)"
-__version__   = "2.0.0"
+__version__   = "3.0.0"
 
 import os,sys,time,re
 from docopt import docopt
-from TCRDMP import DBAdaptor
+from TCRD7 import DBAdaptor
 import urllib,json,codecs
 import logging
 from progressbar import *
@@ -38,20 +38,13 @@ import slm_tcrd_functions as slmf
 
 PROGRAM = os.path.basename(sys.argv[0])
 LOGDIR = "./tcrd6logs"
+#LOGDIR = "./tcrd7logs"
 LOGFILE = "%s/%s.log" % (LOGDIR, PROGRAM)
-RSS_API_BASE_URL = 'http://dev3.ccs.miami.edu:8080/rss-api/'
+# API Docs: https://rss.ccs.miami.edu/rss-apis/
+RSS_API_BASE_URL = 'https://rss.ccs.miami.edu/rss-api/'
 
-def load(args, dba, logger):
-  # Dataset
-  dataset_id = dba.ins_dataset( {'name': 'DRGC Resources', 'source': 'RSS APIs at http://dev3.ccs.miami.edu:8080/rss-apis/', 'app': PROGRAM, 'app_version': __version__, 'url': 'http://dev3.ccs.miami.edu:8080/rss-apis/'} )
-  if not dataset_id:
-    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
-    sys.exit(1)
-  # Provenance
-  rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'drgc_resource'})
-  if not rv:
-    print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
-    sys.exit(1)
+def load(args, dba, logfile, logger):
+  
     
   if not args['--quiet']:
     print "\nGetting targets from RSS..."
@@ -138,12 +131,17 @@ def get_resource_data(resource_type, resource_id):
   else:
     return False
 
+
 if __name__ == '__main__':
-  print "\n{} (v{}) [{}]:".format(PROGRAM, __version__, time.strftime("%c"))
+  print "\n%s (v%s) [%s]:\n" % (PROGRAM, __version__, time.strftime("%c"))
+  
   args = docopt(__doc__, version=__version__)
   if args['--debug']:
     print "\n[*DEBUG*] ARGS:\n%s\n"%repr(args)
-  
+  if args['--logfile']:
+    logfile =  args['--logfile']
+  else:
+    logfile = LOGFILE
   loglevel = int(args['--loglevel'])
   logger = logging.getLogger(__name__)
   logger.setLevel(loglevel)
@@ -159,9 +157,23 @@ if __name__ == '__main__':
   dbi = dba.get_dbinfo()
   logger.info("Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver']))
   if not args['--quiet']:
-    print "\nConnected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
+    print "Connected to TCRD database {} (schema ver {}; data ver {})".format(args['--dbname'], dbi['schema_ver'], dbi['data_ver'])
 
+  download(args)
   start_time = time.time()
-  load(args, dba, logger)
+  load(args, dba, logfile, logger)
   elapsed = time.time() - start_time
+
+  # Dataset
+  dataset_id = dba.ins_dataset( {'name': 'DRGC Resources', 'source': 'RSS APIs at http://dev3.ccs.miami.edu:8080/rss-apis/', 'app': PROGRAM, 'app_version': __version__, 'url': 'http://dev3.ccs.miami.edu:8080/rss-apis/'} )
+  if not dataset_id:
+    print "WARNING: Error inserting dataset See logfile %s for details." % logfile
+    sys.exit(1)
+  # Provenance
+  rv = dba.ins_provenance({'dataset_id': dataset_id, 'table_name': 'drgc_resource'})
+  if not rv:
+    print "WARNING: Error inserting provenance. See logfile %s for details." % logfile
+    sys.exit(1)
+      
   print "\n{}: Done. Elapsed time: {}\n".format(PROGRAM, slmf.secs2str(elapsed))
+
